@@ -32,6 +32,7 @@ mkdir -p "$STAGE"
 rsync -a \
 	--exclude '.git' \
 	--exclude '.github' \
+	--exclude '.claude' \
 	--exclude 'node_modules' \
 	--exclude 'release' \
 	--exclude 'tests' \
