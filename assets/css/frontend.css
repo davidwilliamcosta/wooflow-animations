@@ -1,0 +1,60 @@
+/**
+ * Estilos do front-end. Tudo o que é imprescindível antes da primeira pintura
+ * sai inline no <head> (ver DW_Anim_Assets::print_prehide); aqui fica o resto.
+ */
+
+.dw-anim-part {
+	display: inline-block;
+	will-change: transform, opacity;
+}
+
+.dw-anim-line {
+	display: block;
+}
+
+.dw-anim-mask-inner {
+	display: inline-block;
+	will-change: transform;
+}
+
+.dw-anim-lottie {
+	width: 100%;
+	line-height: 0;
+}
+
+/* O conteúdo sempre aparece: sem movimento, mas aparece. */
+@media ( prefers-reduced-motion: reduce ) {
+
+	.dw-anim,
+	.dw-anim * {
+		animation: none !important;
+		transition: none !important;
+	}
+
+	.dw-anim-pending {
+		opacity: 1 !important;
+		clip-path: none !important;
+	}
+}
+
+/* Estilos exigidos pelo Lenis. Sem eles o scroll suave briga com o nativo. */
+html.lenis,
+html.lenis body {
+	height: auto;
+}
+
+.lenis.lenis-smooth {
+	scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+	overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+	overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+	pointer-events: none;
+}

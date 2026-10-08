@@ -1,0 +1,40 @@
+{
+  "name": "dw-copiar-animacao-elementor",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Painel de animações para o Elementor. Este package.json existe só para fixar as versões das bibliotecas de terceiros; o plugin não precisa de build.",
+  "scripts": {
+    "vendor": "node scripts/vendor-libs.mjs"
+  },
+  "dwVendor": {
+    "gsap": {
+      "version": "3.15.0",
+      "license": "GSAP Standard License (gratuita, não GPL)",
+      "files": {
+        "gsap/gsap.min.js": "https://cdn.jsdelivr.net/npm/gsap@{v}/dist/gsap.min.js",
+        "gsap/ScrollTrigger.min.js": "https://cdn.jsdelivr.net/npm/gsap@{v}/dist/ScrollTrigger.min.js"
+      }
+    },
+    "animejs": {
+      "version": "4.5.0",
+      "license": "MIT",
+      "files": {
+        "anime/anime.min.js": "https://cdn.jsdelivr.net/npm/animejs@{v}/dist/bundles/anime.umd.min.js"
+      }
+    },
+    "lenis": {
+      "version": "1.3.26",
+      "license": "MIT",
+      "files": {
+        "lenis/lenis.min.js": "https://cdn.jsdelivr.net/npm/lenis@{v}/dist/lenis.min.js"
+      }
+    },
+    "lottie-web": {
+      "version": "5.13.0",
+      "license": "MIT",
+      "files": {
+        "lottie/lottie.min.js": "https://cdn.jsdelivr.net/npm/lottie-web@{v}/build/player/lottie_light.min.js"
+      }
+    }
+  }
+}

@@ -1,0 +1,379 @@
+/**
+ * Painel DW Animações dentro do editor do Elementor.
+ *
+ * A grade de cards é o ponto do plugin: cada card anima no hover, então a
+ * escolha é feita no olho, não pela leitura de uma lista de nomes.
+ */
+
+/* ---------- Busca e grupos ---------- */
+
+.dw-anim-picker__search {
+	margin-bottom: 7px;
+}
+
+.dw-anim-picker__q {
+	width: 100%;
+	padding: 5px 7px;
+	font-size: 11px;
+	color: var(--e-a-color-txt, #c2cbd2);
+	background: var(--e-a-bg-default, #26292c);
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 3px;
+}
+
+.dw-anim-picker__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-bottom: 8px;
+}
+
+.dw-anim-tab {
+	padding: 3px 7px;
+	font-size: 10px;
+	color: var(--e-a-color-txt-muted, #9da5ae);
+	cursor: pointer;
+	background: var(--e-a-bg-default, #26292c);
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 3px;
+}
+
+.dw-anim-tab:hover {
+	color: #fff;
+}
+
+.dw-anim-tab.is-active {
+	color: #fff;
+	background: var(--e-a-btn-bg-primary, #515962);
+	border-color: transparent;
+}
+
+/* ---------- Grade ---------- */
+
+.dw-anim-picker__grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+	max-height: 330px;
+	padding: 2px;
+	overflow-y: auto;
+}
+
+.dw-anim-card {
+	position: relative;
+	display: block;
+	padding: 4px 3px 5px;
+	color: var(--e-a-color-txt, #c2cbd2);
+	text-align: center;
+	cursor: pointer;
+	background: var(--e-a-bg-default, #26292c);
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 4px;
+	transition: border-color 0.15s, transform 0.15s;
+}
+
+.dw-anim-card:hover {
+	border-color: #71d7f7;
+	transform: translateY(-1px);
+}
+
+.dw-anim-card.is-selected {
+	border-color: #71d7f7;
+	box-shadow: inset 0 0 0 1px #71d7f7;
+}
+
+.dw-anim-card.is-hidden {
+	display: none;
+}
+
+.dw-anim-card__stage {
+	position: relative;
+	display: block;
+	height: 30px;
+	margin-bottom: 3px;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.04);
+	border-radius: 2px;
+}
+
+.dw-anim-card__box {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 14px;
+	height: 14px;
+	margin: -7px 0 0 -7px;
+	background: #71d7f7;
+	border-radius: 3px;
+}
+
+.dw-anim-card--none .dw-anim-card__box {
+	width: 12px;
+	height: 2px;
+	margin: -1px 0 0 -6px;
+	background: #6b7279;
+	border-radius: 1px;
+}
+
+.dw-anim-card__label {
+	display: block;
+	font-size: 9px;
+	line-height: 1.25;
+	word-break: break-word;
+}
+
+.dw-anim-card__engine {
+	position: absolute;
+	top: 3px;
+	right: 4px;
+	font-size: 7px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	opacity: 0.45;
+}
+
+/* ---------- Preview no hover ---------- */
+
+.dw-anim-card:hover .dw-anim-card__box {
+	animation-duration: 0.7s;
+	animation-iteration-count: infinite;
+	animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@keyframes dw-pv-up {
+	0% { opacity: 0; transform: translateY(10px); }
+	60%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dw-pv-down {
+	0% { opacity: 0; transform: translateY(-10px); }
+	60%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dw-pv-left {
+	0% { opacity: 0; transform: translateX(-12px); }
+	60%, 100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dw-pv-right {
+	0% { opacity: 0; transform: translateX(12px); }
+	60%, 100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dw-pv-fade {
+	0% { opacity: 0; }
+	60%, 100% { opacity: 1; }
+}
+
+@keyframes dw-pv-zoom-in {
+	0% { opacity: 0; transform: scale(0.4); }
+	60%, 100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dw-pv-zoom-out {
+	0% { opacity: 0; transform: scale(1.8); }
+	60%, 100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dw-pv-blur {
+	0% { opacity: 0; filter: blur(4px); }
+	60%, 100% { opacity: 1; filter: blur(0); }
+}
+
+@keyframes dw-pv-rot {
+	0% { opacity: 0; transform: rotate(-70deg); }
+	60%, 100% { opacity: 1; transform: rotate(0); }
+}
+
+@keyframes dw-pv-flip-x {
+	0% { opacity: 0; transform: perspective(60px) rotateY(80deg); }
+	60%, 100% { opacity: 1; transform: perspective(60px) rotateY(0); }
+}
+
+@keyframes dw-pv-flip-y {
+	0% { opacity: 0; transform: perspective(60px) rotateX(80deg); }
+	60%, 100% { opacity: 1; transform: perspective(60px) rotateX(0); }
+}
+
+@keyframes dw-pv-mask-up {
+	0% { clip-path: inset(100% 0 0 0); }
+	60%, 100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes dw-pv-mask-left {
+	0% { clip-path: inset(0 100% 0 0); }
+	60%, 100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes dw-pv-pulse {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.35); }
+}
+
+@keyframes dw-pv-shake {
+	0%, 100% { transform: translateX(0); }
+	25% { transform: translateX(-5px); }
+	75% { transform: translateX(5px); }
+}
+
+@keyframes dw-pv-draw {
+	0% { width: 2px; margin-left: -7px; }
+	60%, 100% { width: 14px; margin-left: -7px; }
+}
+
+@keyframes dw-pv-travel {
+	0% { transform: translateY(8px); }
+	50% { transform: translateY(-8px); }
+	100% { transform: translateY(8px); }
+}
+
+.dw-anim-card:hover .dw-pv-fade-up,
+.dw-anim-card:hover .dw-pv-slide-up,
+.dw-anim-card:hover .dw-pv-text-lines,
+.dw-anim-card:hover .dw-pv-text-words,
+.dw-anim-card:hover .dw-pv-text-chars,
+.dw-anim-card:hover .dw-pv-text-mask { animation-name: dw-pv-up; }
+
+.dw-anim-card:hover .dw-pv-fade-down,
+.dw-anim-card:hover .dw-pv-slide-down { animation-name: dw-pv-down; }
+
+.dw-anim-card:hover .dw-pv-fade-left,
+.dw-anim-card:hover .dw-pv-slide-left { animation-name: dw-pv-left; }
+
+.dw-anim-card:hover .dw-pv-fade-right,
+.dw-anim-card:hover .dw-pv-slide-right { animation-name: dw-pv-right; }
+
+.dw-anim-card:hover .dw-pv-fade,
+.dw-anim-card:hover .dw-pv-scrub-fade,
+.dw-anim-card:hover .dw-pv-lottie-play { animation-name: dw-pv-fade; }
+
+.dw-anim-card:hover .dw-pv-zoom-in,
+.dw-anim-card:hover .dw-pv-scrub-scale { animation-name: dw-pv-zoom-in; }
+
+.dw-anim-card:hover .dw-pv-zoom-out { animation-name: dw-pv-zoom-out; }
+
+.dw-anim-card:hover .dw-pv-blur-in { animation-name: dw-pv-blur; }
+
+.dw-anim-card:hover .dw-pv-rotate-in,
+.dw-anim-card:hover .dw-pv-scrub-rotate,
+.dw-anim-card:hover .dw-pv-wobble { animation-name: dw-pv-rot; }
+
+.dw-anim-card:hover .dw-pv-flip-x { animation-name: dw-pv-flip-x; }
+
+.dw-anim-card:hover .dw-pv-flip-y { animation-name: dw-pv-flip-y; }
+
+.dw-anim-card:hover .dw-pv-mask-up,
+.dw-anim-card:hover .dw-pv-scrub-reveal { animation-name: dw-pv-mask-up; }
+
+.dw-anim-card:hover .dw-pv-mask-left,
+.dw-anim-card:hover .dw-pv-progress-bar { animation-name: dw-pv-mask-left; }
+
+.dw-anim-card:hover .dw-pv-pulse,
+.dw-anim-card:hover .dw-pv-glow,
+.dw-anim-card:hover .dw-pv-counter { animation-name: dw-pv-pulse; }
+
+.dw-anim-card:hover .dw-pv-shake { animation-name: dw-pv-shake; }
+
+.dw-anim-card:hover .dw-pv-svg-draw { animation-name: dw-pv-draw; }
+
+.dw-anim-card:hover .dw-pv-float,
+.dw-anim-card:hover .dw-pv-parallax-y,
+.dw-anim-card:hover .dw-pv-parallax-x,
+.dw-anim-card:hover .dw-pv-pin,
+.dw-anim-card:hover .dw-pv-lottie-scrub { animation-name: dw-pv-travel; }
+
+/* ---------- Ações ---------- */
+
+.dw-anim-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 8px 0 2px;
+}
+
+.dw-anim-btn {
+	flex: 1 1 auto;
+	padding: 5px 6px;
+	font-size: 10px;
+	color: var(--e-a-color-txt, #c2cbd2);
+	cursor: pointer;
+	background: var(--e-a-bg-default, #26292c);
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 3px;
+}
+
+.dw-anim-btn:hover {
+	color: #fff;
+	border-color: #71d7f7;
+}
+
+.dw-anim-play {
+	flex-basis: 100%;
+	color: #0c0d0e;
+	background: #71d7f7;
+	border-color: #71d7f7;
+	font-weight: 600;
+}
+
+.dw-anim-play:hover {
+	color: #0c0d0e;
+	background: #93e3fa;
+}
+
+/* ---------- Minhas animações ---------- */
+
+.dw-anim-saved {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid var(--e-a-border-color, #3f444b);
+}
+
+.dw-anim-saved__title {
+	margin-bottom: 5px;
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	opacity: 0.6;
+}
+
+.dw-anim-saved__row {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 4px;
+}
+
+.dw-anim-saved__apply {
+	flex: 1;
+	padding: 4px 6px;
+	font-size: 10px;
+	color: var(--e-a-color-txt, #c2cbd2);
+	text-align: left;
+	cursor: pointer;
+	background: var(--e-a-bg-default, #26292c);
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 3px;
+}
+
+.dw-anim-saved__apply:hover {
+	border-color: #71d7f7;
+}
+
+.dw-anim-saved__delete {
+	width: 22px;
+	font-size: 13px;
+	line-height: 1;
+	color: #9da5ae;
+	cursor: pointer;
+	background: transparent;
+	border: 1px solid var(--e-a-border-color, #3f444b);
+	border-radius: 3px;
+}
+
+.dw-anim-saved__delete:hover {
+	color: #fff;
+	border-color: #e25c5c;
+}
+
+.dw-anim-warning {
+	color: #f0c36d;
+}

@@ -1,0 +1,25 @@
+# Dependências e artefatos
+node_modules/
+vendor/
+release/
+*.zip
+
+# Terceiros baixados pelo npm run vendor
+assets/lib/*/
+!assets/lib/README.md
+
+# Sistema
+.DS_Store
+._*
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.sublime-*
+
+# Local
+*.log
+
+# Gerado pelo npm run vendor
+assets/lib/manifest.json
