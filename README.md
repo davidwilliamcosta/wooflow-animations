@@ -37,8 +37,9 @@ normalmente).
 
 ## Como se usa
 
-Selecione qualquer elemento — widget, container, seção ou coluna — e abra
-**Avançado → DW Animações**.
+Selecione qualquer elemento e a seção **DW Animações** está logo na primeira
+aba: **Layout** em container, seção e coluna (no topo, antes de tudo) e
+**Conteúdo** nos widgets, abaixo dos controles próprios deles.
 
 ```
 ┌─ DW Animações ──────────────┐
@@ -182,6 +183,15 @@ dentro do editor e sob `prefers-reduced-motion`.
 | `dw_anim_payload` | último ajuste no contrato enviado ao navegador |
 | `dw_anim_lenis_active` | desligar o scroll suave em contextos específicos |
 | `dw_anim_lottie_handle` | apontar para outra cópia do lottie-web |
+| `dw_anim_controls_tab` | mover a seção para outra aba do painel |
+
+Para devolver a seção à aba Avançado:
+
+```php
+add_filter( 'dw_anim_controls_tab', function () {
+	return \Elementor\Controls_Manager::TAB_ADVANCED;
+} );
+```
 
 ### Contrato do front-end
 
@@ -237,7 +247,7 @@ WordPress.
 
 ### 2.0.0
 
-- Painel **DW Animações** com 38 presets em grade visual, preview no hover, busca
+- Painel **DW Animações** na primeira aba de cada elemento, com 38 presets em grade visual, preview no hover, busca
   e grupos, em widget, container, seção e coluna.
 - Gatilhos: entrar na tela, carregar, sair da tela, travado no scroll, hover e
   clique. Cascata em filhos, linhas, palavras ou letras.

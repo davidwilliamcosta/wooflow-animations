@@ -27,7 +27,11 @@ Cada linha corresponde a uma armadilha concreta, verificada na instalação real
 do Elementor 4.3.4.
 
 1. **As chaves nativas de animação são assimétricas.** Widget usa `_animation`, `_animation_tablet`, `_animation_mobile`, `_animation_delay` — mas `animation_duration` **sem** underscore. Container, section e column usam todas sem underscore. Confirmado em `elementor/includes/widgets/common-base.php:838` e `elementor/includes/elements/container.php:1814`. [includes/class-keys.php](includes/class-keys.php) é o **único** lugar do plugin onde esses nomes podem aparecer.
-2. **A seção a ancorar é `section_effects` (sem underscore inicial) e são cinco ganchos**, não quatro: `common`, **`common-optimized`**, `container`, `section`, `column`. `common-optimized` é o elemento usado quando o experimento de markup otimizado está ligado — esquecer dele faz os controles sumirem do painel sem erro nenhum. A lista vive em `DW_Anim_Controls::ELEMENT_TYPES` e o smoke test confere os cinco.
+2. **A seção entra na PRIMEIRA aba, e são duas estratégias diferentes — por um motivo medido.** Os controles de `common` são anexados ao **fim** do stack de cada widget (`Widget_Base::get_stack()`), então seção registrada lá nunca alcança o topo da primeira aba. Registrar em cada widget resolveria a posição, mas esta instalação tem **367 tipos de widget**: 5,8 KB de controles × 367 = **2 MB a mais na configuração do editor**. Então:
+   - **bloco** (`container`, `section`, `column`): gancho `before_section_start` da **primeira seção nativa** de cada um (`section_layout_container`, `section_layout`, `layout` — ids confirmados no 4.3.4), com `TAB_LAYOUT`. Cai no topo da aba Layout;
+   - **widget**: uma vez só, em `common` e `common-optimized`, no `section_effects/after_section_end`, com `TAB_CONTENT`. Cai na aba Conteúdo, abaixo dos controles do widget.
+
+   Os dois stacks de widget são necessários **e** precisam do guard: com `e_optimized_markup` ligado — que é o caso neste site — o stack `common-optimized` dispara **também** os ganchos de `common` (`Controls_Stack::should_manually_trigger_common_action()`), e sem o `self::$done` os 27 controles seriam registrados em dobro. O guard é por **nome de stack**, nunca por `spl_object_id()`: o PHP recicla id de objeto liberado e um id reaproveitado faria a seção sumir inteira, sem erro.
 3. **Os nossos controles usam o prefixo `_dwanim_` em todo tipo de elemento.** Mapa único, de propósito, ao contrário das chaves nativas. Chave de dado nova **tem** de entrar em `DW_Anim_Keys::OURS`, senão copiar/colar e a biblioteca de animações a ignoram em silêncio — o smoke test reprova quem esquecer.
 4. **O atributo do front-end sai de `elementor/frontend/before_render` + `add_render_attribute( '_wrapper', … )`.** Funciona para widget, container, section e column. Nunca filtrar `the_content`.
 5. **Nenhuma biblioteca é enfileirada fora de [includes/class-assets.php](includes/class-assets.php).** O motor é decidido no servidor, por preset, e só o que a página usa entra no rodapé. Um `wp_enqueue_script( 'dw-anim-gsap' )` solto em qualquer outro arquivo põe 115 KB em toda página do site.
@@ -38,8 +42,9 @@ do Elementor 4.3.4.
 10. **Colar em vários elementos é UMA chamada por tipo, dentro de um log de histórico.** `$e.run( 'document/elements/settings', { containers: […] } )` com o array, nunca um `$e.run` por elemento: N chamadas viram N entradas de histórico e o Ctrl+Z desfaz a colagem aos pedaços. Widget e bloco vão em grupos separados (regra 1) mas no mesmo `document/history/start-log`.
 11. **`update_option( $chave, false )` não persiste** quando a option não existe. Toggles gravam `'1'`/`'0'`, e a leitura passa por `DW_Anim_Settings::is_on()`, que aceita as duas formas.
 12. **Checkbox desmarcado some do POST.** O `sanitize()` dos ajustes itera a lista de toggles e grava `'0'` para o que não veio — nunca confia em `! empty( $input['x'] )` sobre o array recebido.
-13. **Preset novo precisa de card com preview.** O card entra sozinho na grade, mas sem `@keyframes` e sem a regra `.dw-anim-card:hover .dw-pv-<id>` em [assets/css/editor.css](assets/css/editor.css) ele fica parado no hover — que é justamente o motivo de o painel existir. O smoke test confere a cobertura.
-14. **Chave nova no payload tem de ser lida no `core.js`.** O contrato `data-dw-anim` é conferido nos dois sentidos pelo smoke test: chave enviada e não lida é configuração que não faz nada; chave lida e não enviada é `undefined` no motor.
+13. **Não confie no campo `tab` fora do editor.** `get_controls()`, `get_widget_types_config()` e `get_element_types_config()` chamados numa requisição de CLI devolvem `tab => 'content'` para **todas** as seções — inclusive as nativas que o Elementor declara como `TAB_ADVANCED`. Conferir a aba por aí dá falso negativo garantido. A única fonte confiável é a configuração que o editor recebe: autenticar, buscar `wp-admin/post.php?post=<id>&action=elementor` e ler o JSON (`"_dwanim_section":{…"tab":"layout"…}`). Foi assim que a mudança da regra 2 foi verificada.
+14. **Preset novo precisa de card com preview.** O card entra sozinho na grade, mas sem `@keyframes` e sem a regra `.dw-anim-card:hover .dw-pv-<id>` em [assets/css/editor.css](assets/css/editor.css) ele fica parado no hover — que é justamente o motivo de o painel existir. O smoke test confere a cobertura.
+15. **Chave nova no payload tem de ser lida no `core.js`.** O contrato `data-dw-anim` é conferido nos dois sentidos pelo smoke test: chave enviada e não lida é configuração que não faz nada; chave lida e não enviada é `undefined` no motor.
 
 ---
 
@@ -52,7 +57,7 @@ includes/
   class-requirements.php    PHP/WP/Elementor; admin notice, nunca fatal
   class-keys.php            REGRA 1 e 3: dono único dos nomes de chave
   class-presets.php         catálogo (38), grupos, gatilhos, curvas; filtro dw_anim_presets
-  class-controls.php        REGRA 2: injeta a seção nos 5 tipos de elemento
+  class-controls.php        REGRA 2: injeta a seção na primeira aba dos 5 tipos
   class-control-picker.php  controle `dw-anim-picker` (template da grade)
   class-editor.php          assets do editor + wp_localize_script
   class-render.php          REGRA 4: escreve data-dw-anim; resolve motor e gatilho
@@ -95,7 +100,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12 e 14. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12 e 15. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da

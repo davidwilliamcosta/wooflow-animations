@@ -139,14 +139,20 @@ ok( $plugin->assets instanceof DW_Anim_Assets, 'registry de assets presente' );
 
 section( '2. Ganchos de injeção de controles' );
 
-foreach ( DW_Anim_Controls::ELEMENT_TYPES as $type ) {
-	$hook = "elementor/element/{$type}/section_effects/after_section_end";
+foreach ( DW_Anim_Controls::WIDGET_STACKS as $stack ) {
+	$hook = "elementor/element/{$stack}/section_effects/after_section_end";
 
-	ok( isset( DW_Test_Hooks::$actions[ $hook ] ), "gancho registrado: {$type}" );
+	ok( isset( DW_Test_Hooks::$actions[ $hook ] ), "gancho de widget registrado: {$stack}" );
+}
+
+foreach ( DW_Anim_Controls::BLOCK_FIRST_SECTION as $type => $first ) {
+	$hook = "elementor/element/{$type}/{$first}/before_section_start";
+
+	ok( isset( DW_Test_Hooks::$actions[ $hook ] ), "gancho de bloco registrado: {$type} (antes de {$first})" );
 }
 
 ok(
-	in_array( 'common-optimized', DW_Anim_Controls::ELEMENT_TYPES, true ),
+	in_array( 'common-optimized', DW_Anim_Controls::WIDGET_STACKS, true ),
 	'common-optimized incluído (regra 2 do CLAUDE.md)'
 );
 
@@ -156,6 +162,9 @@ section( '3. Controles injetados' );
 
 $widget = new DW_Fake_Element( 'common', 'widget' );
 do_action( 'elementor/element/common/section_effects/after_section_end', $widget, [] );
+
+$block = new DW_Fake_Element( 'container', 'container' );
+do_action( 'elementor/element/container/section_layout_container/before_section_start', $block, [] );
 
 $k = static function ( $suffix ) {
 	return DW_Anim_Keys::ours( $suffix );
@@ -168,6 +177,32 @@ ok(
 	'preset usa o controle visual'
 );
 ok( isset( $widget->sections[ $k( 'section' ) ] ), 'seção própria criada' );
+
+// A seção tem de cair na PRIMEIRA aba de cada tipo: Conteúdo no widget, Layout
+// no bloco. Era a aba Avançado até a 2.0.0.
+ok(
+	'content' === ( $widget->sections[ $k( 'section' ) ]['tab'] ?? '' ),
+	'widget: seção na aba Conteúdo',
+	$widget->sections[ $k( 'section' ) ]['tab'] ?? '(sem aba)'
+);
+ok(
+	'layout' === ( $block->sections[ $k( 'section' ) ]['tab'] ?? '' ),
+	'bloco: seção na aba Layout',
+	$block->sections[ $k( 'section' ) ]['tab'] ?? '(sem aba)'
+);
+ok(
+	$k( 'section' ) === array_key_first( $block->sections ),
+	'bloco: nossa seção é a primeira registrada'
+);
+
+// Com e_optimized_markup ligado o mesmo stack chega duas vezes. O guard por
+// nome impede registrar os controles em dobro.
+$twice = new DW_Fake_Element( 'common-optimized', 'widget' );
+do_action( 'elementor/element/common-optimized/section_effects/after_section_end', $twice, [] );
+$first_count = count( $twice->controls );
+do_action( 'elementor/element/common/section_effects/after_section_end', $twice, [] );
+
+ok( $first_count === count( $twice->controls ), 'stack repetido não registra controles em dobro' );
 
 // Toda condição precisa apontar para um controle que existe — condição órfã é
 // um controle que nunca aparece no painel, e isso não dá erro nenhum.

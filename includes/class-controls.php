@@ -1,10 +1,18 @@
 <?php
 /**
- * Injeta a seção "DW Animações" nos elementos do Elementor.
+ * Injeta a seção "DW Animações" na PRIMEIRA aba de cada elemento.
  *
- * São cinco tipos, não quatro: `common-optimized` é o elemento usado quando o
- * experimento de markup otimizado está ligado, e esquecer dele faz os controles
- * sumirem sem erro nenhum. Ver CLAUDE.md, regra 2.
+ * São duas estratégias, por um motivo medido: os controles de `common` são
+ * anexados ao FIM do stack de cada widget (`Widget_Base::get_stack()`), então
+ * uma seção registrada lá nunca alcança o topo da primeira aba. Registrar em
+ * cada widget resolveria a posição, mas são 367 tipos de widget numa instalação
+ * com o Pro — 2 MB a mais na configuração do editor, para 5,8 KB de controles.
+ *
+ * Então: bloco (container, seção, coluna) recebe a seção no topo da aba Layout,
+ * antes da primeira seção nativa; widget recebe uma vez só, via `common`, na aba
+ * Conteúdo, logo abaixo dos controles próprios dele.
+ *
+ * Ver CLAUDE.md, regra 2.
  *
  * @package DW_Anim
  */
@@ -18,16 +26,76 @@ use Elementor\Controls_Manager;
 class DW_Anim_Controls {
 
 	/**
-	 * Tipos de elemento que recebem a seção.
+	 * Stacks de widget, onde a seção entra uma vez só e vale para todos.
 	 *
 	 * @var string[]
 	 */
-	const ELEMENT_TYPES = [ 'common', 'common-optimized', 'container', 'section', 'column' ];
+	const WIDGET_STACKS = [ 'common', 'common-optimized' ];
+
+	/**
+	 * Primeira seção de cada bloco — é antes dela que a nossa entra, para ficar
+	 * no topo da aba Layout. Ids confirmados no Elementor 4.3.4.
+	 *
+	 * @var array<string,string>
+	 */
+	const BLOCK_FIRST_SECTION = [
+		'container' => 'section_layout_container',
+		'section'   => 'section_layout',
+		'column'    => 'layout',
+	];
+
+	/**
+	 * Stacks já atendidos nesta requisição, por nome.
+	 *
+	 * Com o experimento `e_optimized_markup` ligado, o stack `common-optimized`
+	 * dispara também os ganchos de `common`
+	 * (`Controls_Stack::should_manually_trigger_common_action()`), então o mesmo
+	 * stack chegaria aqui duas vezes e os ids de controle seriam registrados em
+	 * dobro.
+	 *
+	 * A chave é o nome do stack, não `spl_object_id()`: o PHP recicla id de
+	 * objeto liberado, e um id reaproveitado faria a injeção ser pulada — some a
+	 * seção inteira do painel, sem erro nenhum. Cada stack monta os controles uma
+	 * vez por requisição (`Controls_Manager::$stacks`), então o nome basta.
+	 *
+	 * @var array<string,bool>
+	 */
+	private static $done = [];
 
 	public function __construct() {
-		foreach ( self::ELEMENT_TYPES as $type ) {
-			add_action( "elementor/element/{$type}/section_effects/after_section_end", [ $this, 'inject' ], 10, 2 );
+		foreach ( self::WIDGET_STACKS as $stack ) {
+			add_action( "elementor/element/{$stack}/section_effects/after_section_end", [ $this, 'inject_widget' ], 10, 2 );
 		}
+
+		foreach ( self::BLOCK_FIRST_SECTION as $type => $section ) {
+			add_action( "elementor/element/{$type}/{$section}/before_section_start", [ $this, 'inject_block' ], 10, 2 );
+		}
+	}
+
+	/**
+	 * Widget: aba Conteúdo, que é a primeira dele.
+	 *
+	 * @param \Elementor\Controls_Stack $element Elemento.
+	 * @param array                    $args    Argumentos da seção vizinha.
+	 * @return void
+	 */
+	public function inject_widget( $element, $args ) {
+		unset( $args );
+
+		$this->inject( $element, Controls_Manager::TAB_CONTENT );
+	}
+
+	/**
+	 * Container, seção e coluna: topo da aba Layout, que é a primeira deles.
+	 *
+	 * @param \Elementor\Controls_Stack $element Elemento.
+	 * @param array                    $args    Argumentos da seção vizinha.
+	 * @return void
+	 */
+	public function inject_block( $element, $args ) {
+		unset( $args );
+
+		$this->inject( $element, Controls_Manager::TAB_LAYOUT );
 	}
 
 	/**
@@ -61,15 +129,29 @@ class DW_Anim_Controls {
 
 	/**
 	 * @param \Elementor\Controls_Stack $element Elemento que recebe os controles.
-	 * @param array                    $args    Argumentos da seção anterior.
+	 * @param string                   $tab     Aba onde a seção aparece.
 	 * @return void
 	 */
-	public function inject( $element, $args ) {
-		unset( $args );
-
+	public function inject( $element, $tab ) {
 		if ( $this->is_atomic( $element ) ) {
 			return;
 		}
+
+		$stack = $element->get_name();
+
+		if ( isset( self::$done[ $stack ] ) ) {
+			return;
+		}
+
+		self::$done[ $stack ] = true;
+
+		/**
+		 * Aba em que a seção DW Animações aparece.
+		 *
+		 * @param string                   $tab     Aba padrão (a primeira do elemento).
+		 * @param \Elementor\Controls_Stack $element Elemento.
+		 */
+		$tab = apply_filters( 'dw_anim_controls_tab', $tab, $element );
 
 		$k = static function ( $suffix ) {
 			return DW_Anim_Keys::ours( $suffix );
@@ -84,7 +166,7 @@ class DW_Anim_Controls {
 			$k( 'section' ),
 			[
 				'label' => __( 'DW Animações', 'dw-copiar-animacao' ),
-				'tab'   => Controls_Manager::TAB_ADVANCED,
+				'tab'   => $tab,
 			]
 		);
 

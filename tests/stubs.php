@@ -146,6 +146,8 @@ namespace Elementor {
 
 	class Controls_Manager {
 		const TAB_ADVANCED = 'advanced';
+		const TAB_CONTENT  = 'content';
+		const TAB_LAYOUT   = 'layout';
 		const RAW_HTML     = 'raw_html';
 		const SELECT       = 'select';
 		const SWITCHER     = 'switcher';
