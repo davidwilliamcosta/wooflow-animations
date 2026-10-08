@@ -2,14 +2,14 @@
 /**
  * Checagem de requisitos. Nunca fatal: sem Elementor o plugin só avisa e sai.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Requirements {
+class WFAN_Requirements {
 
 	const MIN_PHP        = '7.4';
 	const MIN_WP         = '6.0';
@@ -29,7 +29,7 @@ class DW_Anim_Requirements {
 		if ( version_compare( PHP_VERSION, self::MIN_PHP, '<' ) ) {
 			self::$reason = sprintf(
 				/* translators: 1: versão exigida, 2: versão instalada */
-				__( 'exige PHP %1$s ou superior (esta instalação usa %2$s)', 'dw-copiar-animacao' ),
+				__( 'exige PHP %1$s ou superior (esta instalação usa %2$s)', 'wooflow-animations' ),
 				self::MIN_PHP,
 				PHP_VERSION
 			);
@@ -39,21 +39,21 @@ class DW_Anim_Requirements {
 		if ( version_compare( get_bloginfo( 'version' ), self::MIN_WP, '<' ) ) {
 			self::$reason = sprintf(
 				/* translators: %s: versão exigida do WordPress */
-				__( 'exige WordPress %s ou superior', 'dw-copiar-animacao' ),
+				__( 'exige WordPress %s ou superior', 'wooflow-animations' ),
 				self::MIN_WP
 			);
 			return false;
 		}
 
 		if ( ! did_action( 'elementor/loaded' ) ) {
-			self::$reason = __( 'precisa do Elementor instalado e ativo', 'dw-copiar-animacao' );
+			self::$reason = __( 'precisa do Elementor instalado e ativo', 'wooflow-animations' );
 			return false;
 		}
 
 		if ( defined( 'ELEMENTOR_VERSION' ) && version_compare( ELEMENTOR_VERSION, self::MIN_ELEMENTOR, '<' ) ) {
 			self::$reason = sprintf(
 				/* translators: %s: versão exigida do Elementor */
-				__( 'exige Elementor %s ou superior', 'dw-copiar-animacao' ),
+				__( 'exige Elementor %s ou superior', 'wooflow-animations' ),
 				self::MIN_ELEMENTOR
 			);
 			return false;
@@ -79,7 +79,7 @@ class DW_Anim_Requirements {
 
 		printf(
 			'<div class="notice notice-warning"><p><strong>%s</strong> %s.</p></div>',
-			esc_html__( 'DW Animações para Elementor', 'dw-copiar-animacao' ),
+			esc_html__( 'WooFlow Animations for Elementor', 'wooflow-animations' ),
 			esc_html( self::$reason )
 		);
 	}

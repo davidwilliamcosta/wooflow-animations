@@ -7,12 +7,12 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.dwAnim || ! window.anime ) {
+	if ( ! window.wfan || ! window.anime ) {
 		return;
 	}
 
 	var anime = window.anime;
-	var util = window.dwAnim.util;
+	var util = window.wfan.util;
 
 	function animate( targets, props ) {
 		if ( typeof anime.animate === 'function' ) {
@@ -49,7 +49,7 @@
 		return length;
 	}
 
-	window.dwAnim.register( 'anime', {
+	window.wfan.register( 'anime', {
 
 		play: function ( el, spec, targets ) {
 			var nodes = strokes( el );
@@ -75,12 +75,12 @@
 				} );
 			} );
 
-			el.__dwAnimeNodes = nodes;
+			el.__wfanAnimeNodes = nodes;
 			void targets;
 		},
 
 		reset: function ( el ) {
-			( el.__dwAnimeNodes || strokes( el ) ).forEach( prime );
+			( el.__wfanAnimeNodes || strokes( el ) ).forEach( prime );
 		}
 	} );
 

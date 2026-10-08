@@ -1,6 +1,6 @@
 <?php
 /**
- * Injeta a seção "DW Animações" na PRIMEIRA aba de cada elemento.
+ * Injeta a seção "WooFlow Animations" na PRIMEIRA aba de cada elemento.
  *
  * São duas estratégias, por um motivo medido: os controles de `common` são
  * anexados ao FIM do stack de cada widget (`Widget_Base::get_stack()`), então
@@ -14,7 +14,7 @@
  *
  * Ver CLAUDE.md, regra 2.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Elementor\Controls_Manager;
 
-class DW_Anim_Controls {
+class WFAN_Controls {
 
 	/**
 	 * Stacks de widget, onde a seção entra uma vez só e vale para todos.
@@ -118,7 +118,7 @@ class DW_Anim_Controls {
 	private function ids_with_engine( $engine ) {
 		$ids = [];
 
-		foreach ( DW_Anim_Presets::all() as $id => $preset ) {
+		foreach ( WFAN_Presets::all() as $id => $preset ) {
 			if ( $engine === $preset['engine'] ) {
 				$ids[] = $id;
 			}
@@ -146,26 +146,26 @@ class DW_Anim_Controls {
 		self::$done[ $stack ] = true;
 
 		/**
-		 * Aba em que a seção DW Animações aparece.
+		 * Aba em que a seção WooFlow Animations aparece.
 		 *
 		 * @param string                   $tab     Aba padrão (a primeira do elemento).
 		 * @param \Elementor\Controls_Stack $element Elemento.
 		 */
-		$tab = apply_filters( 'dw_anim_controls_tab', $tab, $element );
+		$tab = apply_filters( 'wfan_controls_tab', $tab, $element );
 
 		$k = static function ( $suffix ) {
-			return DW_Anim_Keys::ours( $suffix );
+			return WFAN_Keys::ours( $suffix );
 		};
 
 		// A chave da animação nativa muda conforme o tipo de elemento.
 		$native = in_array( $element->get_name(), [ 'common', 'common-optimized' ], true )
-			? DW_Anim_Keys::NATIVE_WIDGET['name']
-			: DW_Anim_Keys::NATIVE_BLOCK['name'];
+			? WFAN_Keys::NATIVE_WIDGET['name']
+			: WFAN_Keys::NATIVE_BLOCK['name'];
 
 		$element->start_controls_section(
 			$k( 'section' ),
 			[
-				'label' => __( 'DW Animações', 'dw-copiar-animacao' ),
+				'label' => __( 'WooFlow Animations', 'wooflow-animations' ),
 				'tab'   => $tab,
 			]
 		);
@@ -174,8 +174,8 @@ class DW_Anim_Controls {
 			$k( 'native_warning' ),
 			[
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => '<div class="elementor-control-field-description dw-anim-warning">'
-					. esc_html__( 'Este elemento também tem a animação de entrada nativa do Elementor ligada. As duas vão rodar juntas — desligue uma delas.', 'dw-copiar-animacao' )
+				'raw'             => '<div class="elementor-control-field-description wfan-warning">'
+					. esc_html__( 'Este elemento também tem a animação de entrada nativa do Elementor ligada. As duas vão rodar juntas — desligue uma delas.', 'wooflow-animations' )
 					. '</div>',
 				'content_classes' => 'elementor-panel-alert elementor-panel-alert-warning',
 				'condition'       => [
@@ -188,8 +188,8 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'preset' ),
 			[
-				'label'   => __( 'Animação', 'dw-copiar-animacao' ),
-				'type'    => 'dw-anim-picker',
+				'label'   => __( 'Animação', 'wooflow-animations' ),
+				'type'    => 'wfan-picker',
 				'default' => '',
 			]
 		);
@@ -198,11 +198,11 @@ class DW_Anim_Controls {
 			$k( 'actions' ),
 			[
 				'type' => Controls_Manager::RAW_HTML,
-				'raw'  => '<div class="dw-anim-actions">'
-					. '<button type="button" class="dw-anim-btn dw-anim-play" data-dw-action="play">' . esc_html__( '▶ Testar', 'dw-copiar-animacao' ) . '</button>'
-					. '<button type="button" class="dw-anim-btn" data-dw-action="copy">' . esc_html__( 'Copiar', 'dw-copiar-animacao' ) . '</button>'
-					. '<button type="button" class="dw-anim-btn" data-dw-action="paste">' . esc_html__( 'Colar', 'dw-copiar-animacao' ) . '</button>'
-					. '<button type="button" class="dw-anim-btn" data-dw-action="save">' . esc_html__( 'Salvar na biblioteca', 'dw-copiar-animacao' ) . '</button>'
+				'raw'  => '<div class="wfan-actions">'
+					. '<button type="button" class="wfan-btn wfan-play" data-wfan-action="play">' . esc_html__( '▶ Testar', 'wooflow-animations' ) . '</button>'
+					. '<button type="button" class="wfan-btn" data-wfan-action="copy">' . esc_html__( 'Copiar', 'wooflow-animations' ) . '</button>'
+					. '<button type="button" class="wfan-btn" data-wfan-action="paste">' . esc_html__( 'Colar', 'wooflow-animations' ) . '</button>'
+					. '<button type="button" class="wfan-btn" data-wfan-action="save">' . esc_html__( 'Salvar na biblioteca', 'wooflow-animations' ) . '</button>'
 					. '</div>',
 			]
 		);
@@ -210,10 +210,10 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'trigger' ),
 			[
-				'label'     => __( 'Gatilho', 'dw-copiar-animacao' ),
+				'label'     => __( 'Gatilho', 'wooflow-animations' ),
 				'type'      => Controls_Manager::SELECT,
 				'default'   => 'scroll-in',
-				'options'   => DW_Anim_Presets::triggers(),
+				'options'   => WFAN_Presets::triggers(),
 				'condition' => [ $k( 'preset' ) . '!' => '' ],
 			]
 		);
@@ -221,7 +221,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'viewport' ),
 			[
-				'label'      => __( 'Disparar quando estiver visível (%)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Disparar quando estiver visível (%)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ '%' ],
 				'range'      => [ '%' => [ 'min' => 0, 'max' => 100, 'step' => 5 ] ],
@@ -236,7 +236,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'once' ),
 			[
-				'label'        => __( 'Animar só uma vez', 'dw-copiar-animacao' ),
+				'label'        => __( 'Animar só uma vez', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'default'      => 'yes',
 				'return_value' => 'yes',
@@ -250,7 +250,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'duration' ),
 			[
-				'label'      => __( 'Duração (ms)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Duração (ms)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 4000, 'step' => 50 ] ],
@@ -265,7 +265,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'delay' ),
 			[
-				'label'      => __( 'Espera antes de começar (ms)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Espera antes de começar (ms)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 3000, 'step' => 50 ] ],
@@ -279,14 +279,14 @@ class DW_Anim_Controls {
 
 		$easings = [];
 
-		foreach ( DW_Anim_Presets::easings() as $name => $data ) {
+		foreach ( WFAN_Presets::easings() as $name => $data ) {
 			$easings[ $name ] = $data['label'];
 		}
 
 		$element->add_control(
 			$k( 'easing' ),
 			[
-				'label'     => __( 'Curva', 'dw-copiar-animacao' ),
+				'label'     => __( 'Curva', 'wooflow-animations' ),
 				'type'      => Controls_Manager::SELECT,
 				'default'   => 'power2.out',
 				'options'   => $easings,
@@ -300,82 +300,82 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'distance' ),
 			[
-				'label'      => __( 'Distância (px)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Distância (px)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 400, 'step' => 5 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 40 ],
-				'condition'  => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'distance' ) ],
+				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'distance' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'scale_from' ),
 			[
-				'label'     => __( 'Escala inicial', 'dw-copiar-animacao' ),
+				'label'     => __( 'Escala inicial', 'wooflow-animations' ),
 				'type'      => Controls_Manager::NUMBER,
 				'min'       => 0.1,
 				'max'       => 3,
 				'step'      => 0.05,
 				'default'   => 0.85,
-				'condition' => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'scale_from' ) ],
+				'condition' => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'scale_from' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'blur' ),
 			[
-				'label'      => __( 'Desfoque (px)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Desfoque (px)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 40, 'step' => 1 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 10 ],
-				'condition'  => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'blur' ) ],
+				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'blur' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'rotate' ),
 			[
-				'label'      => __( 'Rotação (graus)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Rotação (graus)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'deg' ],
 				'range'      => [ 'deg' => [ 'min' => -180, 'max' => 180, 'step' => 1 ] ],
 				'default'    => [ 'unit' => 'deg', 'size' => 12 ],
-				'condition'  => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'rotate' ) ],
+				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'rotate' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'counter_to' ),
 			[
-				'label'       => __( 'Contar até', 'dw-copiar-animacao' ),
+				'label'       => __( 'Contar até', 'wooflow-animations' ),
 				'type'        => Controls_Manager::NUMBER,
 				'default'     => 100,
-				'description' => __( 'O número de partida é o que já está escrito no elemento.', 'dw-copiar-animacao' ),
-				'condition'   => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'counter_to' ) ],
+				'description' => __( 'O número de partida é o que já está escrito no elemento.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'counter_to' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'scrub_end' ),
 			[
-				'label'     => __( 'Terminar quando', 'dw-copiar-animacao' ),
+				'label'     => __( 'Terminar quando', 'wooflow-animations' ),
 				'type'      => Controls_Manager::SELECT,
 				'default'   => 'out',
 				'options'   => [
-					'center' => __( 'o elemento chegar ao centro da tela', 'dw-copiar-animacao' ),
-					'top'    => __( 'o topo do elemento chegar ao topo da tela', 'dw-copiar-animacao' ),
-					'out'    => __( 'o elemento sair da tela', 'dw-copiar-animacao' ),
+					'center' => __( 'o elemento chegar ao centro da tela', 'wooflow-animations' ),
+					'top'    => __( 'o topo do elemento chegar ao topo da tela', 'wooflow-animations' ),
+					'out'    => __( 'o elemento sair da tela', 'wooflow-animations' ),
 				],
-				'condition' => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'scrub_end' ) ],
+				'condition' => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'scrub_end' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'pin' ),
 			[
-				'label'        => __( 'Fixar o elemento durante a animação', 'dw-copiar-animacao' ),
+				'label'        => __( 'Fixar o elemento durante a animação', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'return_value' => 'yes',
 				'condition'    => [
@@ -388,69 +388,69 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'loop' ),
 			[
-				'label'        => __( 'Repetir sem parar', 'dw-copiar-animacao' ),
+				'label'        => __( 'Repetir sem parar', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'default'      => 'yes',
 				'return_value' => 'yes',
-				'condition'    => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'loop' ) ],
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'loop' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'lottie_url' ),
 			[
-				'label'       => __( 'Arquivo Lottie (.json)', 'dw-copiar-animacao' ),
+				'label'       => __( 'Arquivo Lottie (.json)', 'wooflow-animations' ),
 				'type'        => Controls_Manager::TEXT,
 				'label_block' => true,
 				'placeholder' => 'https://exemplo.com/animacao.json',
-				'description' => __( 'Envie o .json pela Biblioteca de Mídia e cole a URL aqui.', 'dw-copiar-animacao' ),
-				'condition'   => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'lottie_url' ) ],
+				'description' => __( 'Envie o .json pela Biblioteca de Mídia e cole a URL aqui.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'lottie_url' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'lottie_loop' ),
 			[
-				'label'        => __( 'Repetir o Lottie', 'dw-copiar-animacao' ),
+				'label'        => __( 'Repetir o Lottie', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'default'      => 'yes',
 				'return_value' => 'yes',
-				'condition'    => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'lottie_loop' ) ],
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'lottie_loop' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'lottie_speed' ),
 			[
-				'label'     => __( 'Velocidade do Lottie', 'dw-copiar-animacao' ),
+				'label'     => __( 'Velocidade do Lottie', 'wooflow-animations' ),
 				'type'      => Controls_Manager::NUMBER,
 				'min'       => 0.1,
 				'max'       => 3,
 				'step'      => 0.1,
 				'default'   => 1,
-				'condition' => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'lottie_speed' ) ],
+				'condition' => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'lottie_speed' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'stagger' ),
 			[
-				'label'        => __( 'Animar os filhos em cascata', 'dw-copiar-animacao' ),
+				'label'        => __( 'Animar os filhos em cascata', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'return_value' => 'yes',
-				'description'  => __( 'Em vez de animar o elemento inteiro, anima um filho depois do outro. É o que dá vida a grades, listas e loops.', 'dw-copiar-animacao' ),
-				'condition'    => [ $k( 'preset' ) => DW_Anim_Presets::ids_with_param( 'stagger' ) ],
+				'description'  => __( 'Em vez de animar o elemento inteiro, anima um filho depois do outro. É o que dá vida a grades, listas e loops.', 'wooflow-animations' ),
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'stagger' ) ],
 			]
 		);
 
 		$element->add_control(
 			$k( 'stagger_target' ),
 			[
-				'label'       => __( 'Filhos a animar', 'dw-copiar-animacao' ),
+				'label'       => __( 'Filhos a animar', 'wooflow-animations' ),
 				'type'        => Controls_Manager::TEXT,
 				'default'     => '> *',
 				'placeholder' => '> *',
-				'description' => __( 'Seletor CSS relativo ao elemento. O padrão pega os filhos diretos.', 'dw-copiar-animacao' ),
+				'description' => __( 'Seletor CSS relativo ao elemento. O padrão pega os filhos diretos.', 'wooflow-animations' ),
 				'condition'   => [ $k( 'stagger' ) => 'yes' ],
 			]
 		);
@@ -465,7 +465,7 @@ class DW_Anim_Controls {
 				[
 					'name'     => $k( 'preset' ),
 					'operator' => 'in',
-					'value'    => DW_Anim_Presets::ids_with_param( 'stagger_each' ),
+					'value'    => WFAN_Presets::ids_with_param( 'stagger_each' ),
 				],
 			],
 		];
@@ -473,7 +473,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'stagger_each' ),
 			[
-				'label'      => __( 'Intervalo entre cada um (ms)', 'dw-copiar-animacao' ),
+				'label'      => __( 'Intervalo entre cada um (ms)', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 500, 'step' => 10 ] ],
@@ -485,14 +485,14 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'stagger_from' ),
 			[
-				'label'      => __( 'Começar pelo', 'dw-copiar-animacao' ),
+				'label'      => __( 'Começar pelo', 'wooflow-animations' ),
 				'type'       => Controls_Manager::SELECT,
 				'default'    => 'start',
 				'options'    => [
-					'start'  => __( 'primeiro', 'dw-copiar-animacao' ),
-					'center' => __( 'meio', 'dw-copiar-animacao' ),
-					'end'    => __( 'último', 'dw-copiar-animacao' ),
-					'random' => __( 'aleatório', 'dw-copiar-animacao' ),
+					'start'  => __( 'primeiro', 'wooflow-animations' ),
+					'center' => __( 'meio', 'wooflow-animations' ),
+					'end'    => __( 'último', 'wooflow-animations' ),
+					'random' => __( 'aleatório', 'wooflow-animations' ),
 				],
 				'conditions' => $cascade_terms,
 			]
@@ -501,7 +501,7 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'off_mobile' ),
 			[
-				'label'        => __( 'Desligar no celular', 'dw-copiar-animacao' ),
+				'label'        => __( 'Desligar no celular', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'return_value' => 'yes',
 				'separator'    => 'before',
@@ -512,16 +512,16 @@ class DW_Anim_Controls {
 		$element->add_control(
 			$k( 'engine' ),
 			[
-				'label'       => __( 'Motor', 'dw-copiar-animacao' ),
+				'label'       => __( 'Motor', 'wooflow-animations' ),
 				'type'        => Controls_Manager::SELECT,
 				'default'     => 'auto',
 				'options'     => [
-					'auto'  => __( 'Automático (recomendado)', 'dw-copiar-animacao' ),
-					'css'   => __( 'Próprio, sem biblioteca', 'dw-copiar-animacao' ),
-					'gsap'  => __( 'GSAP', 'dw-copiar-animacao' ),
-					'anime' => __( 'Anime.js', 'dw-copiar-animacao' ),
+					'auto'  => __( 'Automático (recomendado)', 'wooflow-animations' ),
+					'css'   => __( 'Próprio, sem biblioteca', 'wooflow-animations' ),
+					'gsap'  => __( 'GSAP', 'wooflow-animations' ),
+					'anime' => __( 'Anime.js', 'wooflow-animations' ),
 				],
-				'description' => __( 'No automático, cada animação usa o motor mais leve que dá conta. Só mude se souber por quê.', 'dw-copiar-animacao' ),
+				'description' => __( 'No automático, cada animação usa o motor mais leve que dá conta. Só mude se souber por quê.', 'wooflow-animations' ),
 				'condition'   => [ $k( 'preset' ) => $this->ids_with_engine( 'css' ) ],
 			]
 		);

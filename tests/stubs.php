@@ -5,7 +5,7 @@
  * Existe para que o smoke test rode com `php tests/smoke.php`, sem WordPress,
  * sem banco e sem Elementor instalado.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 // phpcs:disable
@@ -13,7 +13,7 @@
 namespace {
 
 
-class DW_Test_Hooks {
+class WFAN_Test_Hooks {
 	public static $actions = [];
 	public static $filters = [];
 	public static $scripts = [];
@@ -29,23 +29,23 @@ class DW_Test_Hooks {
 }
 
 function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
-	DW_Test_Hooks::$actions[ $hook ][] = $callback;
+	WFAN_Test_Hooks::$actions[ $hook ][] = $callback;
 	return true;
 }
 
 function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
-	DW_Test_Hooks::$filters[ $hook ][] = $callback;
+	WFAN_Test_Hooks::$filters[ $hook ][] = $callback;
 	return true;
 }
 
 function do_action( $hook, ...$args ) {
-	foreach ( DW_Test_Hooks::$actions[ $hook ] ?? [] as $callback ) {
+	foreach ( WFAN_Test_Hooks::$actions[ $hook ] ?? [] as $callback ) {
 		call_user_func_array( $callback, $args );
 	}
 }
 
 function apply_filters( $hook, $value, ...$args ) {
-	foreach ( DW_Test_Hooks::$filters[ $hook ] ?? [] as $callback ) {
+	foreach ( WFAN_Test_Hooks::$filters[ $hook ] ?? [] as $callback ) {
 		$value = call_user_func_array( $callback, array_merge( [ $value ], $args ) );
 	}
 	return $value;
@@ -89,11 +89,11 @@ function plugin_dir_url( $file ) { return 'https://exemplo.test/wp-content/plugi
 function plugin_basename( $file ) { return basename( dirname( $file ) ) . '/' . basename( $file ); }
 
 function get_option( $name, $default = false ) {
-	return DW_Test_Hooks::$options[ $name ] ?? $default;
+	return WFAN_Test_Hooks::$options[ $name ] ?? $default;
 }
 
 function update_option( $name, $value, $autoload = null ) {
-	DW_Test_Hooks::$options[ $name ] = $value;
+	WFAN_Test_Hooks::$options[ $name ] = $value;
 	return true;
 }
 
@@ -108,34 +108,34 @@ function checked( $checked, $current = true, $echo = true ) {
 }
 
 function wp_register_script( $handle, $src = '', $deps = [], $ver = false, $footer = false ) {
-	DW_Test_Hooks::$scripts[ $handle ] = [ 'src' => $src, 'deps' => $deps, 'ver' => $ver ];
+	WFAN_Test_Hooks::$scripts[ $handle ] = [ 'src' => $src, 'deps' => $deps, 'ver' => $ver ];
 	return true;
 }
 
 function wp_register_style( $handle, $src = '', $deps = [], $ver = false ) {
-	DW_Test_Hooks::$styles[ $handle ] = [ 'src' => $src, 'deps' => $deps ];
+	WFAN_Test_Hooks::$styles[ $handle ] = [ 'src' => $src, 'deps' => $deps ];
 	return true;
 }
 
 function wp_enqueue_script( $handle, $src = '', $deps = [], $ver = false, $footer = false ) {
-	DW_Test_Hooks::$enqueued[] = $handle;
+	WFAN_Test_Hooks::$enqueued[] = $handle;
 	return true;
 }
 
 function wp_enqueue_style( $handle, ...$rest ) {
-	DW_Test_Hooks::$enqueued[] = $handle;
+	WFAN_Test_Hooks::$enqueued[] = $handle;
 	return true;
 }
 
 function wp_script_is( $handle, $list = 'enqueued' ) {
 	if ( 'registered' === $list ) {
-		return isset( DW_Test_Hooks::$scripts[ $handle ] );
+		return isset( WFAN_Test_Hooks::$scripts[ $handle ] );
 	}
-	return in_array( $handle, DW_Test_Hooks::$enqueued, true );
+	return in_array( $handle, WFAN_Test_Hooks::$enqueued, true );
 }
 
 function wp_localize_script( $handle, $object, $data ) {
-	DW_Test_Hooks::$localized[ $object ] = $data;
+	WFAN_Test_Hooks::$localized[ $object ] = $data;
 	return true;
 }
 }

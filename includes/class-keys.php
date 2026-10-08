@@ -6,22 +6,22 @@
  * (widget usa `_animation` mas `animation_duration`, sem underscore) e esse detalhe
  * já custou caro. Ver CLAUDE.md, regra 1.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Keys {
+class WFAN_Keys {
 
 	/** Prefixo dos nossos controles — igual em todo tipo de elemento, de propósito. */
-	const P = '_dwanim_';
+	const P = '_wfan_';
 
 	/** Versão do payload gravado no localStorage pelo copiar/colar. */
 	const PAYLOAD_VERSION = 2;
 
-	/** Versão do JSON escrito em data-dw-anim. */
+	/** Versão do JSON escrito em data-wfan. */
 	const ATTR_VERSION = 1;
 
 	/**

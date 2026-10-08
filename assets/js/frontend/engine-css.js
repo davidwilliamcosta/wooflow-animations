@@ -7,11 +7,11 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.dwAnim ) {
+	if ( ! window.wfan ) {
 		return;
 	}
 
-	var util = window.dwAnim.util;
+	var util = window.wfan.util;
 
 	function px( value ) {
 		return value + 'px';
@@ -166,13 +166,13 @@
 		}
 
 		return targets.map( function ( line ) {
-			if ( line.__dwMaskInner ) {
-				return line.__dwMaskInner;
+			if ( line.__wfanMaskInner ) {
+				return line.__wfanMaskInner;
 			}
 
 			var inner = document.createElement( 'span' );
 
-			inner.className = 'dw-anim-mask-inner';
+			inner.className = 'wfan-mask-inner';
 
 			while ( line.firstChild ) {
 				inner.appendChild( line.firstChild );
@@ -181,7 +181,7 @@
 			line.appendChild( inner );
 			line.style.overflow = 'hidden';
 			line.style.display = 'block';
-			line.__dwMaskInner = inner;
+			line.__wfanMaskInner = inner;
 
 			return inner;
 		} );
@@ -229,7 +229,7 @@
 		return player;
 	}
 
-	window.dwAnim.register( 'css', {
+	window.wfan.register( 'css', {
 
 		play: function ( el, spec, targets ) {
 			var built = build( spec );
@@ -239,7 +239,7 @@
 				var player = playOn( node, built, spec, index );
 
 				if ( player ) {
-					node.__dwPlayer = player;
+					node.__wfanPlayer = player;
 				}
 			} );
 		},
@@ -248,12 +248,12 @@
 			var nodes = prepare( spec, targets );
 
 			nodes.forEach( function ( node ) {
-				if ( node.__dwPlayer ) {
+				if ( node.__wfanPlayer ) {
 					try {
-						node.__dwPlayer.cancel();
+						node.__wfanPlayer.cancel();
 					} catch ( e ) {}
 
-					node.__dwPlayer = null;
+					node.__wfanPlayer = null;
 				}
 			} );
 		},
@@ -261,5 +261,5 @@
 		build: build
 	} );
 
-	window.dwAnimCssBuild = build;
+	window.wfanCssBuild = build;
 }() );

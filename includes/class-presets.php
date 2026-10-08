@@ -6,14 +6,14 @@
  * nunca o navegador, porque é isso que permite enfileirar só a biblioteca usada
  * na página. Ver CLAUDE.md, regra 5.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Presets {
+class WFAN_Presets {
 
 	/**
 	 * Cache do catálogo já filtrado.
@@ -29,12 +29,12 @@ class DW_Anim_Presets {
 	 */
 	public static function groups() {
 		return [
-			'entrada' => __( 'Entrada', 'dw-copiar-animacao' ),
-			'texto'   => __( 'Texto', 'dw-copiar-animacao' ),
-			'scroll'  => __( 'Scroll', 'dw-copiar-animacao' ),
-			'enfase'  => __( 'Ênfase', 'dw-copiar-animacao' ),
-			'svg'     => __( 'SVG', 'dw-copiar-animacao' ),
-			'lottie'  => __( 'Lottie', 'dw-copiar-animacao' ),
+			'entrada' => __( 'Entrada', 'wooflow-animations' ),
+			'texto'   => __( 'Texto', 'wooflow-animations' ),
+			'scroll'  => __( 'Scroll', 'wooflow-animations' ),
+			'enfase'  => __( 'Ênfase', 'wooflow-animations' ),
+			'svg'     => __( 'SVG', 'wooflow-animations' ),
+			'lottie'  => __( 'Lottie', 'wooflow-animations' ),
 		];
 	}
 
@@ -46,12 +46,12 @@ class DW_Anim_Presets {
 	 */
 	public static function triggers() {
 		return [
-			'scroll-in'    => __( 'Ao entrar na tela', 'dw-copiar-animacao' ),
-			'load'         => __( 'Ao carregar a página', 'dw-copiar-animacao' ),
-			'scroll-out'   => __( 'Ao sair da tela', 'dw-copiar-animacao' ),
-			'scroll-scrub' => __( 'Travado no scroll', 'dw-copiar-animacao' ),
-			'hover'        => __( 'No hover', 'dw-copiar-animacao' ),
-			'click'        => __( 'No clique', 'dw-copiar-animacao' ),
+			'scroll-in'    => __( 'Ao entrar na tela', 'wooflow-animations' ),
+			'load'         => __( 'Ao carregar a página', 'wooflow-animations' ),
+			'scroll-out'   => __( 'Ao sair da tela', 'wooflow-animations' ),
+			'scroll-scrub' => __( 'Travado no scroll', 'wooflow-animations' ),
+			'hover'        => __( 'No hover', 'wooflow-animations' ),
+			'click'        => __( 'No clique', 'wooflow-animations' ),
 		];
 	}
 
@@ -64,31 +64,31 @@ class DW_Anim_Presets {
 	public static function easings() {
 		return [
 			'power2.out'  => [
-				'label'  => __( 'Suave na saída (padrão)', 'dw-copiar-animacao' ),
+				'label'  => __( 'Suave na saída (padrão)', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.33, 1, 0.68, 1)',
 			],
 			'power2.in'   => [
-				'label'  => __( 'Suave na entrada', 'dw-copiar-animacao' ),
+				'label'  => __( 'Suave na entrada', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.32, 0, 0.67, 0)',
 			],
 			'power2.inOut' => [
-				'label'  => __( 'Suave nas duas pontas', 'dw-copiar-animacao' ),
+				'label'  => __( 'Suave nas duas pontas', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.65, 0, 0.35, 1)',
 			],
 			'power4.out'  => [
-				'label'  => __( 'Freada forte', 'dw-copiar-animacao' ),
+				'label'  => __( 'Freada forte', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.22, 1, 0.36, 1)',
 			],
 			'back.out(1.7)' => [
-				'label'  => __( 'Com repique', 'dw-copiar-animacao' ),
+				'label'  => __( 'Com repique', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.34, 1.56, 0.64, 1)',
 			],
 			'elastic.out(1, 0.5)' => [
-				'label'  => __( 'Elástico', 'dw-copiar-animacao' ),
+				'label'  => __( 'Elástico', 'wooflow-animations' ),
 				'bezier' => 'cubic-bezier(0.68, -0.55, 0.27, 1.55)',
 			],
 			'none'        => [
-				'label'  => __( 'Linear', 'dw-copiar-animacao' ),
+				'label'  => __( 'Linear', 'wooflow-animations' ),
 				'bezier' => 'linear',
 			],
 		];
@@ -114,54 +114,54 @@ class DW_Anim_Presets {
 		$presets = [
 
 			// Entrada — motor próprio, sem biblioteca nenhuma.
-			'fade'        => [ 'label' => __( 'Fade', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
-			'fade-up'     => [ 'label' => __( 'Fade subindo', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'fade-down'   => [ 'label' => __( 'Fade descendo', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'fade-left'   => [ 'label' => __( 'Fade da esquerda', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'fade-right'  => [ 'label' => __( 'Fade da direita', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'slide-up'    => [ 'label' => __( 'Deslizar subindo', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'slide-down'  => [ 'label' => __( 'Deslizar descendo', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'slide-left'  => [ 'label' => __( 'Deslizar da esquerda', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'slide-right' => [ 'label' => __( 'Deslizar da direita', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
-			'zoom-in'     => [ 'label' => __( 'Zoom para dentro', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'scale_from', 'stagger' ] ],
-			'zoom-out'    => [ 'label' => __( 'Zoom para fora', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'scale_from', 'stagger' ] ],
-			'blur-in'     => [ 'label' => __( 'Desfoque', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'blur', 'stagger' ] ],
-			'rotate-in'   => [ 'label' => __( 'Girar', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'rotate', 'stagger' ] ],
-			'flip-x'      => [ 'label' => __( 'Virar na horizontal', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
-			'flip-y'      => [ 'label' => __( 'Virar na vertical', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
-			'mask-up'     => [ 'label' => __( 'Cortina de baixo', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
-			'mask-left'   => [ 'label' => __( 'Cortina da esquerda', 'dw-copiar-animacao' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
+			'fade'        => [ 'label' => __( 'Fade', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
+			'fade-up'     => [ 'label' => __( 'Fade subindo', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'fade-down'   => [ 'label' => __( 'Fade descendo', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'fade-left'   => [ 'label' => __( 'Fade da esquerda', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'fade-right'  => [ 'label' => __( 'Fade da direita', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'slide-up'    => [ 'label' => __( 'Deslizar subindo', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'slide-down'  => [ 'label' => __( 'Deslizar descendo', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'slide-left'  => [ 'label' => __( 'Deslizar da esquerda', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'slide-right' => [ 'label' => __( 'Deslizar da direita', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'distance', 'stagger' ] ],
+			'zoom-in'     => [ 'label' => __( 'Zoom para dentro', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'scale_from', 'stagger' ] ],
+			'zoom-out'    => [ 'label' => __( 'Zoom para fora', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'scale_from', 'stagger' ] ],
+			'blur-in'     => [ 'label' => __( 'Desfoque', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'blur', 'stagger' ] ],
+			'rotate-in'   => [ 'label' => __( 'Girar', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'rotate', 'stagger' ] ],
+			'flip-x'      => [ 'label' => __( 'Virar na horizontal', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
+			'flip-y'      => [ 'label' => __( 'Virar na vertical', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
+			'mask-up'     => [ 'label' => __( 'Cortina de baixo', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
+			'mask-left'   => [ 'label' => __( 'Cortina da esquerda', 'wooflow-animations' ), 'group' => 'entrada', 'engine' => 'css', 'params' => [ 'stagger' ] ],
 
 			// Texto — divisor próprio, sem depender do SplitText.
-			'text-lines'  => [ 'label' => __( 'Revelar por linha', 'dw-copiar-animacao' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'lines' ],
-			'text-words'  => [ 'label' => __( 'Revelar por palavra', 'dw-copiar-animacao' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'words' ],
-			'text-chars'  => [ 'label' => __( 'Revelar por letra', 'dw-copiar-animacao' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'chars' ],
-			'text-mask'   => [ 'label' => __( 'Cortina por linha', 'dw-copiar-animacao' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'stagger_each' ], 'split' => 'lines' ],
+			'text-lines'  => [ 'label' => __( 'Revelar por linha', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'lines' ],
+			'text-words'  => [ 'label' => __( 'Revelar por palavra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'words' ],
+			'text-chars'  => [ 'label' => __( 'Revelar por letra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'chars' ],
+			'text-mask'   => [ 'label' => __( 'Cortina por linha', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'stagger_each' ], 'split' => 'lines' ],
 
 			// Scroll — aqui entra o GSAP, e só aqui.
-			'parallax-y'    => [ 'label' => __( 'Parallax vertical', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'parallax-x'    => [ 'label' => __( 'Parallax horizontal', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'scrub-fade'    => [ 'label' => __( 'Fade travado no scroll', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'scrub-scale'   => [ 'label' => __( 'Escala travada no scroll', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scale_from', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'scrub-rotate'  => [ 'label' => __( 'Giro travado no scroll', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'rotate', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'scrub-reveal'  => [ 'label' => __( 'Cortina travada no scroll', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'pin'           => [ 'label' => __( 'Fixar na tela', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'progress-bar'  => [ 'label' => __( 'Barra de progresso', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'counter'       => [ 'label' => __( 'Contador numérico', 'dw-copiar-animacao' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ] ],
+			'parallax-y'    => [ 'label' => __( 'Parallax vertical', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'parallax-x'    => [ 'label' => __( 'Parallax horizontal', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'scrub-fade'    => [ 'label' => __( 'Fade travado no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'scrub-scale'   => [ 'label' => __( 'Escala travada no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scale_from', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'scrub-rotate'  => [ 'label' => __( 'Giro travado no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'rotate', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'scrub-reveal'  => [ 'label' => __( 'Cortina travada no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'pin'           => [ 'label' => __( 'Fixar na tela', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'progress-bar'  => [ 'label' => __( 'Barra de progresso', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'counter'       => [ 'label' => __( 'Contador numérico', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ] ],
 
 			// Ênfase — loops curtos, motor próprio.
-			'pulse'  => [ 'label' => __( 'Pulsar', 'dw-copiar-animacao' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
-			'float'  => [ 'label' => __( 'Flutuar', 'dw-copiar-animacao' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'distance', 'loop' ] ],
-			'shake'  => [ 'label' => __( 'Tremer', 'dw-copiar-animacao' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'distance', 'loop' ] ],
-			'wobble' => [ 'label' => __( 'Balançar', 'dw-copiar-animacao' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'rotate', 'loop' ] ],
-			'glow'   => [ 'label' => __( 'Brilhar', 'dw-copiar-animacao' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
+			'pulse'  => [ 'label' => __( 'Pulsar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
+			'float'  => [ 'label' => __( 'Flutuar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'distance', 'loop' ] ],
+			'shake'  => [ 'label' => __( 'Tremer', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'distance', 'loop' ] ],
+			'wobble' => [ 'label' => __( 'Balançar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'rotate', 'loop' ] ],
+			'glow'   => [ 'label' => __( 'Brilhar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
 
 			// SVG — é aqui que o Anime.js ganha o lugar dele.
-			'svg-draw'   => [ 'label' => __( 'Desenhar traço', 'dw-copiar-animacao' ), 'group' => 'svg', 'engine' => 'anime', 'params' => [ 'stagger_each' ], 'triggers' => [ 'scroll-in', 'load', 'hover', 'click' ] ],
+			'svg-draw'   => [ 'label' => __( 'Desenhar traço', 'wooflow-animations' ), 'group' => 'svg', 'engine' => 'anime', 'params' => [ 'stagger_each' ], 'triggers' => [ 'scroll-in', 'load', 'hover', 'click' ] ],
 
 			// Lottie.
-			'lottie-play'  => [ 'label' => __( 'Tocar animação Lottie', 'dw-copiar-animacao' ), 'group' => 'lottie', 'engine' => 'lottie', 'params' => [ 'lottie_url', 'lottie_loop', 'lottie_speed' ], 'triggers' => [ 'scroll-in', 'load', 'hover', 'click' ] ],
-			'lottie-scrub' => [ 'label' => __( 'Lottie travado no scroll', 'dw-copiar-animacao' ), 'group' => 'lottie', 'engine' => 'lottie', 'params' => [ 'lottie_url', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'lottie-play'  => [ 'label' => __( 'Tocar animação Lottie', 'wooflow-animations' ), 'group' => 'lottie', 'engine' => 'lottie', 'params' => [ 'lottie_url', 'lottie_loop', 'lottie_speed' ], 'triggers' => [ 'scroll-in', 'load', 'hover', 'click' ] ],
+			'lottie-scrub' => [ 'label' => __( 'Lottie travado no scroll', 'wooflow-animations' ), 'group' => 'lottie', 'engine' => 'lottie', 'params' => [ 'lottie_url', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 		];
 
 		/**
@@ -169,7 +169,7 @@ class DW_Anim_Presets {
 		 *
 		 * @param array<string,array> $presets Catálogo.
 		 */
-		$presets = apply_filters( 'dw_anim_presets', $presets );
+		$presets = apply_filters( 'wfan_presets', $presets );
 
 		foreach ( $presets as $id => $preset ) {
 			$presets[ $id ] = wp_parse_args(
@@ -255,7 +255,7 @@ class DW_Anim_Presets {
 	 * @return array<string,string>
 	 */
 	public static function options() {
-		$options = [ '' => __( 'Nenhuma', 'dw-copiar-animacao' ) ];
+		$options = [ '' => __( 'Nenhuma', 'wooflow-animations' ) ];
 
 		foreach ( self::all() as $id => $preset ) {
 			$options[ $id ] = $preset['label'];

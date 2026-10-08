@@ -8,7 +8,7 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.dwAnimLenis || {};
+	var cfg = window.wfanLenis || {};
 
 	if ( ! window.Lenis ) {
 		return;
@@ -25,7 +25,7 @@
 		syncTouch: !! cfg.syncTouch
 	} );
 
-	window.dwAnimLenisInstance = lenis;
+	window.wfanLenisInstance = lenis;
 
 	var bridged = false;
 	var usingTicker = false;

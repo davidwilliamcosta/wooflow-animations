@@ -5,13 +5,13 @@
 # Uso: ./build.sh
 set -euo pipefail
 
-SLUG="dw-copiar-animacao-elementor"
+SLUG="wooflow-animations"
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-VER="$( grep -m1 "^define( 'DWANIM_VER'" "$ROOT/$SLUG.php" | sed -E "s/.*'([0-9.]+)'.*/\1/" )"
+VER="$( grep -m1 "^define( 'WFAN_VER'" "$ROOT/$SLUG.php" | sed -E "s/.*'([0-9.]+)'.*/\1/" )"
 HEADER_VER="$( grep -m1 ' \* Version:' "$ROOT/$SLUG.php" | sed -E 's/.*Version: *([0-9.]+).*/\1/' )"
 
 if [ "$VER" != "$HEADER_VER" ]; then
-	echo "Erro: cabeçalho Version: ($HEADER_VER) e DWANIM_VER ($VER) não batem. Ver CLAUDE.md." >&2
+	echo "Erro: cabeçalho Version: ($HEADER_VER) e WFAN_VER ($VER) não batem. Ver CLAUDE.md." >&2
 	exit 1
 fi
 

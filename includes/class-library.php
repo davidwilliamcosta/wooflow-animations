@@ -3,22 +3,22 @@
  * "Minhas animações": conjuntos de ajustes salvos com nome e reaplicáveis em
  * qualquer elemento. É a evolução do copiar/colar, que guarda só um de cada vez.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Library {
+class WFAN_Library {
 
-	const OPTION = 'dwanim_library';
-	const NONCE  = 'dwanim_library';
+	const OPTION = 'wfan_library';
+	const NONCE  = 'wfan_library';
 	const MAX    = 100;
 
 	public function __construct() {
-		add_action( 'wp_ajax_dwanim_save_preset', [ $this, 'ajax_save' ] );
-		add_action( 'wp_ajax_dwanim_delete_preset', [ $this, 'ajax_delete' ] );
+		add_action( 'wp_ajax_wfan_save_preset', [ $this, 'ajax_save' ] );
+		add_action( 'wp_ajax_wfan_delete_preset', [ $this, 'ajax_delete' ] );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class DW_Anim_Library {
 	 * @return array
 	 */
 	private static function sanitize_settings( $settings ) {
-		$allowed = DW_Anim_Keys::all_ours();
+		$allowed = WFAN_Keys::all_ours();
 		$clean   = [];
 
 		foreach ( (array) $settings as $key => $value ) {
@@ -63,30 +63,30 @@ class DW_Anim_Library {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Sem permissão.', 'dw-copiar-animacao' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Sem permissão.', 'wooflow-animations' ) ], 403 );
 		}
 
 		$label = isset( $_POST['label'] ) ? sanitize_text_field( wp_unslash( $_POST['label'] ) ) : '';
 
 		if ( '' === $label ) {
-			wp_send_json_error( [ 'message' => __( 'Dê um nome para a animação.', 'dw-copiar-animacao' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'Dê um nome para a animação.', 'wooflow-animations' ) ], 400 );
 		}
 
 		$raw      = isset( $_POST['settings'] ) ? json_decode( wp_unslash( $_POST['settings'] ), true ) : [];
 		$settings = self::sanitize_settings( $raw );
 
-		if ( empty( $settings[ DW_Anim_Keys::ours( 'preset' ) ] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Escolha uma animação antes de salvar.', 'dw-copiar-animacao' ) ], 400 );
+		if ( empty( $settings[ WFAN_Keys::ours( 'preset' ) ] ) ) {
+			wp_send_json_error( [ 'message' => __( 'Escolha uma animação antes de salvar.', 'wooflow-animations' ) ], 400 );
 		}
 
 		$items = self::all();
 
 		if ( count( $items ) >= self::MAX ) {
-			wp_send_json_error( [ 'message' => __( 'A biblioteca está cheia. Apague alguma antes de salvar outra.', 'dw-copiar-animacao' ) ], 400 );
+			wp_send_json_error( [ 'message' => __( 'A biblioteca está cheia. Apague alguma antes de salvar outra.', 'wooflow-animations' ) ], 400 );
 		}
 
 		$items[] = [
-			'id'       => uniqid( 'dwa_', false ),
+			'id'       => uniqid( 'wfan_', false ),
 			'label'    => $label,
 			'settings' => $settings,
 		];
@@ -103,7 +103,7 @@ class DW_Anim_Library {
 		check_ajax_referer( self::NONCE, 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Sem permissão.', 'dw-copiar-animacao' ) ], 403 );
+			wp_send_json_error( [ 'message' => __( 'Sem permissão.', 'wooflow-animations' ) ], 403 );
 		}
 
 		$id    = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';

@@ -8,13 +8,13 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.dwAnim || ! window.gsap ) {
+	if ( ! window.wfan || ! window.gsap ) {
 		return;
 	}
 
 	var gsap = window.gsap;
 	var ScrollTrigger = window.ScrollTrigger;
-	var util = window.dwAnim.util;
+	var util = window.wfan.util;
 	var refreshTimer = null;
 
 	if ( ScrollTrigger ) {
@@ -105,9 +105,9 @@
 
 	function clear( targets ) {
 		targets.forEach( function ( node ) {
-			if ( node.__dwTween ) {
-				node.__dwTween.kill();
-				node.__dwTween = null;
+			if ( node.__wfanTween ) {
+				node.__wfanTween.kill();
+				node.__wfanTween = null;
 			}
 		} );
 
@@ -134,18 +134,18 @@
 		} );
 	}
 
-	window.dwAnim.register( 'gsap', {
+	window.wfan.register( 'gsap', {
 
 		play: function ( el, spec, targets ) {
 			if ( 'counter' === spec.preset ) {
-				el.__dwTween = counter( el, spec );
+				el.__wfanTween = counter( el, spec );
 				return;
 			}
 
 			var loop = loopVars( spec );
 
 			if ( loop && spec.loop ) {
-				el.__dwTween = gsap.to( targets, assign( {}, loop, {
+				el.__wfanTween = gsap.to( targets, assign( {}, loop, {
 					duration: Math.max( 0.2, spec.duration / 1000 ),
 					delay: spec.delay / 1000,
 					ease: spec.easing,
@@ -165,7 +165,7 @@
 			} ) );
 
 			targets.forEach( function ( node ) {
-				node.__dwTween = tween;
+				node.__wfanTween = tween;
 			} );
 		},
 
@@ -251,13 +251,13 @@
 			to.ease = 'none';
 			to.scrollTrigger = trigger;
 
-			el.__dwTween = gsap.fromTo( targets, from, to );
+			el.__wfanTween = gsap.fromTo( targets, from, to );
 		},
 
 		reset: function ( el, spec, targets ) {
-			if ( el.__dwTween ) {
-				el.__dwTween.kill();
-				el.__dwTween = null;
+			if ( el.__wfanTween ) {
+				el.__wfanTween.kill();
+				el.__wfanTween = null;
 			}
 
 			clear( targets );

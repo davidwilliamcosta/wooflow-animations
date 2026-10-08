@@ -2,14 +2,14 @@
 /**
  * Scroll suave global com Lenis.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Lenis {
+class WFAN_Lenis {
 
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue' ], 20 );
@@ -19,7 +19,7 @@ class DW_Anim_Lenis {
 	 * @return bool
 	 */
 	public static function active() {
-		if ( ! DW_Anim_Settings::is_on( 'lenis_enable' ) ) {
+		if ( ! WFAN_Settings::is_on( 'lenis_enable' ) ) {
 			return false;
 		}
 
@@ -33,7 +33,7 @@ class DW_Anim_Lenis {
 		 *
 		 * @param bool $active Se o Lenis deve rodar.
 		 */
-		return (bool) apply_filters( 'dw_anim_lenis_active', true );
+		return (bool) apply_filters( 'wfan_lenis_active', true );
 	}
 
 	/**
@@ -44,17 +44,17 @@ class DW_Anim_Lenis {
 			return;
 		}
 
-		wp_enqueue_script( 'dw-anim-lenis-boot' );
+		wp_enqueue_script( 'wfan-lenis-boot' );
 
 		wp_localize_script(
-			'dw-anim-lenis-boot',
-			'dwAnimLenis',
+			'wfan-lenis-boot',
+			'wfanLenis',
 			[
-				'lerp'       => (float) DW_Anim_Settings::get( 'lenis_lerp', 0.1 ),
-				'duration'   => (float) DW_Anim_Settings::get( 'lenis_duration', 1.2 ),
-				'smoothWheel' => DW_Anim_Settings::is_on( 'lenis_wheel' ),
-				'syncTouch'  => DW_Anim_Settings::is_on( 'lenis_touch' ),
-				'reduced'    => DW_Anim_Settings::is_on( 'respect_reduced' ),
+				'lerp'       => (float) WFAN_Settings::get( 'lenis_lerp', 0.1 ),
+				'duration'   => (float) WFAN_Settings::get( 'lenis_duration', 1.2 ),
+				'smoothWheel' => WFAN_Settings::is_on( 'lenis_wheel' ),
+				'syncTouch'  => WFAN_Settings::is_on( 'lenis_touch' ),
+				'reduced'    => WFAN_Settings::is_on( 'respect_reduced' ),
 				'adminBar'   => is_admin_bar_showing() ? 32 : 0,
 			]
 		);

@@ -5,9 +5,9 @@
  * Cobre o que quebra em silêncio e só aparece no editor ou no front-end:
  * nomes de chave, condições apontando para controle que não existe, motor
  * resolvido errado, biblioteca enfileirada quando não devia e o contrato
- * data-dw-anim desalinhado entre o PHP e o core.js.
+ * data-wfan desalinhado entre o PHP e o core.js.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 // phpcs:disable
@@ -15,15 +15,15 @@
 require __DIR__ . '/stubs.php';
 
 define( 'ABSPATH', __DIR__ );
-define( 'DWANIM_VER', '2.0.0' );
-define( 'DWANIM_FILE', dirname( __DIR__ ) . '/dw-copiar-animacao-elementor.php' );
-define( 'DWANIM_DIR', dirname( __DIR__ ) . '/' );
-define( 'DWANIM_URL', 'https://exemplo.test/wp-content/plugins/dw-copiar-animacao-elementor/' );
-define( 'DWANIM_BASENAME', 'dw-copiar-animacao-elementor/dw-copiar-animacao-elementor.php' );
-define( 'DWANIM_TD', 'dw-copiar-animacao' );
+define( 'WFAN_VER', '2.0.0' );
+define( 'WFAN_FILE', dirname( __DIR__ ) . '/wooflow-animations.php' );
+define( 'WFAN_DIR', dirname( __DIR__ ) . '/' );
+define( 'WFAN_URL', 'https://exemplo.test/wp-content/plugins/wooflow-animations/' );
+define( 'WFAN_BASENAME', 'wooflow-animations/wooflow-animations.php' );
+define( 'WFAN_TD', 'wooflow-animations' );
 
-require DWANIM_DIR . 'includes/class-requirements.php';
-require DWANIM_DIR . 'includes/class-plugin.php';
+require WFAN_DIR . 'includes/class-requirements.php';
+require WFAN_DIR . 'includes/class-plugin.php';
 
 $failures = 0;
 $checks   = 0;
@@ -51,7 +51,7 @@ function section( $title ) {
 /**
  * Elemento falso do Elementor, o bastante para receber controles e render.
  */
-class DW_Fake_Element {
+class WFAN_Fake_Element {
 
 	public $name;
 	public $type;
@@ -107,7 +107,7 @@ class DW_Fake_Element {
 	}
 
 	public function payload() {
-		$raw = $this->attributes['_wrapper']['data-dw-anim'] ?? null;
+		$raw = $this->attributes['_wrapper']['data-wfan'] ?? null;
 
 		return $raw ? json_decode( $raw, true ) : null;
 	}
@@ -118,41 +118,41 @@ class DW_Fake_Element {
 }
 
 /** Elemento atômico do Elementor 4: reconhecido pelo get_props_schema(). */
-class DW_Fake_Atomic extends DW_Fake_Element {
+class WFAN_Fake_Atomic extends WFAN_Fake_Element {
 	public function get_props_schema() { return []; }
 }
 
-echo "DW Animações — smoke test\n";
+echo "WooFlow Animations — smoke test\n";
 
 // ------------------------------------------------------------------ boot
 
 section( '1. Boot' );
 
-ok( DW_Anim_Requirements::met(), 'requisitos atendidos com os dublês' );
+ok( WFAN_Requirements::met(), 'requisitos atendidos com os dublês' );
 
-$plugin = DW_Anim_Plugin::instance();
+$plugin = WFAN_Plugin::instance();
 
-ok( $plugin instanceof DW_Anim_Plugin, 'plugin instanciado' );
-ok( $plugin->assets instanceof DW_Anim_Assets, 'registry de assets presente' );
+ok( $plugin instanceof WFAN_Plugin, 'plugin instanciado' );
+ok( $plugin->assets instanceof WFAN_Assets, 'registry de assets presente' );
 
 // ------------------------------------------------------- ganchos de controle
 
 section( '2. Ganchos de injeção de controles' );
 
-foreach ( DW_Anim_Controls::WIDGET_STACKS as $stack ) {
+foreach ( WFAN_Controls::WIDGET_STACKS as $stack ) {
 	$hook = "elementor/element/{$stack}/section_effects/after_section_end";
 
-	ok( isset( DW_Test_Hooks::$actions[ $hook ] ), "gancho de widget registrado: {$stack}" );
+	ok( isset( WFAN_Test_Hooks::$actions[ $hook ] ), "gancho de widget registrado: {$stack}" );
 }
 
-foreach ( DW_Anim_Controls::BLOCK_FIRST_SECTION as $type => $first ) {
+foreach ( WFAN_Controls::BLOCK_FIRST_SECTION as $type => $first ) {
 	$hook = "elementor/element/{$type}/{$first}/before_section_start";
 
-	ok( isset( DW_Test_Hooks::$actions[ $hook ] ), "gancho de bloco registrado: {$type} (antes de {$first})" );
+	ok( isset( WFAN_Test_Hooks::$actions[ $hook ] ), "gancho de bloco registrado: {$type} (antes de {$first})" );
 }
 
 ok(
-	in_array( 'common-optimized', DW_Anim_Controls::WIDGET_STACKS, true ),
+	in_array( 'common-optimized', WFAN_Controls::WIDGET_STACKS, true ),
 	'common-optimized incluído (regra 2 do CLAUDE.md)'
 );
 
@@ -160,20 +160,20 @@ ok(
 
 section( '3. Controles injetados' );
 
-$widget = new DW_Fake_Element( 'common', 'widget' );
+$widget = new WFAN_Fake_Element( 'common', 'widget' );
 do_action( 'elementor/element/common/section_effects/after_section_end', $widget, [] );
 
-$block = new DW_Fake_Element( 'container', 'container' );
+$block = new WFAN_Fake_Element( 'container', 'container' );
 do_action( 'elementor/element/container/section_layout_container/before_section_start', $block, [] );
 
 $k = static function ( $suffix ) {
-	return DW_Anim_Keys::ours( $suffix );
+	return WFAN_Keys::ours( $suffix );
 };
 
 ok( count( $widget->controls ) > 15, 'controles criados', count( $widget->controls ) . ' controles' );
 ok( isset( $widget->controls[ $k( 'preset' ) ] ), 'controle de preset existe' );
 ok(
-	'dw-anim-picker' === ( $widget->controls[ $k( 'preset' ) ]['type'] ?? '' ),
+	'wfan-picker' === ( $widget->controls[ $k( 'preset' ) ]['type'] ?? '' ),
 	'preset usa o controle visual'
 );
 ok( isset( $widget->sections[ $k( 'section' ) ] ), 'seção própria criada' );
@@ -197,7 +197,7 @@ ok(
 
 // Com e_optimized_markup ligado o mesmo stack chega duas vezes. O guard por
 // nome impede registrar os controles em dobro.
-$twice = new DW_Fake_Element( 'common-optimized', 'widget' );
+$twice = new WFAN_Fake_Element( 'common-optimized', 'widget' );
 do_action( 'elementor/element/common-optimized/section_effects/after_section_end', $twice, [] );
 $first_count = count( $twice->controls );
 do_action( 'elementor/element/common/section_effects/after_section_end', $twice, [] );
@@ -207,13 +207,13 @@ ok( $first_count === count( $twice->controls ), 'stack repetido não registra co
 // Toda condição precisa apontar para um controle que existe — condição órfã é
 // um controle que nunca aparece no painel, e isso não dá erro nenhum.
 $native_keys = array_merge(
-	array_values( DW_Anim_Keys::NATIVE_WIDGET ),
-	array_values( DW_Anim_Keys::NATIVE_BLOCK )
+	array_values( WFAN_Keys::NATIVE_WIDGET ),
+	array_values( WFAN_Keys::NATIVE_BLOCK )
 );
 
 $orphans   = [];
 $bad_ids   = [];
-$preset_ids = array_keys( DW_Anim_Presets::all() );
+$preset_ids = array_keys( WFAN_Presets::all() );
 
 foreach ( $widget->controls as $id => $args ) {
 	$terms = [];
@@ -253,13 +253,13 @@ $ui_only = [ 'section', 'actions', 'native_warning' ];
 $undeclared = [];
 
 foreach ( array_keys( $widget->controls ) as $id ) {
-	$suffix = substr( $id, strlen( DW_Anim_Keys::P ) );
+	$suffix = substr( $id, strlen( WFAN_Keys::P ) );
 
 	if ( in_array( $suffix, $ui_only, true ) ) {
 		continue;
 	}
 
-	if ( ! in_array( $suffix, DW_Anim_Keys::OURS, true ) ) {
+	if ( ! in_array( $suffix, WFAN_Keys::OURS, true ) ) {
 		$undeclared[] = $id;
 	}
 }
@@ -268,9 +268,9 @@ ok( ! $undeclared, 'toda chave de dado está declarada em Keys::OURS', implode( 
 
 // ------------------------------------------------------------------- render
 
-section( '4. Render do contrato data-dw-anim' );
+section( '4. Render do contrato data-wfan' );
 
-$render = new DW_Anim_Render();
+$render = new WFAN_Render();
 
 function render_with( $element ) {
 	do_action( 'elementor/frontend/before_render', $element );
@@ -278,14 +278,14 @@ function render_with( $element ) {
 	return $element;
 }
 
-DW_Test_Hooks::$actions['elementor/frontend/before_render'] = [ [ new DW_Anim_Render(), 'before_render' ] ];
+WFAN_Test_Hooks::$actions['elementor/frontend/before_render'] = [ [ new WFAN_Render(), 'before_render' ] ];
 
-$fade = render_with( new DW_Fake_Element( 'common', 'widget', [
-	DW_Anim_Keys::ours( 'preset' )   => 'fade-up',
-	DW_Anim_Keys::ours( 'trigger' )  => 'scroll-in',
-	DW_Anim_Keys::ours( 'duration' ) => [ 'unit' => 'px', 'size' => 600 ],
-	DW_Anim_Keys::ours( 'distance' ) => [ 'unit' => 'px', 'size' => 55 ],
-	DW_Anim_Keys::ours( 'once' )     => 'yes',
+$fade = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	WFAN_Keys::ours( 'preset' )   => 'fade-up',
+	WFAN_Keys::ours( 'trigger' )  => 'scroll-in',
+	WFAN_Keys::ours( 'duration' ) => [ 'unit' => 'px', 'size' => 600 ],
+	WFAN_Keys::ours( 'distance' ) => [ 'unit' => 'px', 'size' => 55 ],
+	WFAN_Keys::ours( 'once' )     => 'yes',
 ] ) );
 
 $p = $fade->payload();
@@ -296,132 +296,132 @@ ok( 'css' === ( $p['eng'] ?? '' ), 'motor resolvido para css' );
 ok( 600 === ( $p['d'] ?? 0 ), 'duração lida do controle slider' );
 ok( 55 === ( $p['dist'] ?? 0 ), 'distância lida do controle slider' );
 ok( 1 === ( $p['tr']['once'] ?? 0 ), 'once ligado' );
-ok( in_array( 'dw-anim-pending', $fade->classes(), true ), 'classe de pré-esconde aplicada' );
+ok( in_array( 'wfan-pending', $fade->classes(), true ), 'classe de pré-esconde aplicada' );
 
 // Gatilho hover não esconde nada: o elemento tem de estar visível para receber
 // o mouse.
-$hover = render_with( new DW_Fake_Element( 'common', 'widget', [
-	DW_Anim_Keys::ours( 'preset' )  => 'fade-up',
-	DW_Anim_Keys::ours( 'trigger' ) => 'hover',
+$hover = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	WFAN_Keys::ours( 'preset' )  => 'fade-up',
+	WFAN_Keys::ours( 'trigger' ) => 'hover',
 ] ) );
 
-ok( ! in_array( 'dw-anim-pending', $hover->classes(), true ), 'hover não esconde o elemento' );
+ok( ! in_array( 'wfan-pending', $hover->classes(), true ), 'hover não esconde o elemento' );
 
 // Preset de scroll só aceita scroll-scrub: um gatilho inválido é corrigido.
-$scrub = render_with( new DW_Fake_Element( 'container', 'container', [
-	DW_Anim_Keys::ours( 'preset' )  => 'parallax-y',
-	DW_Anim_Keys::ours( 'trigger' ) => 'hover',
+$scrub = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'preset' )  => 'parallax-y',
+	WFAN_Keys::ours( 'trigger' ) => 'hover',
 ] ) );
 
 $sp = $scrub->payload();
 
 ok( 'gsap' === ( $sp['eng'] ?? '' ), 'parallax exige gsap' );
 ok( 'scroll-scrub' === ( $sp['tr']['t'] ?? '' ), 'gatilho inválido cai no aceito pelo preset' );
-ok( ! in_array( 'dw-anim-pending', $scrub->classes(), true ), 'preset de scroll não usa pré-esconde' );
+ok( ! in_array( 'wfan-pending', $scrub->classes(), true ), 'preset de scroll não usa pré-esconde' );
 
 // Elemento atômico do Elementor 4 fica de fora (regra 7).
-$atomic = render_with( new DW_Fake_Atomic( 'e-heading', 'widget', [
-	DW_Anim_Keys::ours( 'preset' ) => 'fade-up',
+$atomic = render_with( new WFAN_Fake_Atomic( 'e-heading', 'widget', [
+	WFAN_Keys::ours( 'preset' ) => 'fade-up',
 ] ) );
 
 ok( null === $atomic->payload(), 'elemento atômico é ignorado' );
 
 // Sem preset, nada é escrito.
-$plain = render_with( new DW_Fake_Element( 'common', 'widget', [] ) );
+$plain = render_with( new WFAN_Fake_Element( 'common', 'widget', [] ) );
 
 ok( null === $plain->payload(), 'elemento sem preset não recebe atributo' );
 
 // Biblioteca bloqueada nos ajustes: preset que depende dela não anima.
-DW_Test_Hooks::$options[ DW_Anim_Settings::OPTION ] = array_merge(
-	DW_Anim_Settings::defaults(),
+WFAN_Test_Hooks::$options[ WFAN_Settings::OPTION ] = array_merge(
+	WFAN_Settings::defaults(),
 	[ 'lib_gsap' => '0' ]
 );
 
-( new ReflectionProperty( 'DW_Anim_Settings', 'cache' ) )->setValue( null, null );
+( new ReflectionProperty( 'WFAN_Settings', 'cache' ) )->setValue( null, null );
 
-$blocked = render_with( new DW_Fake_Element( 'container', 'container', [
-	DW_Anim_Keys::ours( 'preset' ) => 'parallax-y',
+$blocked = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'preset' ) => 'parallax-y',
 ] ) );
 
 ok( null === $blocked->payload(), 'preset de gsap não sai com a lib bloqueada' );
 
-DW_Test_Hooks::$options = [];
-( new ReflectionProperty( 'DW_Anim_Settings', 'cache' ) )->setValue( null, null );
+WFAN_Test_Hooks::$options = [];
+( new ReflectionProperty( 'WFAN_Settings', 'cache' ) )->setValue( null, null );
 
 // ------------------------------------------------------------------- assets
 
 section( '5. Carregamento sob demanda' );
 
-$assets = new DW_Anim_Assets();
+$assets = new WFAN_Assets();
 $assets->register();
 
-DW_Test_Hooks::$enqueued = [];
+WFAN_Test_Hooks::$enqueued = [];
 $assets->enqueue_needed();
 
-ok( ! DW_Test_Hooks::$enqueued, 'página sem animação não enfileira nada' );
+ok( ! WFAN_Test_Hooks::$enqueued, 'página sem animação não enfileira nada' );
 
 $assets->require_engine( 'css' );
 $assets->enqueue_needed();
 
-ok( in_array( 'dw-anim-core', DW_Test_Hooks::$enqueued, true ), 'core entra quando há animação' );
-ok( in_array( 'dw-anim-engine-css', DW_Test_Hooks::$enqueued, true ), 'motor próprio entra' );
-ok( ! in_array( 'dw-anim-gsap', DW_Test_Hooks::$enqueued, true ), 'gsap NÃO entra em página só de css' );
-ok( ! in_array( 'dw-anim-anime', DW_Test_Hooks::$enqueued, true ), 'anime NÃO entra em página só de css' );
+ok( in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ), 'core entra quando há animação' );
+ok( in_array( 'wfan-engine-css', WFAN_Test_Hooks::$enqueued, true ), 'motor próprio entra' );
+ok( ! in_array( 'wfan-gsap', WFAN_Test_Hooks::$enqueued, true ), 'gsap NÃO entra em página só de css' );
+ok( ! in_array( 'wfan-anime', WFAN_Test_Hooks::$enqueued, true ), 'anime NÃO entra em página só de css' );
 
-$gsapAssets = new DW_Anim_Assets();
+$gsapAssets = new WFAN_Assets();
 $gsapAssets->register();
-DW_Test_Hooks::$enqueued = [];
+WFAN_Test_Hooks::$enqueued = [];
 $gsapAssets->require_engine( 'gsap' );
 $gsapAssets->enqueue_needed();
 
-ok( in_array( 'dw-anim-engine-gsap', DW_Test_Hooks::$enqueued, true ), 'motor gsap entra quando pedido' );
+ok( in_array( 'wfan-engine-gsap', WFAN_Test_Hooks::$enqueued, true ), 'motor gsap entra quando pedido' );
 ok(
-	in_array( 'dw-anim-gsap', DW_Test_Hooks::$scripts['dw-anim-engine-gsap']['deps'] ?? [], true )
-		|| in_array( 'dw-anim-scrolltrigger', DW_Test_Hooks::$scripts['dw-anim-engine-gsap']['deps'] ?? [], true ),
+	in_array( 'wfan-gsap', WFAN_Test_Hooks::$scripts['wfan-engine-gsap']['deps'] ?? [], true )
+		|| in_array( 'wfan-scrolltrigger', WFAN_Test_Hooks::$scripts['wfan-engine-gsap']['deps'] ?? [], true ),
 	'motor gsap depende da biblioteca'
 );
 
 // Lottie do Pro é reusado em vez de duplicado (regra 6).
 wp_register_script( 'lottie', 'https://exemplo.test/pro/lottie.min.js' );
 
-$lottieAssets = new DW_Anim_Assets();
+$lottieAssets = new WFAN_Assets();
 $lottieAssets->register();
-DW_Test_Hooks::$enqueued = [];
+WFAN_Test_Hooks::$enqueued = [];
 $lottieAssets->require_engine( 'lottie' );
 $lottieAssets->enqueue_needed();
 
-ok( in_array( 'lottie', DW_Test_Hooks::$enqueued, true ), 'usa o lottie do Elementor Pro' );
-ok( ! in_array( 'dw-anim-lottie-lib', DW_Test_Hooks::$enqueued, true ), 'não enfileira a nossa cópia do lottie' );
+ok( in_array( 'lottie', WFAN_Test_Hooks::$enqueued, true ), 'usa o lottie do Elementor Pro' );
+ok( ! in_array( 'wfan-lottie-lib', WFAN_Test_Hooks::$enqueued, true ), 'não enfileira a nossa cópia do lottie' );
 
 // -------------------------------------------------------------------- ajustes
 
 section( '6. Ajustes' );
 
-$settings = new DW_Anim_Settings();
+$settings = new WFAN_Settings();
 $clean    = $settings->sanitize( [ 'lenis_lerp' => '9', 'mobile_bp' => '99999' ] );
 
 ok( '0' === $clean['lib_gsap'], 'checkbox ausente grava "0", não false' );
 ok( 1.0 === (float) $clean['lenis_lerp'], 'lerp é limitado a 1' );
 ok( 1920 === (int) $clean['mobile_bp'], 'largura limite é limitada' );
-ok( DW_Anim_Settings::is_on( 'respect_reduced' ), 'reduced-motion vem ligado de fábrica' );
+ok( WFAN_Settings::is_on( 'respect_reduced' ), 'reduced-motion vem ligado de fábrica' );
 
 // --------------------------------------------- contrato PHP x core.js
 
 section( '7. Contrato entre o PHP e o core.js' );
 
-$core = file_get_contents( DWANIM_DIR . 'assets/js/frontend/core.js' );
+$core = file_get_contents( WFAN_DIR . 'assets/js/frontend/core.js' );
 
 preg_match_all( '/raw\.([a-zA-Z]+)/', $core, $matches );
 $js_keys = array_unique( $matches[1] );
 
 $php_keys = [];
 
-foreach ( DW_Anim_Presets::all() as $id => $preset ) {
-	$element = render_with( new DW_Fake_Element( 'common', 'widget', [
-		DW_Anim_Keys::ours( 'preset' )     => $id,
-		DW_Anim_Keys::ours( 'lottie_url' ) => 'https://exemplo.test/a.json',
-		DW_Anim_Keys::ours( 'stagger' )    => 'yes',
-		DW_Anim_Keys::ours( 'off_mobile' ) => 'yes',
+foreach ( WFAN_Presets::all() as $id => $preset ) {
+	$element = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+		WFAN_Keys::ours( 'preset' )     => $id,
+		WFAN_Keys::ours( 'lottie_url' ) => 'https://exemplo.test/a.json',
+		WFAN_Keys::ours( 'stagger' )    => 'yes',
+		WFAN_Keys::ours( 'off_mobile' ) => 'yes',
 	] ) );
 
 	$payload = $element->payload();

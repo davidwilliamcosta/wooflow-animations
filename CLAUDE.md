@@ -1,11 +1,13 @@
-# DW Animações para Elementor — índice para agentes
+# WooFlow Animations for Elementor — índice para agentes
 
 Plugin WordPress que dá ao Elementor um painel de animações por elemento (38
 presets, gatilhos, cascata, scroll travado) e as ações de copiar/colar animação
 que originaram o projeto.
 
-- **Versão:** `DWANIM_VER` em [dw-copiar-animacao-elementor.php](dw-copiar-animacao-elementor.php) — o cabeçalho `Version:` **precisa** bater com a constante
-- **Slug e text domain:** a pasta é `dw-copiar-animacao-elementor` e o domínio é `dw-copiar-animacao`. **Não renomear**: o plugin nasceu como utilitário de copiar/colar e o repositório já está publicado nesse nome. Só o `Plugin Name:` mudou
+- **Versão:** `WFAN_VER` em [wooflow-animations.php](wooflow-animations.php) — o cabeçalho `Version:` **precisa** bater com a constante
+- **Slug e text domain:** ambos `wooflow-animations`, como o resto da família (`wooflow-admin`, `wooflow-delivery`, `wooflow-pdv`)
+- **Prefixo:** `WFAN_` em classes e constantes, `wfan_` em funções, filtros, options e chaves de controle, `wfan-` em handles e classes CSS. **Nunca `WFA_`**: `WFA_Settings` e `WFA_Render` já existem no `wooflow-admin`, e os dois plugins ativos juntos dariam fatal error. O precedente da família para prefixo próprio é o `WFUPV_` do `wooflow-update-product-view`
+- **Renomeação:** até a 2.0.0 o plugin era *DW Copiar Animação Elementor*, na pasta `dw-copiar-animacao-elementor`, com prefixos `DW_Anim_`/`DWANIM_`/`dw-anim-` e chaves de controle `_dwanim_`. A 2.1.0 renomeou tudo. Se aparecer qualquer `dw`/`DW` no código, é sobra de migração — a 2.1.0 só deixou um resquício legítimo: a leitura da chave antiga do `localStorage` (`dwElementorCopiedAnimation`), em [assets/js/editor/copy-paste.js](assets/js/editor/copy-paste.js)
 - **Ambiente de teste:** Local by Flywheel, site `woo.local`, com Elementor 4.3.4, Elementor Pro 4.2.3 e o `plugin-check` já instalados. Instalado por symlink em `wp-content/plugins/`
 - **Idioma:** produto e documentação em pt-BR
 - **Distribuição:** GitHub. **Não** vai para o repositório oficial do WordPress, porque o GSAP é empacotado e a licença dele não é compatível com GPL
@@ -32,39 +34,39 @@ do Elementor 4.3.4.
    - **widget**: uma vez só, em `common` e `common-optimized`, no `section_effects/after_section_end`, com `TAB_CONTENT`. Cai na aba Conteúdo, abaixo dos controles do widget.
 
    Os dois stacks de widget são necessários **e** precisam do guard: com `e_optimized_markup` ligado — que é o caso neste site — o stack `common-optimized` dispara **também** os ganchos de `common` (`Controls_Stack::should_manually_trigger_common_action()`), e sem o `self::$done` os 27 controles seriam registrados em dobro. O guard é por **nome de stack**, nunca por `spl_object_id()`: o PHP recicla id de objeto liberado e um id reaproveitado faria a seção sumir inteira, sem erro.
-3. **Os nossos controles usam o prefixo `_dwanim_` em todo tipo de elemento.** Mapa único, de propósito, ao contrário das chaves nativas. Chave de dado nova **tem** de entrar em `DW_Anim_Keys::OURS`, senão copiar/colar e a biblioteca de animações a ignoram em silêncio — o smoke test reprova quem esquecer.
+3. **Os nossos controles usam o prefixo `_wfan_` em todo tipo de elemento.** Mapa único, de propósito, ao contrário das chaves nativas. Chave de dado nova **tem** de entrar em `WFAN_Keys::OURS`, senão copiar/colar e a biblioteca de animações a ignoram em silêncio — o smoke test reprova quem esquecer.
 4. **O atributo do front-end sai de `elementor/frontend/before_render` + `add_render_attribute( '_wrapper', … )`.** Funciona para widget, container, section e column. Nunca filtrar `the_content`.
-5. **Nenhuma biblioteca é enfileirada fora de [includes/class-assets.php](includes/class-assets.php).** O motor é decidido no servidor, por preset, e só o que a página usa entra no rodapé. Um `wp_enqueue_script( 'dw-anim-gsap' )` solto em qualquer outro arquivo põe 115 KB em toda página do site.
-6. **O Elementor Pro já registra o lottie-web sob o handle `lottie`.** `DW_Anim_Lottie::handle()` resolve isso na hora do enqueue (o Pro registra depois de nós). Registrar a nossa cópia por cima são ~164 KB duplicados.
-7. **Elemento atômico do Elementor 4 fica de fora.** Com o experimento `e_atomic_elements` ligado, esses elementos têm o módulo `interactions` nativo, e os dois sistemas brigam. O reconhecimento é por `method_exists( $element, 'get_props_schema' )`, em `DW_Anim_Controls::is_atomic()` e `DW_Anim_Render::is_atomic()`.
-8. **`prefers-reduced-motion` e o tempo de segurança de 3 s são obrigatórios.** Animação que não dispara **não pode** deixar conteúdo invisível. São três redes: o `<script>` inline do `<head>` (`DW_Anim_Assets::print_prehide()`), o `<noscript>`, e a checagem no `core.js` antes de qualquer biblioteca carregar. Não mexer numa sem entender as outras duas.
-9. **`assets/lib/` é terceiro.** Só `npm run vendor`, com as versões fixadas no campo `dwVendor` do [package.json](package.json).
+5. **Nenhuma biblioteca é enfileirada fora de [includes/class-assets.php](includes/class-assets.php).** O motor é decidido no servidor, por preset, e só o que a página usa entra no rodapé. Um `wp_enqueue_script( 'wfan-gsap' )` solto em qualquer outro arquivo põe 115 KB em toda página do site.
+6. **O Elementor Pro já registra o lottie-web sob o handle `lottie`.** `WFAN_Lottie::handle()` resolve isso na hora do enqueue (o Pro registra depois de nós). Registrar a nossa cópia por cima são ~164 KB duplicados.
+7. **Elemento atômico do Elementor 4 fica de fora.** Com o experimento `e_atomic_elements` ligado, esses elementos têm o módulo `interactions` nativo, e os dois sistemas brigam. O reconhecimento é por `method_exists( $element, 'get_props_schema' )`, em `WFAN_Controls::is_atomic()` e `WFAN_Render::is_atomic()`.
+8. **`prefers-reduced-motion` e o tempo de segurança de 3 s são obrigatórios.** Animação que não dispara **não pode** deixar conteúdo invisível. São três redes: o `<script>` inline do `<head>` (`WFAN_Assets::print_prehide()`), o `<noscript>`, e a checagem no `core.js` antes de qualquer biblioteca carregar. Não mexer numa sem entender as outras duas.
+9. **`assets/lib/` é terceiro.** Só `npm run vendor`, com as versões fixadas no campo `wfanVendor` do [package.json](package.json).
 10. **Colar em vários elementos é UMA chamada por tipo, dentro de um log de histórico.** `$e.run( 'document/elements/settings', { containers: […] } )` com o array, nunca um `$e.run` por elemento: N chamadas viram N entradas de histórico e o Ctrl+Z desfaz a colagem aos pedaços. Widget e bloco vão em grupos separados (regra 1) mas no mesmo `document/history/start-log`.
-11. **`update_option( $chave, false )` não persiste** quando a option não existe. Toggles gravam `'1'`/`'0'`, e a leitura passa por `DW_Anim_Settings::is_on()`, que aceita as duas formas.
+11. **`update_option( $chave, false )` não persiste** quando a option não existe. Toggles gravam `'1'`/`'0'`, e a leitura passa por `WFAN_Settings::is_on()`, que aceita as duas formas.
 12. **Checkbox desmarcado some do POST.** O `sanitize()` dos ajustes itera a lista de toggles e grava `'0'` para o que não veio — nunca confia em `! empty( $input['x'] )` sobre o array recebido.
-13. **Não confie no campo `tab` fora do editor.** `get_controls()`, `get_widget_types_config()` e `get_element_types_config()` chamados numa requisição de CLI devolvem `tab => 'content'` para **todas** as seções — inclusive as nativas que o Elementor declara como `TAB_ADVANCED`. Conferir a aba por aí dá falso negativo garantido. A única fonte confiável é a configuração que o editor recebe: autenticar, buscar `wp-admin/post.php?post=<id>&action=elementor` e ler o JSON (`"_dwanim_section":{…"tab":"layout"…}`). Foi assim que a mudança da regra 2 foi verificada.
-14. **Preset novo precisa de card com preview.** O card entra sozinho na grade, mas sem `@keyframes` e sem a regra `.dw-anim-card:hover .dw-pv-<id>` em [assets/css/editor.css](assets/css/editor.css) ele fica parado no hover — que é justamente o motivo de o painel existir. O smoke test confere a cobertura.
-15. **Chave nova no payload tem de ser lida no `core.js`.** O contrato `data-dw-anim` é conferido nos dois sentidos pelo smoke test: chave enviada e não lida é configuração que não faz nada; chave lida e não enviada é `undefined` no motor.
+13. **Não confie no campo `tab` fora do editor.** `get_controls()`, `get_widget_types_config()` e `get_element_types_config()` chamados numa requisição de CLI devolvem `tab => 'content'` para **todas** as seções — inclusive as nativas que o Elementor declara como `TAB_ADVANCED`. Conferir a aba por aí dá falso negativo garantido. A única fonte confiável é a configuração que o editor recebe: autenticar, buscar `wp-admin/post.php?post=<id>&action=elementor` e ler o JSON (`"_wfan_section":{…"tab":"layout"…}`). Foi assim que a mudança da regra 2 foi verificada.
+14. **Preset novo precisa de card com preview.** O card entra sozinho na grade, mas sem `@keyframes` e sem a regra `.wfan-card:hover .wfan-pv-<id>` em [assets/css/editor.css](assets/css/editor.css) ele fica parado no hover — que é justamente o motivo de o painel existir. O smoke test confere a cobertura.
+15. **Chave nova no payload tem de ser lida no `core.js`.** O contrato `data-wfan` é conferido nos dois sentidos pelo smoke test: chave enviada e não lida é configuração que não faz nada; chave lida e não enviada é `undefined` no motor.
 
 ---
 
 ## 3. Arquitetura
 
 ```
-dw-copiar-animacao-elementor.php   bootstrap: cabeçalho, constantes, requisitos, boot
+wooflow-animations.php   bootstrap: cabeçalho, constantes, requisitos, boot
 includes/
   class-plugin.php          singleton; carrega e liga os módulos
   class-requirements.php    PHP/WP/Elementor; admin notice, nunca fatal
   class-keys.php            REGRA 1 e 3: dono único dos nomes de chave
-  class-presets.php         catálogo (38), grupos, gatilhos, curvas; filtro dw_anim_presets
+  class-presets.php         catálogo (38), grupos, gatilhos, curvas; filtro wfan_presets
   class-controls.php        REGRA 2: injeta a seção na primeira aba dos 5 tipos
-  class-control-picker.php  controle `dw-anim-picker` (template da grade)
+  class-control-picker.php  controle `wfan-picker` (template da grade)
   class-editor.php          assets do editor + wp_localize_script
-  class-render.php          REGRA 4: escreve data-dw-anim; resolve motor e gatilho
+  class-render.php          REGRA 4: escreve data-wfan; resolve motor e gatilho
   class-assets.php          REGRA 5 e 8: registry, carregamento sob demanda, pré-esconde
   class-lenis.php           scroll suave global
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
-  class-settings.php        Elementor → DW Animações
+  class-settings.php        Elementor → WooFlow Animations
   class-library.php         "minhas animações" (option + ajax)
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js
 assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js
@@ -74,7 +76,7 @@ tests/                 smoke.php + stubs.php
 
 ### Quem decide o quê
 
-O **servidor** decide o motor (`DW_Anim_Render::resolve_engine()`), o gatilho
+O **servidor** decide o motor (`WFAN_Render::resolve_engine()`), o gatilho
 válido para o preset (`resolve_trigger()`) e se o elemento começa escondido
 (`hides_element()`). O **navegador** só obedece. Essa divisão é o que permite a
 regra 5: se o motor fosse escolhido no cliente, toda página precisaria carregar
@@ -91,7 +93,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 83 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 87 verificações, sem WordPress e sem banco
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/

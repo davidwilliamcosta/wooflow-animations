@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Baixa as bibliotecas de terceiros para assets/lib/, nas versões fixadas no
- * package.json (campo dwVendor).
+ * package.json (campo wfanVendor).
  *
  * Não precisa de npm install: usa só o fetch do Node (18+). assets/lib/ não vai
  * para o git — este script é o que reconstrói a pasta. Ver CLAUDE.md, regra 9.
@@ -18,7 +18,7 @@ const root = resolve( here, '..' );
 const libDir = join( root, 'assets', 'lib' );
 
 const pkg = JSON.parse( await readFile( join( root, 'package.json' ), 'utf8' ) );
-const vendor = pkg.dwVendor || {};
+const vendor = pkg.wfanVendor || {};
 
 let failures = 0;
 const manifest = [];

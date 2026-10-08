@@ -1,5 +1,5 @@
 /**
- * Painel DW Animações dentro do editor do Elementor.
+ * Painel WooFlow Animations dentro do editor do Elementor.
  *
  * A grade de cards é o ponto do plugin: cada card anima no hover, então a
  * escolha é feita no olho, não pela leitura de uma lista de nomes.
@@ -7,11 +7,11 @@
 
 /* ---------- Busca e grupos ---------- */
 
-.dw-anim-picker__search {
+.wfan-picker__search {
 	margin-bottom: 7px;
 }
 
-.dw-anim-picker__q {
+.wfan-picker__q {
 	width: 100%;
 	padding: 5px 7px;
 	font-size: 11px;
@@ -21,14 +21,14 @@
 	border-radius: 3px;
 }
 
-.dw-anim-picker__tabs {
+.wfan-picker__tabs {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
 	margin-bottom: 8px;
 }
 
-.dw-anim-tab {
+.wfan-tab {
 	padding: 3px 7px;
 	font-size: 10px;
 	color: var(--e-a-color-txt-muted, #9da5ae);
@@ -38,11 +38,11 @@
 	border-radius: 3px;
 }
 
-.dw-anim-tab:hover {
+.wfan-tab:hover {
 	color: #fff;
 }
 
-.dw-anim-tab.is-active {
+.wfan-tab.is-active {
 	color: #fff;
 	background: var(--e-a-btn-bg-primary, #515962);
 	border-color: transparent;
@@ -50,7 +50,7 @@
 
 /* ---------- Grade ---------- */
 
-.dw-anim-picker__grid {
+.wfan-picker__grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 6px;
@@ -59,7 +59,7 @@
 	overflow-y: auto;
 }
 
-.dw-anim-card {
+.wfan-card {
 	position: relative;
 	display: block;
 	padding: 4px 3px 5px;
@@ -72,21 +72,21 @@
 	transition: border-color 0.15s, transform 0.15s;
 }
 
-.dw-anim-card:hover {
+.wfan-card:hover {
 	border-color: #71d7f7;
 	transform: translateY(-1px);
 }
 
-.dw-anim-card.is-selected {
+.wfan-card.is-selected {
 	border-color: #71d7f7;
 	box-shadow: inset 0 0 0 1px #71d7f7;
 }
 
-.dw-anim-card.is-hidden {
+.wfan-card.is-hidden {
 	display: none;
 }
 
-.dw-anim-card__stage {
+.wfan-card__stage {
 	position: relative;
 	display: block;
 	height: 30px;
@@ -96,7 +96,7 @@
 	border-radius: 2px;
 }
 
-.dw-anim-card__box {
+.wfan-card__box {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -107,7 +107,7 @@
 	border-radius: 3px;
 }
 
-.dw-anim-card--none .dw-anim-card__box {
+.wfan-card--none .wfan-card__box {
 	width: 12px;
 	height: 2px;
 	margin: -1px 0 0 -6px;
@@ -115,14 +115,14 @@
 	border-radius: 1px;
 }
 
-.dw-anim-card__label {
+.wfan-card__label {
 	display: block;
 	font-size: 9px;
 	line-height: 1.25;
 	word-break: break-word;
 }
 
-.dw-anim-card__engine {
+.wfan-card__engine {
 	position: absolute;
 	top: 3px;
 	right: 4px;
@@ -134,164 +134,164 @@
 
 /* ---------- Preview no hover ---------- */
 
-.dw-anim-card:hover .dw-anim-card__box {
+.wfan-card:hover .wfan-card__box {
 	animation-duration: 0.7s;
 	animation-iteration-count: infinite;
 	animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-@keyframes dw-pv-up {
+@keyframes wfan-pv-up {
 	0% { opacity: 0; transform: translateY(10px); }
 	60%, 100% { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes dw-pv-down {
+@keyframes wfan-pv-down {
 	0% { opacity: 0; transform: translateY(-10px); }
 	60%, 100% { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes dw-pv-left {
+@keyframes wfan-pv-left {
 	0% { opacity: 0; transform: translateX(-12px); }
 	60%, 100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes dw-pv-right {
+@keyframes wfan-pv-right {
 	0% { opacity: 0; transform: translateX(12px); }
 	60%, 100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes dw-pv-fade {
+@keyframes wfan-pv-fade {
 	0% { opacity: 0; }
 	60%, 100% { opacity: 1; }
 }
 
-@keyframes dw-pv-zoom-in {
+@keyframes wfan-pv-zoom-in {
 	0% { opacity: 0; transform: scale(0.4); }
 	60%, 100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes dw-pv-zoom-out {
+@keyframes wfan-pv-zoom-out {
 	0% { opacity: 0; transform: scale(1.8); }
 	60%, 100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes dw-pv-blur {
+@keyframes wfan-pv-blur {
 	0% { opacity: 0; filter: blur(4px); }
 	60%, 100% { opacity: 1; filter: blur(0); }
 }
 
-@keyframes dw-pv-rot {
+@keyframes wfan-pv-rot {
 	0% { opacity: 0; transform: rotate(-70deg); }
 	60%, 100% { opacity: 1; transform: rotate(0); }
 }
 
-@keyframes dw-pv-flip-x {
+@keyframes wfan-pv-flip-x {
 	0% { opacity: 0; transform: perspective(60px) rotateY(80deg); }
 	60%, 100% { opacity: 1; transform: perspective(60px) rotateY(0); }
 }
 
-@keyframes dw-pv-flip-y {
+@keyframes wfan-pv-flip-y {
 	0% { opacity: 0; transform: perspective(60px) rotateX(80deg); }
 	60%, 100% { opacity: 1; transform: perspective(60px) rotateX(0); }
 }
 
-@keyframes dw-pv-mask-up {
+@keyframes wfan-pv-mask-up {
 	0% { clip-path: inset(100% 0 0 0); }
 	60%, 100% { clip-path: inset(0 0 0 0); }
 }
 
-@keyframes dw-pv-mask-left {
+@keyframes wfan-pv-mask-left {
 	0% { clip-path: inset(0 100% 0 0); }
 	60%, 100% { clip-path: inset(0 0 0 0); }
 }
 
-@keyframes dw-pv-pulse {
+@keyframes wfan-pv-pulse {
 	0%, 100% { transform: scale(1); }
 	50% { transform: scale(1.35); }
 }
 
-@keyframes dw-pv-shake {
+@keyframes wfan-pv-shake {
 	0%, 100% { transform: translateX(0); }
 	25% { transform: translateX(-5px); }
 	75% { transform: translateX(5px); }
 }
 
-@keyframes dw-pv-draw {
+@keyframes wfan-pv-draw {
 	0% { width: 2px; margin-left: -7px; }
 	60%, 100% { width: 14px; margin-left: -7px; }
 }
 
-@keyframes dw-pv-travel {
+@keyframes wfan-pv-travel {
 	0% { transform: translateY(8px); }
 	50% { transform: translateY(-8px); }
 	100% { transform: translateY(8px); }
 }
 
-.dw-anim-card:hover .dw-pv-fade-up,
-.dw-anim-card:hover .dw-pv-slide-up,
-.dw-anim-card:hover .dw-pv-text-lines,
-.dw-anim-card:hover .dw-pv-text-words,
-.dw-anim-card:hover .dw-pv-text-chars,
-.dw-anim-card:hover .dw-pv-text-mask { animation-name: dw-pv-up; }
+.wfan-card:hover .wfan-pv-fade-up,
+.wfan-card:hover .wfan-pv-slide-up,
+.wfan-card:hover .wfan-pv-text-lines,
+.wfan-card:hover .wfan-pv-text-words,
+.wfan-card:hover .wfan-pv-text-chars,
+.wfan-card:hover .wfan-pv-text-mask { animation-name: wfan-pv-up; }
 
-.dw-anim-card:hover .dw-pv-fade-down,
-.dw-anim-card:hover .dw-pv-slide-down { animation-name: dw-pv-down; }
+.wfan-card:hover .wfan-pv-fade-down,
+.wfan-card:hover .wfan-pv-slide-down { animation-name: wfan-pv-down; }
 
-.dw-anim-card:hover .dw-pv-fade-left,
-.dw-anim-card:hover .dw-pv-slide-left { animation-name: dw-pv-left; }
+.wfan-card:hover .wfan-pv-fade-left,
+.wfan-card:hover .wfan-pv-slide-left { animation-name: wfan-pv-left; }
 
-.dw-anim-card:hover .dw-pv-fade-right,
-.dw-anim-card:hover .dw-pv-slide-right { animation-name: dw-pv-right; }
+.wfan-card:hover .wfan-pv-fade-right,
+.wfan-card:hover .wfan-pv-slide-right { animation-name: wfan-pv-right; }
 
-.dw-anim-card:hover .dw-pv-fade,
-.dw-anim-card:hover .dw-pv-scrub-fade,
-.dw-anim-card:hover .dw-pv-lottie-play { animation-name: dw-pv-fade; }
+.wfan-card:hover .wfan-pv-fade,
+.wfan-card:hover .wfan-pv-scrub-fade,
+.wfan-card:hover .wfan-pv-lottie-play { animation-name: wfan-pv-fade; }
 
-.dw-anim-card:hover .dw-pv-zoom-in,
-.dw-anim-card:hover .dw-pv-scrub-scale { animation-name: dw-pv-zoom-in; }
+.wfan-card:hover .wfan-pv-zoom-in,
+.wfan-card:hover .wfan-pv-scrub-scale { animation-name: wfan-pv-zoom-in; }
 
-.dw-anim-card:hover .dw-pv-zoom-out { animation-name: dw-pv-zoom-out; }
+.wfan-card:hover .wfan-pv-zoom-out { animation-name: wfan-pv-zoom-out; }
 
-.dw-anim-card:hover .dw-pv-blur-in { animation-name: dw-pv-blur; }
+.wfan-card:hover .wfan-pv-blur-in { animation-name: wfan-pv-blur; }
 
-.dw-anim-card:hover .dw-pv-rotate-in,
-.dw-anim-card:hover .dw-pv-scrub-rotate,
-.dw-anim-card:hover .dw-pv-wobble { animation-name: dw-pv-rot; }
+.wfan-card:hover .wfan-pv-rotate-in,
+.wfan-card:hover .wfan-pv-scrub-rotate,
+.wfan-card:hover .wfan-pv-wobble { animation-name: wfan-pv-rot; }
 
-.dw-anim-card:hover .dw-pv-flip-x { animation-name: dw-pv-flip-x; }
+.wfan-card:hover .wfan-pv-flip-x { animation-name: wfan-pv-flip-x; }
 
-.dw-anim-card:hover .dw-pv-flip-y { animation-name: dw-pv-flip-y; }
+.wfan-card:hover .wfan-pv-flip-y { animation-name: wfan-pv-flip-y; }
 
-.dw-anim-card:hover .dw-pv-mask-up,
-.dw-anim-card:hover .dw-pv-scrub-reveal { animation-name: dw-pv-mask-up; }
+.wfan-card:hover .wfan-pv-mask-up,
+.wfan-card:hover .wfan-pv-scrub-reveal { animation-name: wfan-pv-mask-up; }
 
-.dw-anim-card:hover .dw-pv-mask-left,
-.dw-anim-card:hover .dw-pv-progress-bar { animation-name: dw-pv-mask-left; }
+.wfan-card:hover .wfan-pv-mask-left,
+.wfan-card:hover .wfan-pv-progress-bar { animation-name: wfan-pv-mask-left; }
 
-.dw-anim-card:hover .dw-pv-pulse,
-.dw-anim-card:hover .dw-pv-glow,
-.dw-anim-card:hover .dw-pv-counter { animation-name: dw-pv-pulse; }
+.wfan-card:hover .wfan-pv-pulse,
+.wfan-card:hover .wfan-pv-glow,
+.wfan-card:hover .wfan-pv-counter { animation-name: wfan-pv-pulse; }
 
-.dw-anim-card:hover .dw-pv-shake { animation-name: dw-pv-shake; }
+.wfan-card:hover .wfan-pv-shake { animation-name: wfan-pv-shake; }
 
-.dw-anim-card:hover .dw-pv-svg-draw { animation-name: dw-pv-draw; }
+.wfan-card:hover .wfan-pv-svg-draw { animation-name: wfan-pv-draw; }
 
-.dw-anim-card:hover .dw-pv-float,
-.dw-anim-card:hover .dw-pv-parallax-y,
-.dw-anim-card:hover .dw-pv-parallax-x,
-.dw-anim-card:hover .dw-pv-pin,
-.dw-anim-card:hover .dw-pv-lottie-scrub { animation-name: dw-pv-travel; }
+.wfan-card:hover .wfan-pv-float,
+.wfan-card:hover .wfan-pv-parallax-y,
+.wfan-card:hover .wfan-pv-parallax-x,
+.wfan-card:hover .wfan-pv-pin,
+.wfan-card:hover .wfan-pv-lottie-scrub { animation-name: wfan-pv-travel; }
 
 /* ---------- Ações ---------- */
 
-.dw-anim-actions {
+.wfan-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
 	margin: 8px 0 2px;
 }
 
-.dw-anim-btn {
+.wfan-btn {
 	flex: 1 1 auto;
 	padding: 5px 6px;
 	font-size: 10px;
@@ -302,12 +302,12 @@
 	border-radius: 3px;
 }
 
-.dw-anim-btn:hover {
+.wfan-btn:hover {
 	color: #fff;
 	border-color: #71d7f7;
 }
 
-.dw-anim-play {
+.wfan-play {
 	flex-basis: 100%;
 	color: #0c0d0e;
 	background: #71d7f7;
@@ -315,20 +315,20 @@
 	font-weight: 600;
 }
 
-.dw-anim-play:hover {
+.wfan-play:hover {
 	color: #0c0d0e;
 	background: #93e3fa;
 }
 
 /* ---------- Minhas animações ---------- */
 
-.dw-anim-saved {
+.wfan-saved {
 	margin-top: 10px;
 	padding-top: 8px;
 	border-top: 1px solid var(--e-a-border-color, #3f444b);
 }
 
-.dw-anim-saved__title {
+.wfan-saved__title {
 	margin-bottom: 5px;
 	font-size: 10px;
 	text-transform: uppercase;
@@ -336,13 +336,13 @@
 	opacity: 0.6;
 }
 
-.dw-anim-saved__row {
+.wfan-saved__row {
 	display: flex;
 	gap: 4px;
 	margin-bottom: 4px;
 }
 
-.dw-anim-saved__apply {
+.wfan-saved__apply {
 	flex: 1;
 	padding: 4px 6px;
 	font-size: 10px;
@@ -354,11 +354,11 @@
 	border-radius: 3px;
 }
 
-.dw-anim-saved__apply:hover {
+.wfan-saved__apply:hover {
 	border-color: #71d7f7;
 }
 
-.dw-anim-saved__delete {
+.wfan-saved__delete {
 	width: 22px;
 	font-size: 13px;
 	line-height: 1;
@@ -369,11 +369,11 @@
 	border-radius: 3px;
 }
 
-.dw-anim-saved__delete:hover {
+.wfan-saved__delete:hover {
 	color: #fff;
 	border-color: #e25c5c;
 }
 
-.dw-anim-warning {
+.wfan-warning {
 	color: #f0c36d;
 }

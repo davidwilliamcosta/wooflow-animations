@@ -1,7 +1,13 @@
-# DW Animações para Elementor
+# WooFlow Animations for Elementor
 
 Painel de animações pronto para aplicar em qualquer elemento do Elementor — e as
 ações **Copiar animação** / **Colar animação** que deram origem ao plugin.
+
+> Parte da família **WooFlow**. Até a versão 2.0.0 este plugin se chamava
+> *DW Copiar Animação Elementor* e ficava na pasta `dw-copiar-animacao-elementor`;
+> a 2.1.0 renomeou tudo. Quem vem da 1.x precisa **desativar e apagar** a versão
+> antiga antes de instalar esta — são pastas diferentes, e o WordPress trata as
+> duas como plugins distintos.
 
 O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
@@ -37,12 +43,12 @@ normalmente).
 
 ## Como se usa
 
-Selecione qualquer elemento e a seção **DW Animações** está logo na primeira
+Selecione qualquer elemento e a seção **WooFlow Animations** está logo na primeira
 aba: **Layout** em container, seção e coluna (no topo, antes de tudo) e
 **Conteúdo** nos widgets, abaixo dos controles próprios deles.
 
 ```
-┌─ DW Animações ──────────────┐
+┌─ WooFlow Animations ──────────────┐
 │ [Buscar animação…        ]  │
 │ Todas Entrada Texto Scroll  │
 │ Ênfase SVG Lottie           │
@@ -101,7 +107,7 @@ leitores de tela.
 Para adicionar os seus:
 
 ```php
-add_filter( 'dw_anim_presets', function ( $presets ) {
+add_filter( 'wfan_presets', function ( $presets ) {
 	$presets['meu-efeito'] = [
 		'label'  => 'Meu efeito',
 		'group'  => 'entrada',
@@ -114,7 +120,7 @@ add_filter( 'dw_anim_presets', function ( $presets ) {
 ```
 
 O card do novo preset entra na grade sozinho. Para dar a ele um preview no hover,
-declare `@keyframes` e aponte `.dw-anim-card:hover .dw-pv-meu-efeito` no seu CSS
+declare `@keyframes` e aponte `.wfan-card:hover .wfan-pv-meu-efeito` no seu CSS
 do editor.
 
 ---
@@ -151,7 +157,7 @@ sites quebram: o JS falha e o conteúdo nunca aparece. Três redes de proteção
 
 ## Scroll suave (Lenis)
 
-Ligado em **Elementor → DW Animações**, com suavidade, duração e entradas
+Ligado em **Elementor → WooFlow Animations**, com suavidade, duração e entradas
 (roda do mouse, toque) configuráveis. O que normalmente quebra já está tratado:
 ponte com o ScrollTrigger pelo ticker do GSAP (dois loops de `requestAnimationFrame`
 produzem tremor), âncoras internas, offset da barra de administração, desligado
@@ -161,13 +167,13 @@ dentro do editor e sob `prefers-reduced-motion`.
 
 ## Ajustes
 
-**Elementor → DW Animações**
+**Elementor → WooFlow Animations**
 
 - **Bibliotecas** — permitir ou bloquear GSAP, Anime.js e Lottie.
 - **Scroll suave** — Lenis e seus parâmetros.
 - **Acessibilidade** — respeitar "reduzir movimento" (ligado de fábrica).
 - **Celular** — desligar todas as animações abaixo de uma largura.
-- **Animação nativa** — desligar a entrada do Elementor onde houver animação DW,
+- **Animação nativa** — desligar a entrada do Elementor onde houver animação WooFlow,
   evitando as duas rodando no mesmo elemento.
 - **Diagnóstico** — registrar no console cada animação registrada e disparada.
 
@@ -179,16 +185,16 @@ dentro do editor e sob `prefers-reduced-motion`.
 
 | Filtro | Para quê |
 |---|---|
-| `dw_anim_presets` | adicionar, remover ou ajustar presets |
-| `dw_anim_payload` | último ajuste no contrato enviado ao navegador |
-| `dw_anim_lenis_active` | desligar o scroll suave em contextos específicos |
-| `dw_anim_lottie_handle` | apontar para outra cópia do lottie-web |
-| `dw_anim_controls_tab` | mover a seção para outra aba do painel |
+| `wfan_presets` | adicionar, remover ou ajustar presets |
+| `wfan_payload` | último ajuste no contrato enviado ao navegador |
+| `wfan_lenis_active` | desligar o scroll suave em contextos específicos |
+| `wfan_lottie_handle` | apontar para outra cópia do lottie-web |
+| `wfan_controls_tab` | mover a seção para outra aba do painel |
 
 Para devolver a seção à aba Avançado:
 
 ```php
-add_filter( 'dw_anim_controls_tab', function () {
+add_filter( 'wfan_controls_tab', function () {
 	return \Elementor\Controls_Manager::TAB_ADVANCED;
 } );
 ```
@@ -198,8 +204,8 @@ add_filter( 'dw_anim_controls_tab', function () {
 Cada elemento animado sai com um JSON no wrapper:
 
 ```html
-<div class="elementor-element dw-anim dw-anim-pending"
-     data-dw-anim='{"v":1,"p":"fade-up","eng":"css",
+<div class="elementor-element wfan wfan-pending"
+     data-wfan='{"v":1,"p":"fade-up","eng":"css",
                     "tr":{"t":"scroll-in","vp":20,"once":1},
                     "d":800,"dl":0,"e":"power2.out","dist":40}'>
 ```
@@ -208,7 +214,7 @@ O `core.js` lê o atributo, resolve o gatilho e entrega a um motor. Motor novo s
 registra assim:
 
 ```js
-window.dwAnim.register( 'meu-motor', {
+window.wfan.register( 'meu-motor', {
 	play: function ( el, spec, targets ) { /* … */ },
 	bind: function ( el, spec, targets ) { /* opcional: gatilho travado no scroll */ },
 	reset: function ( el, spec, targets ) { /* opcional: usado pelo ▶ Testar */ }
@@ -224,7 +230,7 @@ php tests/smoke.php
 83 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, e o
-contrato `data-dw-anim` conferido chave por chave entre o PHP e o `core.js`.
+contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`.
 
 ---
 
@@ -245,9 +251,19 @@ WordPress.
 
 ## Changelog
 
+### 2.1.0
+
+- Renomeado para **WooFlow Animations for Elementor**, na família WooFlow: pasta e
+  text domain `wooflow-animations`, prefixos `WFAN_`/`wfan_`/`wfan-`.
+- Os filtros mudaram de nome (`dw_anim_*` → `wfan_*`), assim como o atributo do
+  front-end (`data-dw-anim` → `data-wfan`) e as classes CSS (`dw-anim-*` →
+  `wfan-*`). Quem estendia a 2.0.0 precisa ajustar — ela nunca foi publicada.
+- Quem vem da 1.x: desinstale a versão antiga antes de instalar esta. A animação
+  copiada no navegador pela 1.x continua colável.
+
 ### 2.0.0
 
-- Painel **DW Animações** na primeira aba de cada elemento, com 38 presets em grade visual, preview no hover, busca
+- Painel **WooFlow Animations** na primeira aba de cada elemento, com 38 presets em grade visual, preview no hover, busca
   e grupos, em widget, container, seção e coluna.
 - Gatilhos: entrar na tela, carregar, sair da tela, travado no scroll, hover e
   clique. Cascata em filhos, linhas, palavras ou letras.
@@ -256,7 +272,7 @@ WordPress.
 - Scroll suave global com Lenis, com ponte para o ScrollTrigger.
 - Página de ajustes, biblioteca de animações salvas e `prefers-reduced-motion`
   respeitado de fábrica.
-- Copiar/colar reescrito: carrega também os ajustes DW, payload versionado,
+- Copiar/colar reescrito: carrega também os ajustes WooFlow, payload versionado,
   colagem em vários elementos em **uma** entrada de histórico, atalhos pelo
   `$e.shortcuts`.
 - Plugin reorganizado de um arquivo único em 12 classes e 9 arquivos de asset;

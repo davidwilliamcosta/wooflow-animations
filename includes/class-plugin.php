@@ -2,37 +2,37 @@
 /**
  * Singleton que liga os módulos do plugin.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Plugin {
+class WFAN_Plugin {
 
 	/**
-	 * @var DW_Anim_Plugin|null
+	 * @var WFAN_Plugin|null
 	 */
 	private static $instance = null;
 
 	/**
-	 * @var DW_Anim_Assets
+	 * @var WFAN_Assets
 	 */
 	public $assets;
 
 	/**
-	 * @var DW_Anim_Settings
+	 * @var WFAN_Settings
 	 */
 	public $settings;
 
 	/**
-	 * @var DW_Anim_Library
+	 * @var WFAN_Library
 	 */
 	public $library;
 
 	/**
-	 * @return DW_Anim_Plugin
+	 * @return WFAN_Plugin
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -66,7 +66,7 @@ class DW_Anim_Plugin {
 		];
 
 		foreach ( $files as $file ) {
-			require_once DWANIM_DIR . 'includes/' . $file . '.php';
+			require_once WFAN_DIR . 'includes/' . $file . '.php';
 		}
 	}
 
@@ -74,15 +74,15 @@ class DW_Anim_Plugin {
 	 * @return void
 	 */
 	private function wire() {
-		$this->settings = new DW_Anim_Settings();
-		$this->library  = new DW_Anim_Library();
-		$this->assets   = new DW_Anim_Assets();
+		$this->settings = new WFAN_Settings();
+		$this->library  = new WFAN_Library();
+		$this->assets   = new WFAN_Assets();
 
-		new DW_Anim_Controls();
-		new DW_Anim_Editor();
-		new DW_Anim_Render();
-		new DW_Anim_Lenis();
-		new DW_Anim_Lottie();
+		new WFAN_Controls();
+		new WFAN_Editor();
+		new WFAN_Render();
+		new WFAN_Lenis();
+		new WFAN_Lottie();
 
 		add_action( 'elementor/controls/register', [ $this, 'register_controls' ] );
 	}
@@ -94,13 +94,13 @@ class DW_Anim_Plugin {
 	 * @return void
 	 */
 	public function register_controls( $manager ) {
-		$manager->register( new DW_Anim_Control_Picker() );
+		$manager->register( new WFAN_Control_Picker() );
 	}
 
 	/**
 	 * Atalho para o registry de assets.
 	 *
-	 * @return DW_Anim_Assets
+	 * @return WFAN_Assets
 	 */
 	public static function assets() {
 		return self::instance()->assets;
@@ -109,7 +109,7 @@ class DW_Anim_Plugin {
 	/**
 	 * Atalho para os ajustes.
 	 *
-	 * @return DW_Anim_Settings
+	 * @return WFAN_Settings
 	 */
 	public static function settings() {
 		return self::instance()->settings;
@@ -118,7 +118,7 @@ class DW_Anim_Plugin {
 	/**
 	 * Atalho para a biblioteca de presets salvos.
 	 *
-	 * @return DW_Anim_Library
+	 * @return WFAN_Library
 	 */
 	public static function library() {
 		return self::instance()->library;

@@ -1,12 +1,12 @@
 {
-  "name": "dw-copiar-animacao-elementor",
-  "version": "2.0.0",
+  "name": "wooflow-animations",
+  "version": "2.1.0",
   "private": true,
   "description": "Painel de animações para o Elementor. Este package.json existe só para fixar as versões das bibliotecas de terceiros; o plugin não precisa de build.",
   "scripts": {
     "vendor": "node scripts/vendor-libs.mjs"
   },
-  "dwVendor": {
+  "wfanVendor": {
     "gsap": {
       "version": "3.15.0",
       "license": "GSAP Standard License (gratuita, não GPL)",

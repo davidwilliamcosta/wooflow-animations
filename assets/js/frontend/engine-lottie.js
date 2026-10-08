@@ -7,15 +7,15 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.dwAnim || ! window.lottie ) {
+	if ( ! window.wfan || ! window.lottie ) {
 		return;
 	}
 
 	var lottie = window.lottie;
-	var util = window.dwAnim.util;
+	var util = window.wfan.util;
 
 	function container( el ) {
-		var found = el.querySelector( '.dw-anim-lottie' );
+		var found = el.querySelector( '.wfan-lottie' );
 
 		if ( found ) {
 			return found;
@@ -23,15 +23,15 @@
 
 		var box = document.createElement( 'div' );
 
-		box.className = 'dw-anim-lottie';
+		box.className = 'wfan-lottie';
 		el.appendChild( box );
 
 		return box;
 	}
 
 	function load( el, spec, autoplay ) {
-		if ( el.__dwLottie ) {
-			return el.__dwLottie;
+		if ( el.__wfanLottie ) {
+			return el.__wfanLottie;
 		}
 
 		if ( ! spec.lottie || ! spec.lottie.url ) {
@@ -48,7 +48,7 @@
 		} );
 
 		player.setSpeed( spec.lottie.speed || 1 );
-		el.__dwLottie = player;
+		el.__wfanLottie = player;
 
 		return player;
 	}
@@ -80,7 +80,7 @@
 		return Math.max( 0, Math.min( 1, ( start - rect.top ) / span ) );
 	}
 
-	window.dwAnim.register( 'lottie', {
+	window.wfan.register( 'lottie', {
 
 		play: function ( el, spec ) {
 			var player = load( el, spec, false );
@@ -127,12 +127,12 @@
 			player.addEventListener( 'DOMLoaded', update );
 			window.addEventListener( 'scroll', onScroll, { passive: true } );
 			window.addEventListener( 'resize', onScroll );
-			el.__dwLottieScroll = onScroll;
+			el.__wfanLottieScroll = onScroll;
 		},
 
 		reset: function ( el ) {
-			if ( el.__dwLottie ) {
-				el.__dwLottie.goToAndStop( 0, true );
+			if ( el.__wfanLottie ) {
+				el.__wfanLottie.goToAndStop( 0, true );
 			}
 		}
 	} );

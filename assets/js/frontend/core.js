@@ -1,19 +1,19 @@
 /**
- * Orquestrador das animações DW.
+ * Orquestrador das animações do WooFlow Animations.
  *
  * Único script sempre presente numa página com animação (~6 KB). Ele lê o
- * contrato data-dw-anim, resolve o gatilho e entrega ao motor. Os motores se
+ * contrato data-wfan, resolve o gatilho e entrega ao motor. Os motores se
  * registram aqui; nenhum deles conhece scroll, hover ou clique.
  */
 ( function () {
 	'use strict';
 
-	var cfg = window.dwAnimConfig || {};
-	var PENDING = 'dw-anim-pending';
+	var cfg = window.wfanConfig || {};
+	var PENDING = 'wfan-pending';
 
 	// Avisa o bootstrap do <head> que o JS chegou: sem isso, ele revela tudo
 	// depois do tempo de segurança.
-	window.dwAnimLoaded = true;
+	window.wfanLoaded = true;
 
 	var api = {
 		engines: {},
@@ -25,7 +25,7 @@
 
 	function log() {
 		if ( cfg.debug && window.console ) {
-			window.console.log.apply( window.console, [ '[DW Animações]' ].concat( [].slice.call( arguments ) ) );
+			window.console.log.apply( window.console, [ '[WooFlow Animations]' ].concat( [].slice.call( arguments ) ) );
 		}
 	}
 
@@ -104,8 +104,8 @@
 	 * (links, negrito) porque só os nós de texto são tocados.
 	 */
 	function splitText( el, mode ) {
-		if ( el.__dwSplit ) {
-			return el.__dwSplit;
+		if ( el.__wfanSplit ) {
+			return el.__wfanSplit;
 		}
 
 		var original = el.textContent;
@@ -140,7 +140,7 @@
 
 				var span = document.createElement( 'span' );
 
-				span.className = 'dw-anim-part';
+				span.className = 'wfan-part';
 				span.textContent = part;
 				fragment.appendChild( span );
 				pieces.push( span );
@@ -163,7 +163,7 @@
 			pieces = groupLines( pieces );
 		}
 
-		el.__dwSplit = pieces;
+		el.__wfanSplit = pieces;
 
 		return pieces;
 	}
@@ -181,7 +181,7 @@
 
 			if ( null === lastTop || Math.abs( top - lastTop ) > 2 ) {
 				current = document.createElement( 'span' );
-				current.className = 'dw-anim-line';
+				current.className = 'wfan-line';
 				word.parentNode.insertBefore( current, word );
 				lines.push( current );
 				lastTop = top;
@@ -372,11 +372,11 @@
 	}
 
 	function setup( el ) {
-		if ( el.__dwAnim ) {
+		if ( el.__wfan ) {
 			return;
 		}
 
-		var raw = el.getAttribute( 'data-dw-anim' );
+		var raw = el.getAttribute( 'data-wfan' );
 
 		if ( ! raw ) {
 			return;
@@ -413,7 +413,7 @@
 		};
 
 		entry.targets = targetsFor( el, spec );
-		el.__dwAnim = entry;
+		el.__wfan = entry;
 		api.specs.push( entry );
 
 		bindTrigger( entry );
@@ -421,7 +421,7 @@
 
 	function scan( root ) {
 		var scope = root && root.querySelectorAll ? root : document;
-		var nodes = scope.querySelectorAll( '.dw-anim[data-dw-anim]' );
+		var nodes = scope.querySelectorAll( '.wfan[data-wfan]' );
 
 		[].forEach.call( nodes, setup );
 
@@ -432,18 +432,18 @@
 	 * Usado pelo botão "▶ Testar" do painel: o editor chama esta função dentro
 	 * do iframe de preview.
 	 */
-	window.dwAnimPlay = function ( id ) {
+	window.wfanPlay = function ( id ) {
 		var el = document.querySelector( '.elementor-element[data-id="' + id + '"]' );
 
 		if ( ! el ) {
 			return;
 		}
 
-		if ( ! el.__dwAnim ) {
+		if ( ! el.__wfan ) {
 			setup( el );
 		}
 
-		var entry = el.__dwAnim;
+		var entry = el.__wfan;
 
 		if ( ! entry ) {
 			return;
@@ -455,7 +455,7 @@
 		} );
 	};
 
-	window.dwAnim = api;
+	window.wfan = api;
 	api.util = {
 		cssEase: cssEase,
 		order: order,

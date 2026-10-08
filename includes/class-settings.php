@@ -1,18 +1,18 @@
 <?php
 /**
- * Ajustes globais, em Elementor → DW Animações.
+ * Ajustes globais, em Elementor → WooFlow Animations.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Settings {
+class WFAN_Settings {
 
-	const OPTION = 'dwanim_settings';
-	const SLUG   = 'dw-anim-settings';
+	const OPTION = 'wfan_settings';
+	const SLUG   = 'wfan-settings';
 
 	/**
 	 * Cache da option.
@@ -24,7 +24,7 @@ class DW_Anim_Settings {
 	public function __construct() {
 		add_action( 'admin_menu', [ $this, 'menu' ] );
 		add_action( 'admin_init', [ $this, 'register' ] );
-		add_filter( 'plugin_action_links_' . DWANIM_BASENAME, [ $this, 'action_link' ] );
+		add_filter( 'plugin_action_links_' . WFAN_BASENAME, [ $this, 'action_link' ] );
 	}
 
 	/**
@@ -111,8 +111,8 @@ class DW_Anim_Settings {
 	public function menu() {
 		add_submenu_page(
 			'elementor',
-			__( 'DW Animações', 'dw-copiar-animacao' ),
-			__( 'DW Animações', 'dw-copiar-animacao' ),
+			__( 'WooFlow Animations', 'wooflow-animations' ),
+			__( 'WooFlow Animations', 'wooflow-animations' ),
 			'manage_options',
 			self::SLUG,
 			[ $this, 'render' ]
@@ -128,7 +128,7 @@ class DW_Anim_Settings {
 
 		array_unshift(
 			$links,
-			sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Ajustes', 'dw-copiar-animacao' ) )
+			sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Ajustes', 'wooflow-animations' ) )
 		);
 
 		return $links;
@@ -182,89 +182,89 @@ class DW_Anim_Settings {
 		$s = self::all();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'DW Animações para Elementor', 'dw-copiar-animacao' ); ?></h1>
+			<h1><?php esc_html_e( 'WooFlow Animations for Elementor', 'wooflow-animations' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'As animações são configuradas em cada elemento, na aba Avançado → DW Animações. Aqui ficam só os ajustes que valem para o site inteiro.', 'dw-copiar-animacao' ); ?>
+				<?php esc_html_e( 'As animações são configuradas em cada elemento, na aba Avançado → WooFlow Animations. Aqui ficam só os ajustes que valem para o site inteiro.', 'wooflow-animations' ); ?>
 			</p>
 
 			<form method="post" action="options.php">
 				<?php settings_fields( self::OPTION ); ?>
 				<?php $name = self::OPTION; ?>
 
-				<h2><?php esc_html_e( 'Bibliotecas', 'dw-copiar-animacao' ); ?></h2>
+				<h2><?php esc_html_e( 'Bibliotecas', 'wooflow-animations' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Nenhuma biblioteca é carregada por padrão: cada uma entra apenas nas páginas que usam um preset que a exige. Desmarcar aqui bloqueia o carregamento mesmo nessas páginas.', 'dw-copiar-animacao' ); ?>
+					<?php esc_html_e( 'Nenhuma biblioteca é carregada por padrão: cada uma entra apenas nas páginas que usam um preset que a exige. Desmarcar aqui bloqueia o carregamento mesmo nessas páginas.', 'wooflow-animations' ); ?>
 				</p>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Permitir', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Permitir', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_gsap]" value="1" <?php checked( self::is_on( 'lib_gsap' ) ); ?>> <?php esc_html_e( 'GSAP + ScrollTrigger — presets de scroll travado, pin, parallax e contador', 'dw-copiar-animacao' ); ?></label><br>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_anime]" value="1" <?php checked( self::is_on( 'lib_anime' ) ); ?>> <?php esc_html_e( 'Anime.js — presets de SVG', 'dw-copiar-animacao' ); ?></label><br>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_lottie]" value="1" <?php checked( self::is_on( 'lib_lottie' ) ); ?>> <?php esc_html_e( 'Lottie — presets de Lottie (reusa a biblioteca do Elementor Pro quando ele estiver ativo)', 'dw-copiar-animacao' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_gsap]" value="1" <?php checked( self::is_on( 'lib_gsap' ) ); ?>> <?php esc_html_e( 'GSAP + ScrollTrigger — presets de scroll travado, pin, parallax e contador', 'wooflow-animations' ); ?></label><br>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_anime]" value="1" <?php checked( self::is_on( 'lib_anime' ) ); ?>> <?php esc_html_e( 'Anime.js — presets de SVG', 'wooflow-animations' ); ?></label><br>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lib_lottie]" value="1" <?php checked( self::is_on( 'lib_lottie' ) ); ?>> <?php esc_html_e( 'Lottie — presets de Lottie (reusa a biblioteca do Elementor Pro quando ele estiver ativo)', 'wooflow-animations' ); ?></label>
 						</td>
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Scroll suave (Lenis)', 'dw-copiar-animacao' ); ?></h2>
+				<h2><?php esc_html_e( 'Scroll suave (Lenis)', 'wooflow-animations' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Ativar', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Ativar', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_enable]" value="1" <?php checked( self::is_on( 'lenis_enable' ) ); ?>> <?php esc_html_e( 'Ligar o scroll suave no site inteiro', 'dw-copiar-animacao' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Fica desligado no editor do Elementor e quando o visitante pede menos movimento no sistema.', 'dw-copiar-animacao' ); ?></p>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_enable]" value="1" <?php checked( self::is_on( 'lenis_enable' ) ); ?>> <?php esc_html_e( 'Ligar o scroll suave no site inteiro', 'wooflow-animations' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Fica desligado no editor do Elementor e quando o visitante pede menos movimento no sistema.', 'wooflow-animations' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="dwanim-lerp"><?php esc_html_e( 'Suavidade (lerp)', 'dw-copiar-animacao' ); ?></label></th>
+						<th scope="row"><label for="wfan-lerp"><?php esc_html_e( 'Suavidade (lerp)', 'wooflow-animations' ); ?></label></th>
 						<td>
-							<input id="dwanim-lerp" type="number" step="0.01" min="0.01" max="1" name="<?php echo esc_attr( $name ); ?>[lenis_lerp]" value="<?php echo esc_attr( $s['lenis_lerp'] ); ?>" class="small-text">
-							<p class="description"><?php esc_html_e( 'Quanto menor, mais longo o deslize. 0,1 é o padrão.', 'dw-copiar-animacao' ); ?></p>
+							<input id="wfan-lerp" type="number" step="0.01" min="0.01" max="1" name="<?php echo esc_attr( $name ); ?>[lenis_lerp]" value="<?php echo esc_attr( $s['lenis_lerp'] ); ?>" class="small-text">
+							<p class="description"><?php esc_html_e( 'Quanto menor, mais longo o deslize. 0,1 é o padrão.', 'wooflow-animations' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="dwanim-lenis-duration"><?php esc_html_e( 'Duração (s)', 'dw-copiar-animacao' ); ?></label></th>
-						<td><input id="dwanim-lenis-duration" type="number" step="0.1" min="0.1" max="5" name="<?php echo esc_attr( $name ); ?>[lenis_duration]" value="<?php echo esc_attr( $s['lenis_duration'] ); ?>" class="small-text"></td>
+						<th scope="row"><label for="wfan-lenis-duration"><?php esc_html_e( 'Duração (s)', 'wooflow-animations' ); ?></label></th>
+						<td><input id="wfan-lenis-duration" type="number" step="0.1" min="0.1" max="5" name="<?php echo esc_attr( $name ); ?>[lenis_duration]" value="<?php echo esc_attr( $s['lenis_duration'] ); ?>" class="small-text"></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Entradas', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Entradas', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_wheel]" value="1" <?php checked( self::is_on( 'lenis_wheel' ) ); ?>> <?php esc_html_e( 'Suavizar a roda do mouse', 'dw-copiar-animacao' ); ?></label><br>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_touch]" value="1" <?php checked( self::is_on( 'lenis_touch' ) ); ?>> <?php esc_html_e( 'Suavizar o toque no celular (não recomendado)', 'dw-copiar-animacao' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_wheel]" value="1" <?php checked( self::is_on( 'lenis_wheel' ) ); ?>> <?php esc_html_e( 'Suavizar a roda do mouse', 'wooflow-animations' ); ?></label><br>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[lenis_touch]" value="1" <?php checked( self::is_on( 'lenis_touch' ) ); ?>> <?php esc_html_e( 'Suavizar o toque no celular (não recomendado)', 'wooflow-animations' ); ?></label>
 						</td>
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Comportamento', 'dw-copiar-animacao' ); ?></h2>
+				<h2><?php esc_html_e( 'Comportamento', 'wooflow-animations' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Acessibilidade', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Acessibilidade', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[respect_reduced]" value="1" <?php checked( self::is_on( 'respect_reduced' ) ); ?>> <?php esc_html_e( 'Respeitar "reduzir movimento" do sistema do visitante', 'dw-copiar-animacao' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Recomendado manter ligado. O conteúdo aparece normalmente, só sem movimento.', 'dw-copiar-animacao' ); ?></p>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[respect_reduced]" value="1" <?php checked( self::is_on( 'respect_reduced' ) ); ?>> <?php esc_html_e( 'Respeitar "reduzir movimento" do sistema do visitante', 'wooflow-animations' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Recomendado manter ligado. O conteúdo aparece normalmente, só sem movimento.', 'wooflow-animations' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Celular', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Celular', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[off_mobile]" value="1" <?php checked( self::is_on( 'off_mobile' ) ); ?>> <?php esc_html_e( 'Desligar todas as animações em telas pequenas', 'dw-copiar-animacao' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[off_mobile]" value="1" <?php checked( self::is_on( 'off_mobile' ) ); ?>> <?php esc_html_e( 'Desligar todas as animações em telas pequenas', 'wooflow-animations' ); ?></label>
 							<p>
-								<label for="dwanim-bp"><?php esc_html_e( 'Largura limite (px)', 'dw-copiar-animacao' ); ?></label>
-								<input id="dwanim-bp" type="number" step="1" min="320" max="1920" name="<?php echo esc_attr( $name ); ?>[mobile_bp]" value="<?php echo esc_attr( $s['mobile_bp'] ); ?>" class="small-text">
+								<label for="wfan-bp"><?php esc_html_e( 'Largura limite (px)', 'wooflow-animations' ); ?></label>
+								<input id="wfan-bp" type="number" step="1" min="320" max="1920" name="<?php echo esc_attr( $name ); ?>[mobile_bp]" value="<?php echo esc_attr( $s['mobile_bp'] ); ?>" class="small-text">
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Animação nativa', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Animação nativa', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[disable_native]" value="1" <?php checked( self::is_on( 'disable_native' ) ); ?>> <?php esc_html_e( 'Desligar a animação de entrada do Elementor quando o mesmo elemento tiver uma animação DW', 'dw-copiar-animacao' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Evita as duas animações rodando juntas no mesmo elemento.', 'dw-copiar-animacao' ); ?></p>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[disable_native]" value="1" <?php checked( self::is_on( 'disable_native' ) ); ?>> <?php esc_html_e( 'Desligar a animação de entrada do Elementor quando o mesmo elemento tiver uma animação WooFlow', 'wooflow-animations' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Evita as duas animações rodando juntas no mesmo elemento.', 'wooflow-animations' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Diagnóstico', 'dw-copiar-animacao' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Diagnóstico', 'wooflow-animations' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[debug]" value="1" <?php checked( self::is_on( 'debug' ) ); ?>> <?php esc_html_e( 'Registrar no console do navegador cada animação registrada e disparada', 'dw-copiar-animacao' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[debug]" value="1" <?php checked( self::is_on( 'debug' ) ); ?>> <?php esc_html_e( 'Registrar no console do navegador cada animação registrada e disparada', 'wooflow-animations' ); ?></label>
 						</td>
 					</tr>
 				</table>

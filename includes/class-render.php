@@ -6,14 +6,14 @@
  * para widget, container, section e column. Nunca de um filtro em the_content.
  * Ver CLAUDE.md, regra 4.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Render {
+class WFAN_Render {
 
 	public function __construct() {
 		add_action( 'elementor/frontend/before_render', [ $this, 'before_render' ], 10, 1 );
@@ -72,7 +72,7 @@ class DW_Anim_Render {
 		}
 
 		$k = static function ( $suffix ) {
-			return DW_Anim_Keys::ours( $suffix );
+			return WFAN_Keys::ours( $suffix );
 		};
 
 		$settings  = $element->get_settings_for_display();
@@ -82,7 +82,7 @@ class DW_Anim_Render {
 			return;
 		}
 
-		$preset = DW_Anim_Presets::get( $preset_id );
+		$preset = WFAN_Presets::get( $preset_id );
 
 		if ( ! $preset ) {
 			return;
@@ -97,13 +97,13 @@ class DW_Anim_Render {
 		$trigger = $this->resolve_trigger( $preset, $settings, $k );
 		$payload = $this->payload( $preset_id, $preset, $engine, $trigger, $settings, $k );
 
-		$classes = [ 'dw-anim' ];
+		$classes = [ 'wfan' ];
 
 		if ( $this->hides_element( $preset, $trigger ) && ! $this->is_preview() ) {
-			$classes[] = 'dw-anim-pending';
+			$classes[] = 'wfan-pending';
 
 			if ( 0 === strpos( $preset_id, 'mask' ) || 'text-mask' === $preset_id ) {
-				$classes[] = 'dw-anim-mask';
+				$classes[] = 'wfan-mask';
 			}
 		}
 
@@ -111,11 +111,11 @@ class DW_Anim_Render {
 			'_wrapper',
 			[
 				'class'        => $classes,
-				'data-dw-anim' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
+				'data-wfan' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
 			]
 		);
 
-		DW_Anim_Plugin::assets()->require_engine( $engine );
+		WFAN_Plugin::assets()->require_engine( $engine );
 
 		$this->maybe_disable_native( $element );
 	}
@@ -145,7 +145,7 @@ class DW_Anim_Render {
 			$engine = $override;
 		}
 
-		if ( DW_Anim_Settings::lib_allowed( $engine ) ) {
+		if ( WFAN_Settings::lib_allowed( $engine ) ) {
 			return $engine;
 		}
 
@@ -162,7 +162,7 @@ class DW_Anim_Render {
 	 */
 	private function resolve_trigger( $preset, $settings, $k ) {
 		$trigger = isset( $settings[ $k( 'trigger' ) ] ) ? (string) $settings[ $k( 'trigger' ) ] : 'scroll-in';
-		$allowed = $preset['triggers'] ? $preset['triggers'] : array_keys( DW_Anim_Presets::triggers() );
+		$allowed = $preset['triggers'] ? $preset['triggers'] : array_keys( WFAN_Presets::triggers() );
 
 		if ( in_array( $trigger, $allowed, true ) ) {
 			return $trigger;
@@ -198,7 +198,7 @@ class DW_Anim_Render {
 	 */
 	private function payload( $preset_id, $preset, $engine, $trigger, $settings, $k ) {
 		$payload = [
-			'v'   => DW_Anim_Keys::ATTR_VERSION,
+			'v'   => WFAN_Keys::ATTR_VERSION,
 			'p'   => $preset_id,
 			'eng' => $engine,
 			'tr'  => [
@@ -273,24 +273,24 @@ class DW_Anim_Render {
 		 * @param string $preset_id Id do preset.
 		 * @param array  $settings  Ajustes do elemento.
 		 */
-		return apply_filters( 'dw_anim_payload', $payload, $preset_id, $settings );
+		return apply_filters( 'wfan_payload', $payload, $preset_id, $settings );
 	}
 
 	/**
 	 * Com o ajuste ligado, apaga a animação nativa do elemento que já tem uma
-	 * animação DW — senão as duas rodam juntas no mesmo elemento.
+	 * animação WooFlow — senão as duas rodam juntas no mesmo elemento.
 	 *
 	 * @param \Elementor\Element_Base $element Elemento.
 	 * @return void
 	 */
 	private function maybe_disable_native( $element ) {
-		if ( ! DW_Anim_Settings::is_on( 'disable_native' ) || ! method_exists( $element, 'set_settings' ) ) {
+		if ( ! WFAN_Settings::is_on( 'disable_native' ) || ! method_exists( $element, 'set_settings' ) ) {
 			return;
 		}
 
 		$native = 'widget' === $element->get_type()
-			? DW_Anim_Keys::NATIVE_WIDGET
-			: DW_Anim_Keys::NATIVE_BLOCK;
+			? WFAN_Keys::NATIVE_WIDGET
+			: WFAN_Keys::NATIVE_BLOCK;
 
 		foreach ( [ 'name', 'tablet', 'mobile' ] as $slot ) {
 			$element->set_settings( $native[ $slot ], '' );

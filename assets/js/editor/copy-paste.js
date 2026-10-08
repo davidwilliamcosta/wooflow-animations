@@ -2,7 +2,7 @@
  * Copiar e colar animação entre elementos do Elementor.
  *
  * Diferenças em relação à primeira versão deste plugin:
- *  - o payload carrega também os ajustes DW, e tem número de versão;
+ *  - o payload carrega também os ajustes WooFlow, e tem número de versão;
  *  - colar em N elementos é UMA entrada de histórico, não N;
  *  - os atalhos passam pelo $e.shortcuts, com fallback que se desliga sozinho
  *    quando o registro do Elementor assume o teclado.
@@ -10,8 +10,12 @@
 ( function ( $ ) {
 	'use strict';
 
-	var STORAGE_KEY = 'dwElementorCopiedAnimation';
-	var cfg = window.dwAnimEditor || {};
+	var STORAGE_KEY = 'wooflowCopiedAnimation';
+
+	// A 1.0.0 foi publicada com este nome de chave. Quem copiou antes de
+	// atualizar continua conseguindo colar.
+	var LEGACY_KEY = 'dwElementorCopiedAnimation';
+	var cfg = window.wfanEditor || {};
 	var i18n = cfg.i18n || {};
 	var keys = cfg.keys || {};
 	var memory = null;
@@ -39,7 +43,7 @@
 
 	function log( message, data ) {
 		if ( window.console && cfg.debug ) {
-			window.console.log( '[DW Animações] ' + message, data );
+			window.console.log( '[WooFlow Animations] ' + message, data );
 		}
 	}
 
@@ -51,7 +55,7 @@
 		var raw = null;
 
 		try {
-			raw = window.localStorage.getItem( STORAGE_KEY );
+			raw = window.localStorage.getItem( STORAGE_KEY ) || window.localStorage.getItem( LEGACY_KEY );
 		} catch ( e ) {
 			return null;
 		}
@@ -93,7 +97,7 @@
 				duration: data.duration || '',
 				delay: data.delay || ''
 			},
-			dw: {}
+			wfan: {}
 		};
 	}
 
@@ -123,7 +127,7 @@
 		}
 
 		var map = nativeKeys( container );
-		var data = { v: keys.version || 2, native: {}, dw: {} };
+		var data = { v: keys.version || 2, native: {}, wfan: {} };
 
 		Object.keys( map ).forEach( function ( slot ) {
 			data.native[ slot ] = container.settings.get( map[ slot ] ) || '';
@@ -133,14 +137,14 @@
 			var value = container.settings.get( key );
 
 			if ( value !== undefined ) {
-				data.dw[ key ] = value;
+				data.wfan[ key ] = value;
 			}
 		} );
 
 		setStored( data );
 		log( 'copiado', data );
 
-		toast( data.native.name || data.dw[ keys.preset ]
+		toast( data.native.name || data.wfan[ keys.preset ]
 			? t( 'copied' )
 			: t( 'copiedEmpty' ) );
 	}
@@ -158,8 +162,8 @@
 		} );
 
 		ourKeys().forEach( function ( key ) {
-			if ( data.dw && Object.prototype.hasOwnProperty.call( data.dw, key ) ) {
-				settings[ key ] = data.dw[ key ];
+			if ( data.wfan && Object.prototype.hasOwnProperty.call( data.wfan, key ) ) {
+				settings[ key ] = data.wfan[ key ];
 			}
 		} );
 
@@ -269,10 +273,10 @@
 		}
 
 		groups.push( {
-			name: 'dw-animation',
+			name: 'wfan-animation',
 			actions: [
 				{
-					name: 'dw-copy-animation',
+					name: 'wfan-copy-animation',
 					icon: 'eicon-animation',
 					title: t( 'copyTitle' ),
 					shortcut: shortcutLabel( 'C' ),
@@ -280,14 +284,14 @@
 						try {
 							copyAnimation( view.getContainer() );
 						} catch ( e ) {
-							window.console && window.console.error( 'DW Animações:', e );
+							window.console && window.console.error( 'WooFlow Animations:', e );
 						}
 
 						closeMenu();
 					}
 				},
 				{
-					name: 'dw-paste-animation',
+					name: 'wfan-paste-animation',
 					icon: 'eicon-animation',
 					title: t( 'pasteTitle' ),
 					shortcut: shortcutLabel( 'V' ),
@@ -304,7 +308,7 @@
 
 							pasteAnimation( inSelection && selected.length ? selected : [ container ] );
 						} catch ( e ) {
-							window.console && window.console.error( 'DW Animações:', e );
+							window.console && window.console.error( 'WooFlow Animations:', e );
 						}
 
 						closeMenu();
@@ -403,11 +407,11 @@
 	}
 
 	function bindKeys( doc ) {
-		if ( ! doc || doc.__dwAnimBound ) {
+		if ( ! doc || doc.__wfanBound ) {
 			return;
 		}
 
-		doc.__dwAnimBound = true;
+		doc.__wfanBound = true;
 		doc.addEventListener( 'keydown', onKeyDown, true );
 	}
 
@@ -434,7 +438,7 @@
 	}
 
 	// API usada pelos botões do painel (panel.js).
-	window.dwAnimCopyPaste = {
+	window.wfanCopyPaste = {
 		copy: copyAnimation,
 		paste: pasteAnimation,
 		selected: selectedContainers,

@@ -5,14 +5,14 @@
  * Único lugar do plugin autorizado a enfileirar biblioteca. Nada de GSAP em
  * página que não usa scroll travado. Ver CLAUDE.md, regra 5.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Assets {
+class WFAN_Assets {
 
 	/** Tempo, em ms, após o qual o conteúdo é revelado mesmo sem o JS ter rodado. */
 	const FAILSAFE_MS = 3000;
@@ -48,9 +48,9 @@ class DW_Anim_Assets {
 	 * @return string
 	 */
 	public static function ver( $rel ) {
-		$path = DWANIM_DIR . $rel;
+		$path = WFAN_DIR . $rel;
 
-		return file_exists( $path ) ? (string) filemtime( $path ) : DWANIM_VER;
+		return file_exists( $path ) ? (string) filemtime( $path ) : WFAN_VER;
 	}
 
 	/**
@@ -58,7 +58,7 @@ class DW_Anim_Assets {
 	 * @return string
 	 */
 	public static function url( $rel ) {
-		return DWANIM_URL . $rel;
+		return WFAN_URL . $rel;
 	}
 
 	/**
@@ -66,36 +66,36 @@ class DW_Anim_Assets {
 	 */
 	public function register() {
 		$libs = [
-			'dw-anim-gsap'           => 'assets/lib/gsap/gsap.min.js',
-			'dw-anim-scrolltrigger'  => 'assets/lib/gsap/ScrollTrigger.min.js',
-			'dw-anim-anime'          => 'assets/lib/anime/anime.min.js',
-			'dw-anim-lenis'          => 'assets/lib/lenis/lenis.min.js',
-			'dw-anim-lottie-lib'     => 'assets/lib/lottie/lottie.min.js',
+			'wfan-gsap'           => 'assets/lib/gsap/gsap.min.js',
+			'wfan-scrolltrigger'  => 'assets/lib/gsap/ScrollTrigger.min.js',
+			'wfan-anime'          => 'assets/lib/anime/anime.min.js',
+			'wfan-lenis'          => 'assets/lib/lenis/lenis.min.js',
+			'wfan-lottie-lib'     => 'assets/lib/lottie/lottie.min.js',
 		];
 
 		foreach ( $libs as $handle => $rel ) {
-			$deps = 'dw-anim-scrolltrigger' === $handle ? [ 'dw-anim-gsap' ] : [];
+			$deps = 'wfan-scrolltrigger' === $handle ? [ 'wfan-gsap' ] : [];
 
 			wp_register_script( $handle, self::url( $rel ), $deps, self::ver( $rel ), true );
 		}
 
-		wp_register_style( 'dw-anim-frontend', self::url( 'assets/css/frontend.css' ), [], self::ver( 'assets/css/frontend.css' ) );
+		wp_register_style( 'wfan-frontend', self::url( 'assets/css/frontend.css' ), [], self::ver( 'assets/css/frontend.css' ) );
 
-		wp_register_script( 'dw-anim-core', self::url( 'assets/js/frontend/core.js' ), [], self::ver( 'assets/js/frontend/core.js' ), true );
-		wp_localize_script( 'dw-anim-core', 'dwAnimConfig', $this->config() );
+		wp_register_script( 'wfan-core', self::url( 'assets/js/frontend/core.js' ), [], self::ver( 'assets/js/frontend/core.js' ), true );
+		wp_localize_script( 'wfan-core', 'wfanConfig', $this->config() );
 
 		$engines = [
-			'css'    => [ 'assets/js/frontend/engine-css.js', [ 'dw-anim-core' ] ],
-			'gsap'   => [ 'assets/js/frontend/engine-gsap.js', [ 'dw-anim-core', 'dw-anim-scrolltrigger' ] ],
-			'anime'  => [ 'assets/js/frontend/engine-anime.js', [ 'dw-anim-core', 'dw-anim-anime' ] ],
-			'lottie' => [ 'assets/js/frontend/engine-lottie.js', [ 'dw-anim-core' ] ],
+			'css'    => [ 'assets/js/frontend/engine-css.js', [ 'wfan-core' ] ],
+			'gsap'   => [ 'assets/js/frontend/engine-gsap.js', [ 'wfan-core', 'wfan-scrolltrigger' ] ],
+			'anime'  => [ 'assets/js/frontend/engine-anime.js', [ 'wfan-core', 'wfan-anime' ] ],
+			'lottie' => [ 'assets/js/frontend/engine-lottie.js', [ 'wfan-core' ] ],
 		];
 
 		foreach ( $engines as $engine => $spec ) {
-			wp_register_script( 'dw-anim-engine-' . $engine, self::url( $spec[0] ), $spec[1], self::ver( $spec[0] ), true );
+			wp_register_script( 'wfan-engine-' . $engine, self::url( $spec[0] ), $spec[1], self::ver( $spec[0] ), true );
 		}
 
-		wp_register_script( 'dw-anim-lenis-boot', self::url( 'assets/js/frontend/lenis-boot.js' ), [ 'dw-anim-lenis' ], self::ver( 'assets/js/frontend/lenis-boot.js' ), true );
+		wp_register_script( 'wfan-lenis-boot', self::url( 'assets/js/frontend/lenis-boot.js' ), [ 'wfan-lenis' ], self::ver( 'assets/js/frontend/lenis-boot.js' ), true );
 	}
 
 	/**
@@ -106,15 +106,15 @@ class DW_Anim_Assets {
 	private function config() {
 		$bezier = [];
 
-		foreach ( DW_Anim_Presets::easings() as $name => $data ) {
+		foreach ( WFAN_Presets::easings() as $name => $data ) {
 			$bezier[ $name ] = $data['bezier'];
 		}
 
 		return [
-			'reduced'  => DW_Anim_Settings::is_on( 'respect_reduced' ) ? 1 : 0,
-			'offMobile' => DW_Anim_Settings::is_on( 'off_mobile' ) ? 1 : 0,
-			'mobileBp' => (int) DW_Anim_Settings::get( 'mobile_bp', 767 ),
-			'debug'    => DW_Anim_Settings::is_on( 'debug' ) ? 1 : 0,
+			'reduced'  => WFAN_Settings::is_on( 'respect_reduced' ) ? 1 : 0,
+			'offMobile' => WFAN_Settings::is_on( 'off_mobile' ) ? 1 : 0,
+			'mobileBp' => (int) WFAN_Settings::get( 'mobile_bp', 767 ),
+			'debug'    => WFAN_Settings::is_on( 'debug' ) ? 1 : 0,
 			'editor'   => $this->is_preview() ? 1 : 0,
 			'bezier'   => $bezier,
 			'failsafe' => self::FAILSAFE_MS,
@@ -138,7 +138,7 @@ class DW_Anim_Assets {
 	public function require_engine( $engine ) {
 		$this->used = true;
 
-		if ( ! DW_Anim_Settings::lib_allowed( $engine ) ) {
+		if ( ! WFAN_Settings::lib_allowed( $engine ) ) {
 			return;
 		}
 
@@ -167,9 +167,9 @@ class DW_Anim_Assets {
 		}
 
 		?>
-<style id="dw-anim-prehide">html.dw-anim-js .dw-anim-pending{opacity:0!important}html.dw-anim-js .dw-anim-pending.dw-anim-mask{clip-path:inset(0 0 100% 0)}@media(prefers-reduced-motion:reduce){html.dw-anim-js .dw-anim-pending{opacity:1!important;clip-path:none!important}}</style>
-<script id="dw-anim-boot">document.documentElement.className+=" dw-anim-js";setTimeout(function(){if(!window.dwAnimLoaded){document.documentElement.classList.remove("dw-anim-js")}},<?php echo (int) self::FAILSAFE_MS; ?>);</script>
-<noscript><style>html.dw-anim-js .dw-anim-pending{opacity:1!important;clip-path:none!important}</style></noscript>
+<style id="wfan-prehide">html.wfan-js .wfan-pending{opacity:0!important}html.wfan-js .wfan-pending.wfan-mask{clip-path:inset(0 0 100% 0)}@media(prefers-reduced-motion:reduce){html.wfan-js .wfan-pending{opacity:1!important;clip-path:none!important}}</style>
+<script id="wfan-boot">document.documentElement.className+=" wfan-js";setTimeout(function(){if(!window.wfanLoaded){document.documentElement.classList.remove("wfan-js")}},<?php echo (int) self::FAILSAFE_MS; ?>);</script>
+<noscript><style>html.wfan-js .wfan-pending{opacity:1!important;clip-path:none!important}</style></noscript>
 		<?php
 	}
 
@@ -181,8 +181,8 @@ class DW_Anim_Assets {
 			return;
 		}
 
-		wp_enqueue_style( 'dw-anim-frontend' );
-		wp_enqueue_script( 'dw-anim-core' );
+		wp_enqueue_style( 'wfan-frontend' );
+		wp_enqueue_script( 'wfan-core' );
 
 		foreach ( array_keys( $this->needed ) as $engine ) {
 			if ( 'lottie' === $engine ) {
@@ -190,7 +190,7 @@ class DW_Anim_Assets {
 				continue;
 			}
 
-			wp_enqueue_script( 'dw-anim-engine-' . $engine );
+			wp_enqueue_script( 'wfan-engine-' . $engine );
 		}
 	}
 
@@ -201,21 +201,21 @@ class DW_Anim_Assets {
 	 * @return void
 	 */
 	private function enqueue_lottie_engine() {
-		$handle = DW_Anim_Lottie::handle();
+		$handle = WFAN_Lottie::handle();
 
 		wp_enqueue_script( $handle );
 
 		global $wp_scripts;
 
-		if ( isset( $wp_scripts->registered['dw-anim-engine-lottie'] ) ) {
-			$deps = $wp_scripts->registered['dw-anim-engine-lottie']->deps;
+		if ( isset( $wp_scripts->registered['wfan-engine-lottie'] ) ) {
+			$deps = $wp_scripts->registered['wfan-engine-lottie']->deps;
 
 			if ( ! in_array( $handle, $deps, true ) ) {
-				$wp_scripts->registered['dw-anim-engine-lottie']->deps[] = $handle;
+				$wp_scripts->registered['wfan-engine-lottie']->deps[] = $handle;
 			}
 		}
 
-		wp_enqueue_script( 'dw-anim-engine-lottie' );
+		wp_enqueue_script( 'wfan-engine-lottie' );
 	}
 
 	/**
@@ -226,17 +226,17 @@ class DW_Anim_Assets {
 	public function enqueue_all_for_preview() {
 		$this->register();
 
-		wp_enqueue_style( 'dw-anim-frontend' );
-		wp_enqueue_script( 'dw-anim-core' );
-		wp_enqueue_script( 'dw-anim-engine-css' );
+		wp_enqueue_style( 'wfan-frontend' );
+		wp_enqueue_script( 'wfan-core' );
+		wp_enqueue_script( 'wfan-engine-css' );
 
 		foreach ( [ 'gsap', 'anime' ] as $engine ) {
-			if ( DW_Anim_Settings::lib_allowed( $engine ) ) {
-				wp_enqueue_script( 'dw-anim-engine-' . $engine );
+			if ( WFAN_Settings::lib_allowed( $engine ) ) {
+				wp_enqueue_script( 'wfan-engine-' . $engine );
 			}
 		}
 
-		if ( DW_Anim_Settings::lib_allowed( 'lottie' ) ) {
+		if ( WFAN_Settings::lib_allowed( 'lottie' ) ) {
 			$this->enqueue_lottie_engine();
 		}
 	}

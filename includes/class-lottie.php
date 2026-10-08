@@ -6,17 +6,17 @@
  * elegância, é obrigação: são ~250 KB duplicados na mesma página.
  * Ver CLAUDE.md, regra 6.
  *
- * @package DW_Anim
+ * @package WFAN
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class DW_Anim_Lottie {
+class WFAN_Lottie {
 
 	public function __construct() {
-		add_filter( 'dw_anim_payload', [ $this, 'guard_url' ], 10, 3 );
+		add_filter( 'wfan_payload', [ $this, 'guard_url' ], 10, 3 );
 	}
 
 	/**
@@ -25,14 +25,14 @@ class DW_Anim_Lottie {
 	 * @return string
 	 */
 	public static function handle() {
-		$handle = wp_script_is( 'lottie', 'registered' ) ? 'lottie' : 'dw-anim-lottie-lib';
+		$handle = wp_script_is( 'lottie', 'registered' ) ? 'lottie' : 'wfan-lottie-lib';
 
 		/**
 		 * Permite apontar para outra cópia do lottie-web já presente no site.
 		 *
 		 * @param string $handle Handle registrado.
 		 */
-		return (string) apply_filters( 'dw_anim_lottie_handle', $handle );
+		return (string) apply_filters( 'wfan_lottie_handle', $handle );
 	}
 
 	/**

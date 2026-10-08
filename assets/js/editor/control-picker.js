@@ -1,5 +1,5 @@
 /**
- * View do controle visual `dw-anim-picker`.
+ * View do controle visual `wfan-picker`.
  *
  * O template vem do PHP (includes/class-control-picker.php), porque o catálogo
  * é o mesmo para todos os elementos. Aqui ficam só seleção, grupos e busca.
@@ -7,7 +7,7 @@
 ( function ( $ ) {
 	'use strict';
 
-	var cfg = window.dwAnimEditor || {};
+	var cfg = window.wfanEditor || {};
 
 	function labelFor( value ) {
 		var found = ( cfg.presets || [] ).filter( function ( preset ) {
@@ -41,10 +41,10 @@
 			ui: function () {
 				var ui = inherit( 'ui', this, arguments );
 
-				ui.cards = '.dw-anim-card';
-				ui.tabs = '.dw-anim-tab';
-				ui.search = '.dw-anim-picker__q';
-				ui.saved = '[data-dw-saved]';
+				ui.cards = '.wfan-card';
+				ui.tabs = '.wfan-tab';
+				ui.search = '.wfan-picker__q';
+				ui.saved = '[data-wfan-saved]';
 
 				return ui;
 			},
@@ -54,16 +54,16 @@
 					'click @ui.cards': 'onCardClick',
 					'click @ui.tabs': 'onTabClick',
 					'input @ui.search': 'onSearch',
-					'click .dw-anim-saved__apply': 'onSavedApply',
-					'click .dw-anim-saved__delete': 'onSavedDelete'
+					'click .wfan-saved__apply': 'onSavedApply',
+					'click .wfan-saved__delete': 'onSavedDelete'
 				} );
 			},
 
 			onReady: function () {
 				this.syncSelection();
 
-				if ( window.dwAnimPanel ) {
-					window.dwAnimPanel.renderSaved();
+				if ( window.wfanPanel ) {
+					window.wfanPanel.renderSaved();
 				}
 			},
 
@@ -123,13 +123,13 @@
 				event.preventDefault();
 
 				var id = event.currentTarget.getAttribute( 'data-id' );
-				var items = ( window.dwAnimEditor && window.dwAnimEditor.library ) || [];
+				var items = ( window.wfanEditor && window.wfanEditor.library ) || [];
 				var found = items.filter( function ( item ) {
 					return item.id === id;
 				} );
 
-				if ( found.length && window.dwAnimPanel ) {
-					window.dwAnimPanel.apply( found[ 0 ].settings );
+				if ( found.length && window.wfanPanel ) {
+					window.wfanPanel.apply( found[ 0 ].settings );
 				}
 			},
 
@@ -138,18 +138,18 @@
 
 				var id = event.currentTarget.getAttribute( 'data-id' );
 
-				if ( window.dwAnimPanel ) {
-					window.dwAnimPanel.deleteSaved( id );
+				if ( window.wfanPanel ) {
+					window.wfanPanel.deleteSaved( id );
 				}
 			}
 		} );
 
-		elementor.addControlView( 'dw-anim-picker', PickerView );
+		elementor.addControlView( 'wfan-picker', PickerView );
 
 		return true;
 	}
 
-	window.dwAnimPickerLabel = labelFor;
+	window.wfanPickerLabel = labelFor;
 
 	if ( window.elementor && elementor.modules ) {
 		register();

@@ -1,5 +1,5 @@
 /**
- * Botões e amarrações do painel DW Animações.
+ * Botões e amarrações do painel WooFlow Animations.
  *
  *  - ▶ Testar reproduz a animação no preview sem salvar nada;
  *  - Copiar/Colar reusam exatamente o mesmo código do menu de contexto;
@@ -9,12 +9,12 @@
 ( function ( $ ) {
 	'use strict';
 
-	var cfg = window.dwAnimEditor || {};
+	var cfg = window.wfanEditor || {};
 	var keys = cfg.keys || {};
 	var i18n = cfg.i18n || {};
 
 	function cp() {
-		return window.dwAnimCopyPaste || null;
+		return window.wfanCopyPaste || null;
 	}
 
 	function t( key, fallback ) {
@@ -95,13 +95,13 @@
 			win = elementor.$preview[ 0 ].contentWindow;
 		} catch ( e ) {}
 
-		if ( ! win || typeof win.dwAnimPlay !== 'function' ) {
+		if ( ! win || typeof win.wfanPlay !== 'function' ) {
 			toast( t( 'error' ) );
 			return;
 		}
 
 		list.forEach( function ( container ) {
-			win.dwAnimPlay( container.id );
+			win.wfanPlay( container.id );
 		} );
 
 		toast( t( 'playing' ) );
@@ -122,14 +122,14 @@
 		}
 
 		$.post( cfg.ajaxUrl, {
-			action: 'dwanim_save_preset',
+			action: 'wfan_save_preset',
 			nonce: cfg.nonce,
 			label: label,
 			settings: JSON.stringify( settings )
 		} ).done( function ( response ) {
 			if ( response && response.success ) {
 				cfg.library = response.data.items;
-				window.dwAnimEditor.library = response.data.items;
+				window.wfanEditor.library = response.data.items;
 				toast( t( 'saved' ) );
 				renderSaved();
 			} else {
@@ -142,13 +142,13 @@
 
 	function deleteSaved( id ) {
 		$.post( cfg.ajaxUrl, {
-			action: 'dwanim_delete_preset',
+			action: 'wfan_delete_preset',
 			nonce: cfg.nonce,
 			id: id
 		} ).done( function ( response ) {
 			if ( response && response.success ) {
 				cfg.library = response.data.items;
-				window.dwAnimEditor.library = response.data.items;
+				window.wfanEditor.library = response.data.items;
 				renderSaved();
 			}
 		} );
@@ -160,8 +160,8 @@
 	 * depender de reabrir o painel.
 	 */
 	function renderSaved() {
-		var items = ( window.dwAnimEditor && window.dwAnimEditor.library ) || [];
-		var slots = $( '#elementor-panel' ).find( '[data-dw-saved]' );
+		var items = ( window.wfanEditor && window.wfanEditor.library ) || [];
+		var slots = $( '#elementor-panel' ).find( '[data-wfan-saved]' );
 
 		if ( ! slots.length ) {
 			return;
@@ -172,14 +172,14 @@
 			return;
 		}
 
-		var html = '<div class="dw-anim-saved"><div class="dw-anim-saved__title">'
+		var html = '<div class="wfan-saved"><div class="wfan-saved__title">'
 			+ escapeHtml( t( 'savedTitle', 'Minhas animações' ) ) + '</div>';
 
 		items.forEach( function ( item ) {
-			html += '<div class="dw-anim-saved__row">'
-				+ '<button type="button" class="dw-anim-saved__apply" data-id="' + escapeHtml( item.id ) + '">'
+			html += '<div class="wfan-saved__row">'
+				+ '<button type="button" class="wfan-saved__apply" data-id="' + escapeHtml( item.id ) + '">'
 				+ escapeHtml( item.label ) + '</button>'
-				+ '<button type="button" class="dw-anim-saved__delete" data-id="' + escapeHtml( item.id ) + '" title="'
+				+ '<button type="button" class="wfan-saved__delete" data-id="' + escapeHtml( item.id ) + '" title="'
 				+ escapeHtml( t( 'deleteOne', 'Apagar' ) ) + '">&times;</button>'
 				+ '</div>';
 		} );
@@ -206,7 +206,7 @@
 	 */
 	function narrowTriggers() {
 		var panel = $( '#elementor-panel' );
-		var value = panel.find( '.dw-anim-picker__value' ).val() || '';
+		var value = panel.find( '.wfan-picker__value' ).val() || '';
 		var preset = presetById( value );
 		var select = panel.find( '[data-setting="' + keys.trigger + '"]' );
 
@@ -235,7 +235,7 @@
 	}
 
 	function onPanelClick( event ) {
-		var action = event.currentTarget.getAttribute( 'data-dw-action' );
+		var action = event.currentTarget.getAttribute( 'data-wfan-action' );
 
 		event.preventDefault();
 
@@ -269,8 +269,8 @@
 	function init() {
 		var panel = $( document.body );
 
-		panel.on( 'click', '#elementor-panel [data-dw-action]', onPanelClick );
-		panel.on( 'click', '#elementor-panel .dw-anim-card', function () {
+		panel.on( 'click', '#elementor-panel [data-wfan-action]', onPanelClick );
+		panel.on( 'click', '#elementor-panel .wfan-card', function () {
 			window.setTimeout( narrowTriggers, 50 );
 		} );
 
@@ -282,7 +282,7 @@
 
 	}
 
-	window.dwAnimPanel = {
+	window.wfanPanel = {
 		apply: apply,
 		renderSaved: renderSaved,
 		deleteSaved: deleteSaved,
