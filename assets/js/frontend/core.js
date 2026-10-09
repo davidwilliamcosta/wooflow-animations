@@ -11,6 +11,10 @@
 	var cfg = window.wfanConfig || {};
 	var PENDING = 'wfan-pending';
 
+	// Liga a inversão de cor sem mouse. O nome tem de bater com o
+	// WFAN_Controls::HOVER_PREVIEW_CLASS, que é quem escreve a regra.
+	var HOVER_ON = 'wfan-hv-on';
+
 	// Avisa o bootstrap do <head> que o JS chegou: sem isso, ele revela tudo
 	// depois do tempo de segurança.
 	window.wfanLoaded = true;
@@ -84,6 +88,7 @@
 			to: typeof raw.to === 'number' ? raw.to : 100,
 			loop: !! raw.loop,
 			split: raw.sp || '',
+			cssOnly: !! raw.co,
 			offMobile: !! raw.om,
 			stagger: stagger ? {
 				sel: stagger.sel || '> *',
@@ -393,6 +398,17 @@
 
 		var spec = normalize( parsed );
 
+		// Efeito de estado: o CSS do elemento já faz tudo. Chega aqui porque o
+		// contrato é o mesmo para todo preset, mas não há gatilho a amarrar nem
+		// motor a chamar — e o motor nem conheceria este preset. A entrada fica
+		// guardada mesmo assim: é dela que o ▶ Testar tira a duração.
+		if ( spec.cssOnly ) {
+			reveal( el );
+			el.__wfan = { el: el, spec: spec, targets: [ el ], seen: false };
+			log( 'resolvido em CSS, sem motor:', spec.preset, el );
+			return;
+		}
+
 		if ( prefersReduced() ) {
 			reveal( el );
 			log( 'ignorado por preferência de menos movimento', el );
@@ -429,14 +445,57 @@
 	}
 
 	/**
+	 * Mostra o estado invertido por um instante. `:hover` não se simula, então
+	 * o ▶ Testar liga a classe que o CSS do elemento também atende e a desliga
+	 * depois — o tempo cobre a ida e a volta da transição.
+	 */
+	function showState( entry ) {
+		var el = entry.el;
+
+		el.classList.add( HOVER_ON );
+		window.clearTimeout( el.__wfanHold );
+
+		el.__wfanHold = window.setTimeout( function () {
+			el.classList.remove( HOVER_ON );
+		}, Math.max( 600, ( entry.spec.duration * 2 ) + 400 ) );
+	}
+
+	/**
 	 * Usado pelo botão "▶ Testar" do painel: o editor chama esta função dentro
 	 * do iframe de preview.
+	 *
+	 * O `spec` vem junto porque no canvas do editor o wrapper é do Backbone do
+	 * Elementor e não carrega o `data-wfan` — quem monta o contrato continua
+	 * sendo o servidor, que o painel consulta antes de chamar aqui. Sem ele, a
+	 * função cai no atributo, que é o caso do front-end.
 	 */
-	window.wfanPlay = function ( id ) {
+	window.wfanPlay = function ( id, spec ) {
 		var el = document.querySelector( '.elementor-element[data-id="' + id + '"]' );
 
 		if ( ! el ) {
 			return;
+		}
+
+		if ( spec ) {
+			try {
+				el.setAttribute( 'data-wfan', JSON.stringify( spec ) );
+			} catch ( e ) {
+				return;
+			}
+
+			el.classList.add( 'wfan' );
+
+			// O contrato pode ter mudado desde o último clique: a entrada
+			// anterior descreve ajustes que não são mais os do painel.
+			el.__wfan = null;
+
+			// O editor re-renderiza o conteúdo do widget a cada mudança, então
+			// os pedaços da quebra de texto guardados aqui podem ter saído do
+			// documento — animá-los não moveria nada na tela. Só nesse caso a
+			// quebra é refeita: refazer sempre aninharia span dentro de span.
+			if ( el.__wfanSplit && el.__wfanSplit.length && ! document.contains( el.__wfanSplit[ 0 ] ) ) {
+				el.__wfanSplit = null;
+			}
 		}
 
 		if ( ! el.__wfan ) {
@@ -446,6 +505,11 @@
 		var entry = el.__wfan;
 
 		if ( ! entry ) {
+			return;
+		}
+
+		if ( entry.spec.cssOnly ) {
+			showState( entry );
 			return;
 		}
 

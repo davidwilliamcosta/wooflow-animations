@@ -83,6 +83,11 @@ class WFAN_Keys {
 		'lottie_loop',
 		'lottie_speed',
 		'counter_to',
+		'hover_bg',
+		'hover_title',
+		'hover_accent',
+		'hover_text',
+		'hover_dur',
 		'off_mobile',
 	];
 

@@ -25,6 +25,13 @@ class WFAN_Assets {
 	private $needed = [];
 
 	/**
+	 * Algum elemento desta página pediu a folha do front-end sem motor nenhum.
+	 *
+	 * @var bool
+	 */
+	private $styles = false;
+
+	/**
 	 * Já saiu algum elemento com animação nesta página?
 	 *
 	 * @var bool
@@ -62,6 +69,26 @@ class WFAN_Assets {
 	}
 
 	/**
+	 * Entrega uma configuração ao JS preservando os tipos.
+	 *
+	 * `wp_localize_script()` converte todo escalar do primeiro nível em string,
+	 * e `"0"` é verdadeiro no JavaScript: um toggle desligado chegaria ligado no
+	 * navegador. Ver CLAUDE.md, regra 17.
+	 *
+	 * @param string $handle Handle do script, já registrado.
+	 * @param string $object Nome da variável global.
+	 * @param array  $data   Dados.
+	 * @return void
+	 */
+	public static function localize( $handle, $object, $data ) {
+		// Os HEX garantem que nenhum rótulo vindo do banco (nome salvo na
+		// biblioteca, por exemplo) feche o <script> em que o JSON é impresso.
+		$json = wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
+
+		wp_add_inline_script( $handle, 'var ' . $object . ' = ' . $json . ';', 'before' );
+	}
+
+	/**
 	 * @return void
 	 */
 	public function register() {
@@ -81,8 +108,12 @@ class WFAN_Assets {
 
 		wp_register_style( 'wfan-frontend', self::url( 'assets/css/frontend.css' ), [], self::ver( 'assets/css/frontend.css' ) );
 
+		// Efeito global, independente de haver elemento animado na página:
+		// quem enfileira é o WFAN_Blur, se estiver ligado nos Ajustes.
+		wp_register_style( 'wfan-blur', self::url( 'assets/css/blur.css' ), [], self::ver( 'assets/css/blur.css' ) );
+
 		wp_register_script( 'wfan-core', self::url( 'assets/js/frontend/core.js' ), [], self::ver( 'assets/js/frontend/core.js' ), true );
-		wp_localize_script( 'wfan-core', 'wfanConfig', $this->config() );
+		self::localize( 'wfan-core', 'wfanConfig', $this->config() );
 
 		$engines = [
 			'css'    => [ 'assets/js/frontend/engine-css.js', [ 'wfan-core' ] ],
@@ -110,12 +141,14 @@ class WFAN_Assets {
 			$bezier[ $name ] = $data['bezier'];
 		}
 
+		// Booleano de verdade, nunca 1/0: o core.js testa estes valores por
+		// veracidade. Ver CLAUDE.md, regra 17.
 		return [
-			'reduced'  => WFAN_Settings::is_on( 'respect_reduced' ) ? 1 : 0,
-			'offMobile' => WFAN_Settings::is_on( 'off_mobile' ) ? 1 : 0,
+			'reduced'  => WFAN_Settings::is_on( 'respect_reduced' ),
+			'offMobile' => WFAN_Settings::is_on( 'off_mobile' ),
 			'mobileBp' => (int) WFAN_Settings::get( 'mobile_bp', 767 ),
-			'debug'    => WFAN_Settings::is_on( 'debug' ) ? 1 : 0,
-			'editor'   => $this->is_preview() ? 1 : 0,
+			'debug'    => WFAN_Settings::is_on( 'debug' ),
+			'editor'   => $this->is_preview(),
 			'bezier'   => $bezier,
 			'failsafe' => self::FAILSAFE_MS,
 		];
@@ -143,6 +176,20 @@ class WFAN_Assets {
 		}
 
 		$this->needed[ $engine ] = true;
+	}
+
+	/**
+	 * Um elemento renderizado pediu só a folha do front-end.
+	 *
+	 * É o caso dos presets resolvidos em CSS (`css_only`): o efeito sai no CSS
+	 * que o Elementor gera por elemento, e a única coisa que falta é a rede de
+	 * `prefers-reduced-motion` do frontend.css. Nenhum byte de JS entra.
+	 *
+	 * @return void
+	 */
+	public function require_style() {
+		$this->used   = true;
+		$this->styles = true;
 	}
 
 	/**
@@ -177,11 +224,16 @@ class WFAN_Assets {
 	 * @return void
 	 */
 	public function enqueue_needed() {
-		if ( ! $this->used || ! $this->needed ) {
+		if ( ! $this->needed && ! $this->styles ) {
 			return;
 		}
 
 		wp_enqueue_style( 'wfan-frontend' );
+
+		if ( ! $this->needed ) {
+			return;
+		}
+
 		wp_enqueue_script( 'wfan-core' );
 
 		foreach ( array_keys( $this->needed ) as $engine ) {

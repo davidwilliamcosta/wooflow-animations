@@ -41,6 +41,7 @@ rsync -a \
 	--exclude 'package.json' \
 	--exclude 'build.sh' \
 	--exclude 'CLAUDE.md' \
+	--exclude 'AGENTS.md' \
 	--exclude '.DS_Store' \
 	--exclude '._*' \
 	"$ROOT/" "$STAGE/"

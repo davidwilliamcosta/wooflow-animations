@@ -1,0 +1,487 @@
+/* ============================================================
+   WooFlow Animations for Elementor — WooFlow Design System
+
+   ÚNICA fonte de estilo do painel administrativo. É proibido
+   criar blocos <style> ou atributos style="" nos templates PHP
+   (exceto larguras dinâmicas de barra de gráfico, que não
+   existem nesta tela).
+
+   Os tokens --wf-* são compartilhados por toda a linha WooFlow.
+   NÃO altere valores aqui: mudanças de marca são feitas
+   simultaneamente em todos os plugins da família.
+   ============================================================ */
+:root,
+.wooflow-admin {
+	/* Marca */
+	--wf-primary:        #7c3aed;
+	--wf-primary-dark:   #6d28d9;
+	--wf-primary-muted:  #f5f3ff;
+	--wf-primary-soft:   #faf8ff;
+	--wf-primary-text:   #ffffff;
+
+	/* Neutros */
+	--wf-gray-50:   #f9fafb;
+	--wf-gray-100:  #f3f4f6;
+	--wf-gray-200:  #e5e7eb;
+	--wf-gray-300:  #d1d5db;
+	--wf-gray-400:  #9ca3af;
+	--wf-gray-500:  #6b7280;
+	--wf-gray-700:  #374151;
+	--wf-gray-900:  #111827;
+	--wf-white:     #ffffff;
+
+	/* Semânticas — badges */
+	--wf-success-bg: #dcfce7;  --wf-success-fg: #166534;
+	--wf-warning-bg: #fef9c3;  --wf-warning-fg: #854d0e;
+	--wf-danger-bg:  #fee2e2;  --wf-danger-fg:  #991b1b;
+	--wf-info-bg:    #dbeafe;  --wf-info-fg:    #1d4ed8;
+
+	/* Semânticas — mensagens. Fundo mais claro e borda própria,
+	   porque o aviso ocupa a largura toda e o badge não. */
+	--wf-notice-success-bg: #f0fdf4;  --wf-notice-success-bd: #bbf7d0;  --wf-notice-success-fg: #166534;
+	--wf-notice-error-bg:   #fef2f2;  --wf-notice-error-bd:   #fecaca;  --wf-notice-error-fg:   #991b1b;
+	--wf-notice-warning-bg: #fffbeb;  --wf-notice-warning-bd: #fde68a;  --wf-notice-warning-fg: #92400e;
+	--wf-notice-info-bg:    #eff6ff;  --wf-notice-info-bd:    #bfdbfe;  --wf-notice-info-fg:    #1e40af;
+
+	/* Bordas e raios */
+	--wf-border:        1px solid #dcdcde;
+	--wf-border-color:  #dcdcde;
+	--wf-border-soft:   1px solid #e5e7eb;
+	--wf-radius-sm:     4px;
+	--wf-radius:        6px;
+	--wf-radius-md:     8px;
+	--wf-radius-lg:     10px;
+	--wf-radius-pill:   99px;
+
+	/* Sombras */
+	--wf-shadow-xs: 0 1px 2px rgba(0,0,0,.06);
+	--wf-shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+	--wf-shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
+
+	/* Tipografia — herda a stack do WP admin */
+	--wf-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+	           Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--wf-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--wf-fs-micro: 10px;
+	--wf-fs-xs:    11px;
+	--wf-fs-sm:    12px;
+	--wf-fs-base:  13px;
+	--wf-fs-md:    14px;
+	--wf-fs-lg:    16px;
+	--wf-fs-xl:    18px;
+
+	/* Espaçamentos */
+	--wf-space-1: 4px;
+	--wf-space-2: 8px;
+	--wf-space-3: 12px;
+	--wf-space-4: 16px;
+	--wf-space-5: 20px;
+	--wf-space-6: 24px;
+
+	/* Transição */
+	--wf-transition: .15s ease;
+}
+
+/* ------------------------------------------------------------
+   Base
+   ------------------------------------------------------------ */
+.wrap.wooflow-admin { max-width: 100%; }
+
+.wooflow-admin,
+.wooflow-admin * { font-family: var(--wf-font); box-sizing: border-box; }
+
+/*
+ * O reset acima não pode alcançar os ícones. Dashicons é fonte de glifos:
+ * o caractere é da área de uso privado e, sem a fonte certa, o navegador
+ * imprime o fallback — foi assim que o ⓘ dos avisos apareceu quebrado.
+ * A regra do core tem a mesma especificidade e perde por vir antes.
+ */
+.wooflow-admin .dashicons,
+.wooflow-admin .dashicons-before::before { font-family: dashicons; }
+
+.wooflow-admin code {
+	background: var(--wf-gray-100);
+	border-radius: var(--wf-radius-sm);
+	padding: 2px 6px;
+	font-family: var(--wf-font-mono);
+	font-size: var(--wf-fs-sm);
+	color: var(--wf-gray-700);
+}
+
+/* ------------------------------------------------------------
+   Brand bar
+   ------------------------------------------------------------ */
+.wooflow-brand-bar {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--wf-space-4);
+	padding: 14px 0 0;
+}
+
+.wooflow-brand-bar__main {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+
+.wooflow-brand-bar__name {
+	font-size: var(--wf-fs-lg);
+	font-weight: 700;
+	color: var(--wf-primary);
+	line-height: 1.2;
+}
+
+.wooflow-brand-bar__desc {
+	font-size: var(--wf-fs-sm);
+	color: var(--wf-gray-500);
+	line-height: 1.35;
+}
+
+.wooflow-brand-bar__version {
+	font-size: var(--wf-fs-xs);
+	color: var(--wf-gray-400);
+	background: var(--wf-gray-100);
+	padding: 2px 8px;
+	border-radius: var(--wf-radius-pill);
+	white-space: nowrap;
+	margin-left: auto;
+	align-self: center;
+}
+
+/* ------------------------------------------------------------
+   Navegação principal (seções via URL)
+
+   A tela tem uma única seção hoje, então o template não imprime
+   a nav. O estilo fica aqui porque a casca passa a imprimi-la
+   sozinha quando uma segunda seção for registrada.
+   ------------------------------------------------------------ */
+.wooflow-main-nav {
+	display: flex;
+	flex-wrap: wrap;
+	border-bottom: var(--wf-border);
+	margin: var(--wf-space-3) 0 var(--wf-space-5);
+}
+
+.wooflow-main-nav__item {
+	display: inline-block;
+	padding: 10px 18px;
+	font-size: var(--wf-fs-base);
+	font-weight: 500;
+	color: var(--wf-gray-500);
+	text-decoration: none;
+	border-bottom: 3px solid transparent;
+	margin-bottom: -1px;
+	transition: color var(--wf-transition), border-color var(--wf-transition);
+}
+
+.wooflow-main-nav__item:hover { color: var(--wf-primary); }
+
+.wooflow-main-nav__item:focus-visible {
+	outline: 2px solid var(--wf-primary);
+	outline-offset: -2px;
+	color: var(--wf-primary);
+}
+
+.wooflow-main-nav__item.is-active {
+	color: var(--wf-primary);
+	border-bottom-color: var(--wf-primary);
+}
+
+/* ------------------------------------------------------------
+   Seção e cards
+   ------------------------------------------------------------ */
+.wooflow-section { margin-top: var(--wf-space-5); }
+
+.wooflow-admin-card {
+	background: var(--wf-white);
+	border: var(--wf-border);
+	border-radius: var(--wf-radius-lg);
+	box-shadow: var(--wf-shadow-xs);
+	padding: 18px;
+	margin-top: var(--wf-space-4);
+}
+
+.wooflow-admin-card:first-child { margin-top: 0; }
+
+.wooflow-admin-card__title {
+	font-size: var(--wf-fs-md);
+	font-weight: 600;
+	color: var(--wf-gray-900);
+	margin: 0 0 var(--wf-space-4);
+	padding-bottom: var(--wf-space-3);
+	border-bottom: var(--wf-border);
+}
+
+.wooflow-admin-card__footer {
+	margin-top: var(--wf-space-4);
+	padding-top: var(--wf-space-4);
+	border-top: var(--wf-border);
+	display: flex;
+	align-items: center;
+	gap: var(--wf-space-3);
+}
+
+/* Descrição que abre um card, antes dos campos. */
+.wooflow-admin-card__intro {
+	font-size: var(--wf-fs-sm);
+	color: var(--wf-gray-500);
+	line-height: 1.5;
+	margin: calc( var(--wf-space-4) * -1 + 2px ) 0 var(--wf-space-4);
+}
+
+/* ------------------------------------------------------------
+   Campos
+
+   Primitivas compartilhadas da linha: um campo rotulado
+   (.wooflow-field), uma linha de caixa de seleção com texto de
+   apoio (.wooflow-check) e um grupo de campos dependentes de um
+   toggle (.wooflow-toggle-block).
+   ------------------------------------------------------------ */
+.wooflow-field { margin-bottom: var(--wf-space-4); }
+.wooflow-field:last-child { margin-bottom: 0; }
+
+.wooflow-field--inline {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--wf-space-2);
+}
+
+.wooflow-field--inline .wooflow-label { margin-bottom: 0; }
+
+.wooflow-label {
+	display: block;
+	font-size: var(--wf-fs-sm);
+	font-weight: 500;
+	color: var(--wf-gray-700);
+	margin-bottom: var(--wf-space-1);
+}
+
+.wooflow-description {
+	font-size: var(--wf-fs-sm);
+	color: var(--wf-gray-500);
+	margin-top: var(--wf-space-1);
+	line-height: 1.5;
+}
+
+.wooflow-check {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--wf-space-2);
+	margin-bottom: var(--wf-space-3);
+	cursor: pointer;
+}
+
+.wooflow-check:last-child { margin-bottom: 0; }
+
+.wooflow-check input[type="checkbox"] {
+	margin: 1px 0 0;
+	flex-shrink: 0;
+}
+
+.wooflow-check__text {
+	font-size: var(--wf-fs-base);
+	color: var(--wf-gray-700);
+	line-height: 1.45;
+	min-width: 0;
+}
+
+.wooflow-check__text .wooflow-description { margin-top: 2px; }
+
+.wooflow-input,
+.wooflow-admin input[type="number"],
+.wooflow-admin .regular-text,
+.wooflow-admin select,
+.wooflow-admin textarea {
+	font-size: var(--wf-fs-base);
+	padding: 7px 10px;
+	border: var(--wf-border);
+	border-radius: var(--wf-radius);
+	background: var(--wf-white);
+	color: var(--wf-gray-900);
+	transition: border-color var(--wf-transition), box-shadow var(--wf-transition);
+}
+
+.wooflow-input:focus,
+.wooflow-admin input[type="number"]:focus,
+.wooflow-admin .regular-text:focus,
+.wooflow-admin select:focus,
+.wooflow-admin textarea:focus {
+	border-color: var(--wf-primary);
+	box-shadow: 0 0 0 1px var(--wf-primary);
+	outline: none;
+}
+
+.wooflow-admin input[type="number"].wooflow-input--sm { width: 90px; }
+
+.wooflow-admin input[type="checkbox"]:focus-visible {
+	outline: 2px solid var(--wf-primary);
+	outline-offset: 1px;
+}
+
+/* Bloco dependente de um toggle: a borda esquerda acende quando
+   o campo marcado com data-wooflow-toggle está ligado, e os
+   campos dependentes esmaecem quando ele está desligado.
+   Sem :has() o bloco fica no estado neutro, que é legível. */
+.wooflow-toggle-block {
+	border-left: 4px solid var(--wf-border-color);
+	padding-left: 14px;
+	transition: border-color var(--wf-transition);
+}
+
+.wooflow-toggle-block:has( [data-wooflow-toggle]:checked ) {
+	border-left-color: var(--wf-primary);
+}
+
+.wooflow-toggle-block__deps {
+	margin-top: var(--wf-space-4);
+	transition: opacity var(--wf-transition);
+}
+
+.wooflow-toggle-block:not(:has( [data-wooflow-toggle]:checked )) .wooflow-toggle-block__deps {
+	opacity: .55;
+}
+
+/* ------------------------------------------------------------
+   Botões
+   ------------------------------------------------------------ */
+.wooflow-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--wf-space-2);
+	font-family: var(--wf-font);
+	font-size: var(--wf-fs-md);
+	font-weight: 500;
+	line-height: 1.3;
+	min-height: 38px;
+	padding: 0 22px;
+	border: 1px solid transparent;
+	border-radius: var(--wf-radius);
+	cursor: pointer;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background var(--wf-transition), border-color var(--wf-transition), color var(--wf-transition);
+}
+
+.wooflow-btn:focus-visible { outline: 2px solid var(--wf-primary); outline-offset: 2px; }
+.wooflow-btn[disabled], .wooflow-btn.is-disabled { opacity: .55; pointer-events: none; }
+
+.wooflow-btn--primary       { background: var(--wf-primary); color: var(--wf-primary-text); border-color: var(--wf-primary); }
+.wooflow-btn--primary:hover { background: var(--wf-primary-dark); border-color: var(--wf-primary-dark); color: var(--wf-primary-text); }
+
+.wooflow-btn--secondary       { background: var(--wf-white); color: var(--wf-gray-700); border-color: var(--wf-border-color); box-shadow: var(--wf-shadow-xs); }
+.wooflow-btn--secondary:hover { background: var(--wf-gray-50); border-color: var(--wf-gray-300); color: var(--wf-gray-900); }
+
+.wooflow-btn--ghost       { background: transparent; color: var(--wf-gray-500); border-color: transparent; }
+.wooflow-btn--ghost:hover { color: var(--wf-primary); background: var(--wf-primary-soft); }
+
+.wooflow-btn--sm { min-height: 30px; font-size: var(--wf-fs-sm); padding: 0 13px; }
+
+/* Alinha o botão nativo do WP ao padrão WooFlow. Escopado em
+   .wooflow-admin: nunca global. */
+.wooflow-admin .wp-core-ui .button-primary,
+.wp-core-ui .wooflow-admin .button-primary {
+	background: var(--wf-primary) !important;
+	border-color: var(--wf-primary-dark) !important;
+	color: var(--wf-primary-text) !important;
+	min-height: 38px !important;
+	padding: 0 22px !important;
+	font-size: var(--wf-fs-md) !important;
+	line-height: 36px !important;
+	border-radius: var(--wf-radius) !important;
+	box-shadow: none !important;
+}
+
+.wooflow-admin .wp-core-ui .button-primary:hover,
+.wp-core-ui .wooflow-admin .button-primary:hover {
+	background: var(--wf-primary-dark) !important;
+}
+
+/* Barra de ações do formulário. Fica fora dos cards porque um
+   único Salvar grava os três grupos de uma vez. */
+.wooflow-form-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--wf-space-3);
+	margin-top: var(--wf-space-5);
+}
+
+/* ------------------------------------------------------------
+   Mensagens e badges
+   ------------------------------------------------------------ */
+.wooflow-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--wf-space-3);
+	padding: var(--wf-space-3) var(--wf-space-4);
+	border-radius: var(--wf-radius-md);
+	font-size: var(--wf-fs-base);
+	line-height: 1.5;
+	margin-bottom: var(--wf-space-4);
+}
+
+.wooflow-notice--success { background: var(--wf-notice-success-bg); border: 1px solid var(--wf-notice-success-bd); color: var(--wf-notice-success-fg); }
+.wooflow-notice--error   { background: var(--wf-notice-error-bg);   border: 1px solid var(--wf-notice-error-bd);   color: var(--wf-notice-error-fg); }
+.wooflow-notice--warning { background: var(--wf-notice-warning-bg); border: 1px solid var(--wf-notice-warning-bd); color: var(--wf-notice-warning-fg); }
+.wooflow-notice--info    { background: var(--wf-notice-info-bg);    border: 1px solid var(--wf-notice-info-bd);    color: var(--wf-notice-info-fg); }
+
+.wooflow-notice .dashicons { flex-shrink: 0; }
+
+.wooflow-badge {
+	display: inline-block;
+	padding: 2px var(--wf-space-2);
+	border-radius: var(--wf-radius-pill);
+	font-size: var(--wf-fs-xs);
+	font-weight: 500;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.wooflow-badge--primary { background: var(--wf-primary-muted); color: var(--wf-primary); }
+.wooflow-badge--success { background: var(--wf-success-bg); color: var(--wf-success-fg); }
+.wooflow-badge--warning { background: var(--wf-warning-bg); color: var(--wf-warning-fg); }
+.wooflow-badge--danger  { background: var(--wf-danger-bg);  color: var(--wf-danger-fg); }
+.wooflow-badge--info    { background: var(--wf-info-bg);    color: var(--wf-info-fg); }
+.wooflow-badge--neutral { background: var(--wf-gray-100);   color: var(--wf-gray-500); }
+
+/* ------------------------------------------------------------
+   Supressão de notices de terceiros
+
+   Apoiada na body class própria, o que dispensa saber se a tela
+   é elementor_page_* (fallback) ou wooflow_page_* (hub ativo).
+   ------------------------------------------------------------ */
+/* O :not(.settings-error) é obrigatório. Sem ele, a regra que
+   esconde `#wpbody-content > .notice` tem especificidade maior
+   (duas classes) do que uma regra de resgate por id
+   (`#setting-error-settings_updated`, uma classe), então o
+   próprio aviso de "Ajustes salvos." do settings_errors()
+   desapareceria — mesmo com !important nos dois lados. */
+body.wooflow-admin-screen #wpbody-content > .notice:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content > .updated:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content > .error:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content > .update-nag,
+body.wooflow-admin-screen #wpbody-content > .woocommerce-message,
+body.wooflow-admin-screen #wpbody-content .wrap > .notice:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content .wrap > .updated:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content .wrap > .error:not(.settings-error),
+body.wooflow-admin-screen #wpbody-content .wrap > .woocommerce-message {
+	display: none !important;
+}
+
+/* Mensagens do próprio plugin. */
+body.wooflow-admin-screen .wooflow-notice { display: flex !important; }
+
+/* ------------------------------------------------------------
+   Responsivo
+   ------------------------------------------------------------ */
+@media (max-width: 820px) {
+	.wooflow-brand-bar {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.wooflow-brand-bar__version { margin-left: 0; align-self: flex-start; }
+}

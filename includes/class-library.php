@@ -33,10 +33,13 @@ class WFAN_Library {
 	/**
 	 * Mantém só as chaves que são nossas — nunca grava ajuste alheio.
 	 *
+	 * Pública porque o ▶ Testar do editor passa pela mesma peneira antes de
+	 * montar o contrato de preview (`WFAN_Editor::ajax_preview_spec()`).
+	 *
 	 * @param array $settings Pares chave/valor vindos do editor.
 	 * @return array
 	 */
-	private static function sanitize_settings( $settings ) {
+	public static function sanitize_settings( $settings ) {
 		$allowed = WFAN_Keys::all_ours();
 		$clean   = [];
 

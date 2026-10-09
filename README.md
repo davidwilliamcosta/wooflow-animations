@@ -11,7 +11,7 @@ ações **Copiar animação** / **Colar animação** que deram origem ao plugin.
 
 O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
-Este plugin preenche essa lacuna: **38 presets** escolhidos numa grade visual que
+Este plugin preenche essa lacuna: **39 presets** escolhidos numa grade visual que
 anima no hover, com gatilho, duração, curva e cascata configuráveis em cada
 elemento.
 
@@ -91,6 +91,33 @@ diretos; aceita qualquer seletor CSS relativo. Os presets de texto fazem o mesmo
 por linha, palavra ou letra, com o texto inteiro preservado no `aria-label` para
 leitores de tela.
 
+### Inverter cores no hover
+
+O preset **Inverter cores no hover** (grupo *Ênfase*) é o caso clássico da lista
+de itens em que o bloco inteiro troca de cor quando o mouse passa: fundo, títulos
+e textos de uma vez, com transição suave.
+
+Aplique-o **no bloco do item**, não na lista — e leve para os outros itens com
+**Copiar / Colar**, que carrega as cores junto. Os controles são quatro cores e a
+velocidade:
+
+| Controle | O que pinta |
+|---|---|
+| Cor de fundo no hover | o próprio bloco |
+| Cor dos títulos no hover | todo `.elementor-heading-title` dentro dele |
+| Cor do número ou rótulo | só os títulos que estão **direto** no bloco — o `01`, `02`… de uma lista numerada |
+| Cor dos textos no hover | os widgets de editor de texto, parágrafos e listas |
+
+Ele é o único preset que não liga motor nenhum: o efeito é um **estado**, não uma
+linha do tempo, então sai inteiro no CSS que o Elementor já escreve para o
+elemento — página que só usa este preset não baixa um byte de JavaScript. Em
+troca, "desligar no celular", duração, espera e curva somem do painel: são
+controles que só o JS saberia obedecer.
+
+As mesmas cores respondem à classe **`wfan-hv-on`**: é por ela que o ▶ Testar
+mostra o efeito sem mouse, e é como se deixa um item **já invertido** — o
+"ativo" de uma lista. Basta adicioná-la em *Avançado → Classes CSS* do bloco.
+
 ---
 
 ## Presets
@@ -100,7 +127,7 @@ leitores de tela.
 | **Entrada** (17) | fade, fade/slide nas 4 direções, zoom in/out, desfoque, girar, virar H/V, cortina vertical/horizontal | próprio |
 | **Texto** (4) | revelar por linha, por palavra, por letra, cortina por linha | próprio |
 | **Scroll** (9) | parallax H/V, fade/escala/giro/cortina travados no scroll, fixar na tela, barra de progresso, contador | GSAP |
-| **Ênfase** (5) | pulsar, flutuar, tremer, balançar, brilhar | próprio |
+| **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
 | **SVG** (1) | desenhar traço | Anime.js |
 | **Lottie** (2) | tocar, travado no scroll | lottie-web |
 
@@ -133,6 +160,7 @@ explícita: **nenhuma biblioteca é carregada por padrão.**
 | Página | O que carrega |
 |---|---|
 | Sem animação | nada (só ~400 bytes de CSS no `<head>`) |
+| Inverter cores no hover | **nenhum JS** — só o CSS que o Elementor já gera para o elemento |
 | Fade, slide, texto, ênfase | `core.js` + motor próprio, ~10 KB |
 | Scroll travado, pin, parallax, contador | \+ GSAP e ScrollTrigger, ~115 KB |
 | Desenho de SVG | \+ Anime.js, ~115 KB |
@@ -165,17 +193,34 @@ dentro do editor e sob `prefers-reduced-motion`.
 
 ---
 
+## Blur progressivo
+
+Ligado em **Elementor → WooFlow Animations**: uma faixa fixa na borda da tela em
+que o desfoque cresce aos poucos, em três camadas de `backdrop-filter` mascaradas
+em degradê — é isso que evita a linha dura que um desfoque único deixa. Nenhum
+HTML na página: a faixa é impressa no rodapé do site, com `aria-hidden` e sem
+receber clique.
+
+Configuráveis a borda (rodapé, topo ou as duas), a altura em porcentagem da tela,
+o desfoque da camada mais forte — as outras duas acompanham na mesma proporção —,
+o `z-index` e o desligamento em telas pequenas, onde desfocar a tela inteira sai
+caro. O CSS são ~1 KB e só entra nas páginas em que o efeito está ligado; dentro
+do editor a faixa não aparece, para não desfocar o que se está editando.
+
+---
+
 ## Ajustes
 
-**Elementor → WooFlow Animations**
+**Elementor → WooFlow Animations**, em quatro abas. Cada aba salva sozinha, sem
+mexer nas outras.
 
 - **Bibliotecas** — permitir ou bloquear GSAP, Anime.js e Lottie.
 - **Scroll suave** — Lenis e seus parâmetros.
-- **Acessibilidade** — respeitar "reduzir movimento" (ligado de fábrica).
-- **Celular** — desligar todas as animações abaixo de uma largura.
-- **Animação nativa** — desligar a entrada do Elementor onde houver animação WooFlow,
-  evitando as duas rodando no mesmo elemento.
-- **Diagnóstico** — registrar no console cada animação registrada e disparada.
+- **Blur progressivo** — borda, altura, intensidade, camada e saída em telas pequenas.
+- **Comportamento** — respeitar "reduzir movimento" (ligado de fábrica), desligar
+  todas as animações abaixo de uma largura, desligar a animação de entrada do
+  Elementor onde houver animação WooFlow, e registrar no console cada animação
+  registrada e disparada.
 
 ---
 
@@ -188,6 +233,7 @@ dentro do editor e sob `prefers-reduced-motion`.
 | `wfan_presets` | adicionar, remover ou ajustar presets |
 | `wfan_payload` | último ajuste no contrato enviado ao navegador |
 | `wfan_lenis_active` | desligar o scroll suave em contextos específicos |
+| `wfan_blur_active` | desligar o blur progressivo em contextos específicos |
 | `wfan_lottie_handle` | apontar para outra cópia do lottie-web |
 | `wfan_controls_tab` | mover a seção para outra aba do painel |
 
@@ -227,10 +273,12 @@ window.wfan.register( 'meu-motor', {
 php tests/smoke.php
 ```
 
-83 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+128 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
-por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, e o
-contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`.
+por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
+contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, as
+medidas do blur progressivo, e a tela de ajustes — padrão de UI, cobertura de
+classes e o recorte por aba que impede uma aba de zerar as outras ao salvar.
 
 ---
 
@@ -263,7 +311,7 @@ WordPress.
 
 ### 2.0.0
 
-- Painel **WooFlow Animations** na primeira aba de cada elemento, com 38 presets em grade visual, preview no hover, busca
+- Painel **WooFlow Animations** na primeira aba de cada elemento, com 39 presets em grade visual, preview no hover, busca
   e grupos, em widget, container, seção e coluna.
 - Gatilhos: entrar na tela, carregar, sair da tela, travado no scroll, hover e
   clique. Cascata em filhos, linhas, palavras ou letras.

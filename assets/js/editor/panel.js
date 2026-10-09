@@ -60,8 +60,7 @@
 		}
 	}
 
-	function currentSettings() {
-		var container = currentContainer();
+	function settingsOf( container ) {
 		var out = {};
 
 		if ( ! container ) {
@@ -81,6 +80,19 @@
 		return out;
 	}
 
+	function currentSettings() {
+		return settingsOf( currentContainer() );
+	}
+
+	/**
+	 * ▶ Testar.
+	 *
+	 * No canvas do editor o wrapper é construído pelo Backbone do Elementor e
+	 * não traz o `data-wfan` — o atributo só existe no front-end e na carga
+	 * inicial do preview. Então o contrato é pedido ao servidor, que é quem
+	 * decide motor e gatilho, e entregue pronto ao preview. O toast só aparece
+	 * depois: antes disso não há nada sendo reproduzido.
+	 */
 	function play() {
 		var list = selected();
 
@@ -100,11 +112,28 @@
 			return;
 		}
 
-		list.forEach( function ( container ) {
-			win.wfanPlay( container.id );
+		var items = list.map( function ( container ) {
+			return { id: container.id, settings: settingsOf( container ) };
 		} );
 
-		toast( t( 'playing' ) );
+		$.post( cfg.ajaxUrl, {
+			action: cfg.previewAction,
+			nonce: cfg.nonce,
+			items: JSON.stringify( items )
+		} ).done( function ( response ) {
+			if ( ! response || ! response.success || ! response.data || ! response.data.items ) {
+				toast( ( response && response.data && response.data.message ) || t( 'error' ) );
+				return;
+			}
+
+			response.data.items.forEach( function ( item ) {
+				win.wfanPlay( item.id, item.spec );
+			} );
+
+			toast( t( 'playing' ) );
+		} ).fail( function () {
+			toast( t( 'error' ) );
+		} );
 	}
 
 	function save() {

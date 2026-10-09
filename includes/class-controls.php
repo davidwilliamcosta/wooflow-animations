@@ -62,6 +62,39 @@ class WFAN_Controls {
 	 */
 	private static $done = [];
 
+	/**
+	 * Alvos da inversão de cor no hover, relativos ao elemento.
+	 *
+	 * Quem escreve essas regras é o próprio Elementor, pelos `selectors` dos
+	 * controles de cor — e não um CSS estático do plugin — porque o que decide
+	 * aqui é especificidade: a cor de cada widget sai em
+	 * `.elementor-{post} .elementor-element.elementor-element-{id} …` (0,3,0) e
+	 * só um seletor montado sobre `{{WRAPPER}}:hover` (0,4,0 para cima) ganha
+	 * dela sem `!important`.
+	 *
+	 * @var array<string,string[]>
+	 */
+	/**
+	 * Classe que liga a inversão sem mouse nenhum.
+	 *
+	 * Existe porque `:hover` não se simula: o ▶ Testar não teria o que fazer, e
+	 * o botão ficaria mentindo. Toda regra de cor sai nos dois estados, e o
+	 * core.js só precisa pendurar esta classe no elemento. Serve também para
+	 * deixar um item já invertido — o "ativo" de uma lista.
+	 */
+	const HOVER_PREVIEW_CLASS = 'wfan-hv-on';
+
+	const HOVER_TARGETS = [
+		'bg'     => [ '' ],
+		'title'  => [ '.elementor-heading-title' ],
+		'accent' => [ '> .elementor-widget-heading .elementor-heading-title' ],
+		'text'   => [
+			'.elementor-widget-text-editor',
+			'.elementor-widget-text-editor p',
+			'.elementor-widget-text-editor li',
+		],
+	];
+
 	public function __construct() {
 		foreach ( self::WIDGET_STACKS as $stack ) {
 			add_action( "elementor/element/{$stack}/section_effects/after_section_end", [ $this, 'inject_widget' ], 10, 2 );
@@ -110,7 +143,8 @@ class WFAN_Controls {
 	}
 
 	/**
-	 * Ids de preset cujo motor é o informado.
+	 * Ids de preset cujo motor é o informado. Os resolvidos só em CSS ficam de
+	 * fora: trocar o motor deles não muda nada, e a opção só confundiria.
 	 *
 	 * @param string $engine Motor.
 	 * @return string[]
@@ -119,12 +153,71 @@ class WFAN_Controls {
 		$ids = [];
 
 		foreach ( WFAN_Presets::all() as $id => $preset ) {
-			if ( $engine === $preset['engine'] ) {
+			if ( $engine === $preset['engine'] && empty( $preset['css_only'] ) ) {
 				$ids[] = $id;
 			}
 		}
 
 		return $ids;
+	}
+
+	/**
+	 * Monta um seletor do Elementor a partir dos alvos relativos.
+	 *
+	 * Em estado de hover o seletor sai duas vezes, uma por `:hover` e outra pela
+	 * classe de preview. Lista separada por vírgula, e não `:is()`: a mesma
+	 * especificidade, sem depender de um seletor que navegador antigo descarta
+	 * — e seletor inválido derruba a regra inteira, não só o ramo dele.
+	 *
+	 * @param string[] $targets Alvos relativos ao elemento ('' = o próprio).
+	 * @param bool     $hover   Prende o seletor ao estado invertido.
+	 * @return string
+	 */
+	private function scoped( $targets, $hover = false ) {
+		$roots = $hover
+			? [ '{{WRAPPER}}:hover', '{{WRAPPER}}.' . self::HOVER_PREVIEW_CLASS ]
+			: [ '{{WRAPPER}}' ];
+
+		$out = [];
+
+		foreach ( $roots as $root ) {
+			foreach ( $targets as $target ) {
+				$out[] = '' === $target ? $root : $root . ' ' . $target;
+			}
+		}
+
+		return implode( ', ', $out );
+	}
+
+	/**
+	 * Controle de cor de um dos alvos da inversão no hover.
+	 *
+	 * A cor vai sozinha nos `selectors`: declaração estática junto viraria lixo
+	 * se o usuário escolher uma cor global, porque o Elementor troca tudo depois
+	 * do primeiro `:` pelo valor global (`Base::add_control_rules()`). A
+	 * transição, por isso, é escrita só pelo controle de velocidade.
+	 *
+	 * @param \Elementor\Controls_Stack $element  Elemento.
+	 * @param string                    $slot     Chave em HOVER_TARGETS.
+	 * @param array                     $args     Rótulo, padrão e descrição.
+	 * @return void
+	 */
+	private function add_hover_color( $element, $slot, $args ) {
+		$property = 'bg' === $slot ? 'background-color' : 'color';
+
+		$element->add_control(
+			WFAN_Keys::ours( 'hover_' . $slot ),
+			array_merge(
+				[
+					'type'      => Controls_Manager::COLOR,
+					'selectors' => [
+						$this->scoped( self::HOVER_TARGETS[ $slot ], true ) => $property . ': {{VALUE}};',
+					],
+					'condition' => [ WFAN_Keys::ours( 'preset' ) => WFAN_Presets::ids_with_param( 'hover_colors' ) ],
+				],
+				$args
+			)
+		);
 	}
 
 	/**
@@ -157,6 +250,10 @@ class WFAN_Controls {
 			return WFAN_Keys::ours( $suffix );
 		};
 
+		// Lista para as condições negativas dos controles que só o JS obedece:
+		// sem preset, ou com um preset resolvido só em CSS, eles não aparecem.
+		$timed = array_merge( [ '' ], WFAN_Presets::ids_css_only() );
+
 		// A chave da animação nativa muda conforme o tipo de elemento.
 		$native = in_array( $element->get_name(), [ 'common', 'common-optimized' ], true )
 			? WFAN_Keys::NATIVE_WIDGET['name']
@@ -178,8 +275,10 @@ class WFAN_Controls {
 					. esc_html__( 'Este elemento também tem a animação de entrada nativa do Elementor ligada. As duas vão rodar juntas — desligue uma delas.', 'wooflow-animations' )
 					. '</div>',
 				'content_classes' => 'elementor-panel-alert elementor-panel-alert-warning',
+				// Preset de estado não briga com a animação de entrada nativa:
+				// o aviso ali seria alarme falso.
 				'condition'       => [
-					$k( 'preset' ) . '!' => '',
+					$k( 'preset' ) . '!' => $timed,
 					$native . '!'       => '',
 				],
 			]
@@ -256,7 +355,7 @@ class WFAN_Controls {
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 4000, 'step' => 50 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 800 ],
 				'condition'  => [
-					$k( 'preset' ) . '!'  => '',
+					$k( 'preset' ) . '!'  => $timed,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
 			]
@@ -271,7 +370,7 @@ class WFAN_Controls {
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 3000, 'step' => 50 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 0 ],
 				'condition'  => [
-					$k( 'preset' ) . '!'  => '',
+					$k( 'preset' ) . '!'  => $timed,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
 			]
@@ -291,9 +390,71 @@ class WFAN_Controls {
 				'default'   => 'power2.out',
 				'options'   => $easings,
 				'condition' => [
-					$k( 'preset' ) . '!'  => '',
+					$k( 'preset' ) . '!'  => $timed,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
+			]
+		);
+
+		/*
+		 * Inversão de cor no hover. É um estado, não uma linha do tempo: quem
+		 * desenha é o CSS que o Elementor gera a partir destes `selectors`, e
+		 * nenhum motor sai do rodapé por causa dele.
+		 */
+		$element->add_control(
+			$k( 'hover_dur' ),
+			[
+				'label'      => __( 'Velocidade da transição (ms)', 'wooflow-animations' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range'      => [ 'px' => [ 'min' => 0, 'max' => 2000, 'step' => 50 ] ],
+				'default'    => [ 'unit' => 'px', 'size' => 300 ],
+				'selectors'  => [
+					$this->scoped(
+						array_merge(
+							self::HOVER_TARGETS['bg'],
+							self::HOVER_TARGETS['title'],
+							self::HOVER_TARGETS['text']
+						)
+					) => 'transition-property: background-color, color; transition-duration: {{SIZE}}ms; transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);',
+				],
+				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'hover_colors' ) ],
+			]
+		);
+
+		$this->add_hover_color(
+			$element,
+			'bg',
+			[
+				'label'   => __( 'Cor de fundo no hover', 'wooflow-animations' ),
+				'default' => '#1A1A1A',
+			]
+		);
+
+		$this->add_hover_color(
+			$element,
+			'title',
+			[
+				'label'   => __( 'Cor dos títulos no hover', 'wooflow-animations' ),
+				'default' => '#FFFFFF',
+			]
+		);
+
+		$this->add_hover_color(
+			$element,
+			'accent',
+			[
+				'label'       => __( 'Cor do número ou rótulo', 'wooflow-animations' ),
+				'description' => __( 'Pinta só os títulos que estão direto no bloco — é onde costuma ficar o número ou o rótulo do item. Deixe vazio se não houver.', 'wooflow-animations' ),
+			]
+		);
+
+		$this->add_hover_color(
+			$element,
+			'text',
+			[
+				'label'   => __( 'Cor dos textos no hover', 'wooflow-animations' ),
+				'default' => '#FFFFFF',
 			]
 		);
 
@@ -505,7 +666,9 @@ class WFAN_Controls {
 				'type'         => Controls_Manager::SWITCHER,
 				'return_value' => 'yes',
 				'separator'    => 'before',
-				'condition'    => [ $k( 'preset' ) . '!' => '' ],
+				// Quem obedece a este toggle é o core.js, que nem é carregado
+				// por um preset resolvido só em CSS.
+				'condition'    => [ $k( 'preset' ) . '!' => $timed ],
 			]
 		);
 

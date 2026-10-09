@@ -1,0 +1,69 @@
+/**
+ * Blur progressivo: faixa fixa na borda da viewport.
+ *
+ * Carregado só quando o efeito está ligado nos Ajustes (CLAUDE.md, regra 5).
+ * As medidas chegam em variáveis, escritas inline por WFAN_Blur::inline_css().
+ */
+
+.wfan-blur {
+	position: fixed;
+	left: 0;
+	right: 0;
+	height: var( --wfan-blur-h, 20vh );
+	z-index: var( --wfan-blur-z, 999 );
+	pointer-events: none;
+}
+
+/*
+ * A borda também define a direção do degradê, e é por isso que ela é uma
+ * variável: as três máscaras abaixo seriam seis regras duplicadas se o
+ * `to bottom` / `to top` estivesse escrito dentro de cada gradiente.
+ */
+.wfan-blur--bottom {
+	bottom: 0;
+	--wfan-blur-dir: to bottom;
+}
+
+.wfan-blur--top {
+	/* O offset existe por causa da barra de administração. */
+	top: var( --wfan-blur-offset, 0px );
+	--wfan-blur-dir: to top;
+}
+
+.wfan-blur__layer {
+	position: absolute;
+	inset: 0;
+}
+
+/*
+ * Cada camada desfoca mais que a anterior e é mascarada numa faixa
+ * deslocada; a soma das três é o que dá a rampa contínua, em vez do
+ * degrau que um único backdrop-filter produz.
+ */
+.wfan-blur__layer--1 {
+	-webkit-backdrop-filter: blur( var( --wfan-blur-1, 1px ) );
+	backdrop-filter: blur( var( --wfan-blur-1, 1px ) );
+	-webkit-mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 0%, #000 25%, #000 50%, transparent 75% );
+	mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 0%, #000 25%, #000 50%, transparent 75% );
+}
+
+.wfan-blur__layer--2 {
+	-webkit-backdrop-filter: blur( var( --wfan-blur-2, 3px ) );
+	backdrop-filter: blur( var( --wfan-blur-2, 3px ) );
+	-webkit-mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 25%, #000 50%, #000 75%, transparent 100% );
+	mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 25%, #000 50%, #000 75%, transparent 100% );
+}
+
+.wfan-blur__layer--3 {
+	-webkit-backdrop-filter: blur( var( --wfan-blur-3, 7px ) );
+	backdrop-filter: blur( var( --wfan-blur-3, 7px ) );
+	-webkit-mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 50%, #000 75%, #000 100% );
+	mask-image: linear-gradient( var( --wfan-blur-dir, to bottom ), transparent 50%, #000 75%, #000 100% );
+}
+
+@media print {
+
+	.wfan-blur {
+		display: none;
+	}
+}

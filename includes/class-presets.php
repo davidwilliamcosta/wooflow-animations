@@ -103,6 +103,7 @@ class WFAN_Presets {
 	 *  - engine   css | gsap | anime | lottie
 	 *  - params   controles extras que o preset usa
 	 *  - triggers gatilhos aceitos (vazio = todos)
+	 *  - css_only efeito de estado, resolvido só em CSS: não carrega motor nenhum
 	 *
 	 * @return array<string,array>
 	 */
@@ -156,6 +157,18 @@ class WFAN_Presets {
 			'wobble' => [ 'label' => __( 'Balançar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'rotate', 'loop' ] ],
 			'glow'   => [ 'label' => __( 'Brilhar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
 
+			// Inversão de cor no hover: estado, não linha do tempo. Sai inteiro
+			// pelos `selectors` dos controles de cor, sem JS nenhum — daí o
+			// `css_only`. Ver CLAUDE.md, regra 18.
+			'hover-invert' => [
+				'label'    => __( 'Inverter cores no hover', 'wooflow-animations' ),
+				'group'    => 'enfase',
+				'engine'   => 'css',
+				'params'   => [ 'hover_colors' ],
+				'triggers' => [ 'hover' ],
+				'css_only' => true,
+			],
+
 			// SVG — é aqui que o Anime.js ganha o lugar dele.
 			'svg-draw'   => [ 'label' => __( 'Desenhar traço', 'wooflow-animations' ), 'group' => 'svg', 'engine' => 'anime', 'params' => [ 'stagger_each' ], 'triggers' => [ 'scroll-in', 'load', 'hover', 'click' ] ],
 
@@ -181,6 +194,7 @@ class WFAN_Presets {
 					'params'   => [],
 					'triggers' => [],
 					'split'    => '',
+					'css_only' => false,
 				]
 			);
 		}
@@ -224,6 +238,37 @@ class WFAN_Presets {
 
 		foreach ( self::all() as $id => $preset ) {
 			if ( in_array( $param, $preset['params'], true ) ) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * O preset é resolvido só em CSS?
+	 *
+	 * @param string $id Id do preset.
+	 * @return bool
+	 */
+	public static function is_css_only( $id ) {
+		$preset = self::get( $id );
+
+		return $preset ? ! empty( $preset['css_only'] ) : false;
+	}
+
+	/**
+	 * Ids dos presets resolvidos só em CSS. Usado para tirar do painel os
+	 * controles que só o JS sabe obedecer — duração, espera, curva, motor e
+	 * "desligar no celular" não chegam a lugar nenhum num efeito de estado.
+	 *
+	 * @return string[]
+	 */
+	public static function ids_css_only() {
+		$ids = [];
+
+		foreach ( self::all() as $id => $preset ) {
+			if ( ! empty( $preset['css_only'] ) ) {
 				$ids[] = $id;
 			}
 		}

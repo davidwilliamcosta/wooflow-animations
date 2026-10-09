@@ -62,6 +62,7 @@ class WFAN_Plugin {
 			'class-editor',
 			'class-render',
 			'class-lenis',
+			'class-blur',
 			'class-lottie',
 		];
 
@@ -82,6 +83,7 @@ class WFAN_Plugin {
 		new WFAN_Editor();
 		new WFAN_Render();
 		new WFAN_Lenis();
+		new WFAN_Blur();
 		new WFAN_Lottie();
 
 		add_action( 'elementor/controls/register', [ $this, 'register_controls' ] );

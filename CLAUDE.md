@@ -1,6 +1,6 @@
 # WooFlow Animations for Elementor — índice para agentes
 
-Plugin WordPress que dá ao Elementor um painel de animações por elemento (38
+Plugin WordPress que dá ao Elementor um painel de animações por elemento (39
 presets, gatilhos, cascata, scroll travado) e as ações de copiar/colar animação
 que originaram o projeto.
 
@@ -47,6 +47,22 @@ do Elementor 4.3.4.
 13. **Não confie no campo `tab` fora do editor.** `get_controls()`, `get_widget_types_config()` e `get_element_types_config()` chamados numa requisição de CLI devolvem `tab => 'content'` para **todas** as seções — inclusive as nativas que o Elementor declara como `TAB_ADVANCED`. Conferir a aba por aí dá falso negativo garantido. A única fonte confiável é a configuração que o editor recebe: autenticar, buscar `wp-admin/post.php?post=<id>&action=elementor` e ler o JSON (`"_wfan_section":{…"tab":"layout"…}`). Foi assim que a mudança da regra 2 foi verificada.
 14. **Preset novo precisa de card com preview.** O card entra sozinho na grade, mas sem `@keyframes` e sem a regra `.wfan-card:hover .wfan-pv-<id>` em [assets/css/editor.css](assets/css/editor.css) ele fica parado no hover — que é justamente o motivo de o painel existir. O smoke test confere a cobertura.
 15. **Chave nova no payload tem de ser lida no `core.js`.** O contrato `data-wfan` é conferido nos dois sentidos pelo smoke test: chave enviada e não lida é configuração que não faz nada; chave lida e não enviada é `undefined` no motor.
+16. **A tela de ajustes segue o padrão de UI da linha WooFlow, e tem seis armadilhas próprias.** Todo o CSS vive em [assets/css/admin.css](assets/css/admin.css) — nada de `<style>` ou `style=""` nos templates — e nenhum valor de cor fica fora dos tokens `--wf-*`. O smoke test confere isso, mais o prefixo único `.wooflow-` e a existência de regra para cada classe usada. As seis:
+    - **O menu-pai é resolvido em runtime**, não fixo: `WFAN_Settings::parent_slug()` devolve o hub da família (`wooflow`, ou o legado `wooflow-checkout`) quando ele existe, e cai no `elementor` quando o plugin está sozinho. Funciona na prioridade padrão do `admin_menu` porque o hub registra o pai na 5; o Elementor registra o dele só na 20, mas `add_submenu_page()` acumula em `$submenu` e o pai aparece depois;
+    - **a capability é `manage_options`, nunca `manage_woocommerce`.** O plugin não depende do WooCommerce, e num site sem Woo ninguém tem essa capability — a tela ficaria inacessível. O smoke test reprova quem trocar;
+    - **o CSS de admin não pode depender de `woocommerce_admin_styles`.** `wp_enqueue_style()` com dependência inexistente é descartado em silêncio, e a tela sairia sem estilo nenhum em site sem Woo;
+    - **a supressão de notices de terceiros precisa do `:not(.settings-error)`.** A regra que esconde `#wpbody-content > .notice` tem especificidade maior que um resgate por id, então sem o `:not()` o próprio aviso de "Ajustes salvos." do `settings_errors()` desaparece — mesmo com `!important` dos dois lados;
+    - **o reset de fonte do painel não pode alcançar os Dashicons.** `.wooflow-admin *` define `font-family` com a mesma especificidade de `.dashicons` do core e vem depois, então sem o resgate `.wooflow-admin .dashicons{font-family:dashicons}` todo ícone vira o caractere cru da área de uso privado. O smoke test confere o resgate;
+    - **cada aba é um `<form>` e grava só os toggles dela.** `sanitize()` parte dos valores já gravados e usa o campo oculto `_tab` para saber que recorte da regra 12 aplicar — sem isso, salvar uma aba desligaria os checkboxes de todas as outras, que nem chegam a ser enviados. `WFAN_Settings::tabs()` é o mapa único: dele saem a navegação, o nome do template (`templates/admin/tabs/tab-<chave>.php`) e esse recorte. Toggle que não estiver em nenhuma aba nunca é gravado pelo formulário — o smoke test reprova quem esquecer.
+17. **Nenhuma configuração vai ao JS por `wp_localize_script()`.** Ele converte todo escalar do primeiro nível em string, e `"0"` é **verdadeiro** no JavaScript: `cfg.offMobile`, `cfg.debug` e `cfg.reduced` são testados por veracidade no [core.js](assets/js/frontend/core.js), então um toggle desligado chegava ligado. Custou a animação inteira em tela ≤ `mobile_bp` — medido em produção, zero animações num viewport de 390 px com "desligar no celular" desligado — e o log de depuração aceso em todo site. O caminho é `WFAN_Assets::localize()`, que imprime `wp_add_inline_script()` com `wp_json_encode()` e os `JSON_HEX_*` (rótulo vindo do banco não pode fechar o `<script>`). O smoke test reprova qualquer `wp_localize_script` em `includes/`, por tokens, e confere o tipo de cada bandeira do `wfanConfig`.
+
+18. **Preset de estado (`css_only`) não carrega motor, e a cor dele sai dos `selectors` do controle.** `hover-invert` é o primeiro: inverter a cor no hover é um estado, não uma linha do tempo, e o `play()` dos motores não tem volta — o `mouseenter` do `core.js` dispara uma vez e acabou. Três consequências que não dá para separar:
+    - a cor **tem** de sair de um seletor `{{WRAPPER}}:hover`, montado em `WFAN_Controls::HOVER_TARGETS`. O Elementor escreve a cor de cada widget em `.elementor-{post} .elementor-element.elementor-element-{id} …` (0,3,0); um CSS estático do plugin (`.wfan-hv:hover`, 0,2,0) perderia e exigiria `!important`. Com `{{WRAPPER}}:hover` a regra nasce com 0,4,0 para cima e ganha sozinha;
+    - **declaração estática não entra junto da cor** no mesmo controle: com uma cor global escolhida, o Elementor troca tudo depois do primeiro `:` pelo valor global (`Base::add_control_rules()`), e um `transition:` vizinho viraria `transition:var(--e-global-color-x)`. Por isso a transição é escrita só pelo controle `hover_dur`, que tem `{{SIZE}}` e nunca é global;
+    - **`:hover` não se simula**, então toda regra de cor sai nos dois estados: `{{WRAPPER}}:hover` **e** `{{WRAPPER}}.wfan-hv-on` (`WFAN_Controls::HOVER_PREVIEW_CLASS`). Sem esse par o ▶ Testar não tem o que ligar — ele mostra o toast "Reproduzindo no preview…" e não acontece nada, que foi exatamente o primeiro bug do preset. O `core.js` pendura a classe por `duração × 2 + 400 ms`, e o `d` do payload vem do `hover_dur` e não do controle genérico de duração, que neste preset está escondido e por isso chega como `null` (`get_active_settings()`). O smoke test confere o par de seletores e o nome da classe dos dois lados;
+    - o render chama `require_style()` no lugar de `require_engine()` (nenhum byte de JS entra), manda `co:1` no payload para o `core.js` não amarrar gatilho nenhum, e os controles que só o JS obedece — duração, espera, curva, motor, "desligar no celular" — saem do painel por `'!' => array_merge( [''], WFAN_Presets::ids_css_only() )`.
+
+19. **No canvas do editor o nosso `data-wfan` não existe — para preset nenhum.** O wrapper ali é construído pelo Backbone do Elementor: `BaseElementView.attributes()` devolve só `data-id`, `data-element_type` e `data-model-cid`, e `className()` monta as classes dele. Os atributos do `_wrapper` do PHP saem do `print_element()`, que roda no front-end e na carga inicial do preview; a re-renderização de um elemento no editor passa pelo ajax `render_widget` → `Document::render_element()` → `render_content()`, que **não** dispara `elementor/frontend/before_render`. Consequência medida: o ▶ Testar ficou desde sempre mostrando "Reproduzindo no preview…" sem reproduzir nada, porque o `setup()` do `core.js` não achava atributo para ler. O caminho é `WFAN_Render::spec()` — o mesmo que o `before_render()` usa — exposto ao painel pelo ajax `WFAN_Editor::PREVIEW_ACTION`; o `panel.js` entrega o contrato pronto em `wfanPlay( id, spec )` e só então mostra o toast. **Nunca** redecidir motor ou gatilho em JavaScript para resolver isto: é o servidor que decide (seção 3), e uma segunda implementação divergiria em silêncio.
 
 ---
 
@@ -58,19 +74,21 @@ includes/
   class-plugin.php          singleton; carrega e liga os módulos
   class-requirements.php    PHP/WP/Elementor; admin notice, nunca fatal
   class-keys.php            REGRA 1 e 3: dono único dos nomes de chave
-  class-presets.php         catálogo (38), grupos, gatilhos, curvas; filtro wfan_presets
-  class-controls.php        REGRA 2: injeta a seção na primeira aba dos 5 tipos
+  class-presets.php         catálogo (39), grupos, gatilhos, curvas, css_only; filtro wfan_presets
+  class-controls.php        REGRA 2 e 18: injeta a seção na primeira aba dos 5 tipos
   class-control-picker.php  controle `wfan-picker` (template da grade)
-  class-editor.php          assets do editor + wp_localize_script
-  class-render.php          REGRA 4: escreve data-wfan; resolve motor e gatilho
-  class-assets.php          REGRA 5 e 8: registry, carregamento sob demanda, pré-esconde
+  class-editor.php          assets do editor + config tipada (REGRA 17) + contrato do ▶ Testar (REGRA 19)
+  class-render.php          REGRA 4 e 18: escreve data-wfan; resolve motor e gatilho
+  class-assets.php          REGRA 5, 8, 17 e 18: registry, carregamento sob demanda, pré-esconde, config tipada
   class-lenis.php           scroll suave global
+  class-blur.php            blur progressivo global; efeito de borda, não preset
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
-  class-settings.php        Elementor → WooFlow Animations
+  class-settings.php        REGRA 16: ajustes globais; menu-pai resolvido em runtime
   class-library.php         "minhas animações" (option + ajax)
+templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.php (REGRA 16)
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js
 assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js
-assets/css/            editor.css (REGRA 13) · frontend.css
+assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · admin.css (REGRA 16)
 tests/                 smoke.php + stubs.php
 ```
 
@@ -93,7 +111,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 87 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 166 verificações, sem WordPress e sem banco
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -102,7 +120,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12 e 15. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18 e 19. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da

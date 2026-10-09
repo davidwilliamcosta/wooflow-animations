@@ -46,7 +46,7 @@ class WFAN_Lenis {
 
 		wp_enqueue_script( 'wfan-lenis-boot' );
 
-		wp_localize_script(
+		WFAN_Assets::localize(
 			'wfan-lenis-boot',
 			'wfanLenis',
 			[

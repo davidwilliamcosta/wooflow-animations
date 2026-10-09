@@ -221,6 +221,11 @@
 	60%, 100% { width: 14px; margin-left: -7px; }
 }
 
+@keyframes wfan-pv-invert {
+	0% { background: rgba(255, 255, 255, 0.12); }
+	50%, 100% { background: #71d7f7; }
+}
+
 @keyframes wfan-pv-travel {
 	0% { transform: translateY(8px); }
 	50% { transform: translateY(-8px); }
@@ -273,6 +278,8 @@
 .wfan-card:hover .wfan-pv-counter { animation-name: wfan-pv-pulse; }
 
 .wfan-card:hover .wfan-pv-shake { animation-name: wfan-pv-shake; }
+
+.wfan-card:hover .wfan-pv-hover-invert { animation-name: wfan-pv-invert; }
 
 .wfan-card:hover .wfan-pv-svg-draw { animation-name: wfan-pv-draw; }
 

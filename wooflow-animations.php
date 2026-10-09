@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WooFlow Animations for Elementor
  * Description: Painel de animações pronto para aplicar em qualquer elemento do Elementor — entrada, scroll, texto, ênfase, SVG e Lottie — mais as ações "Copiar animação" e "Colar animação" no menu de contexto e por atalho.
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: David William da Costa
  * Author URI: https://davidwilliam.studio
  * Plugin URI: https://github.com/davidwilliamcosta/wooflow-animations
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // O cabeçalho Version: e a constante WFAN_VER andam sempre juntos. Ver CLAUDE.md, regra 1.
-define( 'WFAN_VER', '2.1.0' );
+define( 'WFAN_VER', '2.2.0' );
 define( 'WFAN_FILE', __FILE__ );
 define( 'WFAN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WFAN_URL', plugin_dir_url( __FILE__ ) );

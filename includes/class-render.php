@@ -63,6 +63,63 @@ class WFAN_Render {
 	}
 
 	/**
+	 * O contrato completo de um elemento, do jeito que o navegador o veria.
+	 *
+	 * Fica separado do `before_render()` porque o ▶ Testar do editor precisa do
+	 * mesmo resultado: no canvas, o wrapper é construído pelo Backbone do
+	 * Elementor (`BaseElementView.attributes()` devolve só `data-id`,
+	 * `data-element_type` e `data-model-cid`), e o `print_element()` — que é
+	 * quem dispara o nosso gancho — só roda no front-end e na carga inicial do
+	 * preview. Sem este caminho, o editor teria de redecidir motor e gatilho em
+	 * JavaScript, e quem decide isso é o servidor (ver CLAUDE.md, seção 3).
+	 *
+	 * @param array $settings Ajustes do elemento.
+	 * @param bool  $hide     Permite a classe de pré-esconde. Falso no editor.
+	 * @return array{payload:array,classes:string[],engine:string,css_only:bool}|null
+	 */
+	public function spec( $settings, $hide = true ) {
+		$k = static function ( $suffix ) {
+			return WFAN_Keys::ours( $suffix );
+		};
+
+		$preset_id = isset( $settings[ $k( 'preset' ) ] ) ? (string) $settings[ $k( 'preset' ) ] : '';
+
+		if ( '' === $preset_id ) {
+			return null;
+		}
+
+		$preset = WFAN_Presets::get( $preset_id );
+
+		if ( ! $preset ) {
+			return null;
+		}
+
+		$engine = $this->resolve_engine( $preset, $settings, $k );
+
+		if ( ! $engine ) {
+			return null;
+		}
+
+		$trigger = $this->resolve_trigger( $preset, $settings, $k );
+		$classes = [ 'wfan' ];
+
+		if ( $hide && $this->hides_element( $preset, $trigger ) ) {
+			$classes[] = 'wfan-pending';
+
+			if ( 0 === strpos( $preset_id, 'mask' ) || 'text-mask' === $preset_id ) {
+				$classes[] = 'wfan-mask';
+			}
+		}
+
+		return [
+			'payload'  => $this->payload( $preset_id, $preset, $engine, $trigger, $settings, $k ),
+			'classes'  => $classes,
+			'engine'   => $engine,
+			'css_only' => ! empty( $preset['css_only'] ),
+		];
+	}
+
+	/**
 	 * @param \Elementor\Element_Base $element Elemento em renderização.
 	 * @return void
 	 */
@@ -71,51 +128,30 @@ class WFAN_Render {
 			return;
 		}
 
-		$k = static function ( $suffix ) {
-			return WFAN_Keys::ours( $suffix );
-		};
+		$spec = $this->spec( $element->get_settings_for_display(), ! $this->is_preview() );
 
-		$settings  = $element->get_settings_for_display();
-		$preset_id = isset( $settings[ $k( 'preset' ) ] ) ? (string) $settings[ $k( 'preset' ) ] : '';
-
-		if ( '' === $preset_id ) {
+		if ( ! $spec ) {
 			return;
-		}
-
-		$preset = WFAN_Presets::get( $preset_id );
-
-		if ( ! $preset ) {
-			return;
-		}
-
-		$engine = $this->resolve_engine( $preset, $settings, $k );
-
-		if ( ! $engine ) {
-			return;
-		}
-
-		$trigger = $this->resolve_trigger( $preset, $settings, $k );
-		$payload = $this->payload( $preset_id, $preset, $engine, $trigger, $settings, $k );
-
-		$classes = [ 'wfan' ];
-
-		if ( $this->hides_element( $preset, $trigger ) && ! $this->is_preview() ) {
-			$classes[] = 'wfan-pending';
-
-			if ( 0 === strpos( $preset_id, 'mask' ) || 'text-mask' === $preset_id ) {
-				$classes[] = 'wfan-mask';
-			}
 		}
 
 		$element->add_render_attribute(
 			'_wrapper',
 			[
-				'class'        => $classes,
-				'data-wfan' => wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
+				'class'        => $spec['classes'],
+				'data-wfan' => wp_json_encode( $spec['payload'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ),
 			]
 		);
 
-		WFAN_Plugin::assets()->require_engine( $engine );
+		// Preset de estado não precisa de JS: o efeito inteiro sai no CSS que o
+		// Elementor gera pelos `selectors` dos controles. Só a folha do
+		// front-end entra, por causa da rede de prefers-reduced-motion.
+		if ( $spec['css_only'] ) {
+			WFAN_Plugin::assets()->require_style();
+
+			return;
+		}
+
+		WFAN_Plugin::assets()->require_engine( $spec['engine'] );
 
 		$this->maybe_disable_native( $element );
 	}
@@ -140,6 +176,14 @@ class WFAN_Render {
 	private function resolve_engine( $preset, $settings, $k ) {
 		$engine   = $preset['engine'];
 		$override = isset( $settings[ $k( 'engine' ) ] ) ? (string) $settings[ $k( 'engine' ) ] : 'auto';
+
+		// Preset resolvido só em CSS não tem motor para trocar. O controle nem
+		// aparece para ele, mas um copiar/colar vindo de outro preset traz o
+		// valor junto — e uma biblioteca enfileirada à toa é o que a regra 5
+		// existe para evitar.
+		if ( ! empty( $preset['css_only'] ) ) {
+			return 'css';
+		}
 
 		if ( 'css' === $engine && in_array( $override, [ 'gsap', 'anime' ], true ) ) {
 			$engine = $override;
@@ -212,6 +256,20 @@ class WFAN_Render {
 			'dl'  => (int) $this->num( $settings, $k( 'delay' ), 0 ),
 			'e'   => isset( $settings[ $k( 'easing' ) ] ) ? (string) $settings[ $k( 'easing' ) ] : 'power2.out',
 		];
+
+		// Avisa o core.js de que este elemento já está resolvido em CSS: sem
+		// isso ele amarraria o gatilho e mandaria o motor tocar um preset que o
+		// motor não conhece.
+		//
+		// A duração vem do controle próprio: o genérico está escondido neste
+		// preset e, escondido, o Elementor devolve `null` para ele
+		// (`get_active_settings()`), o que daria os 800 ms de fábrica. Quem
+		// precisa do número certo é o ▶ Testar, para segurar o estado o tempo
+		// da transição.
+		if ( ! empty( $preset['css_only'] ) ) {
+			$payload['co'] = 1;
+			$payload['d']  = (int) $this->num( $settings, $k( 'hover_dur' ), 300 );
+		}
 
 		$params = $preset['params'];
 
