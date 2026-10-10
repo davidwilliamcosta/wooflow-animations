@@ -93,6 +93,29 @@ class WFAN_Controls {
 			'.elementor-widget-text-editor p',
 			'.elementor-widget-text-editor li',
 		],
+		'icon'   => [
+			'.elementor-icon',
+			'svg',
+			'svg *',
+		],
+	];
+
+	/**
+	 * O que cada cor escreve.
+	 *
+	 * O ícone precisa de `fill` além de `color`: ícone de fonte obedece à cor
+	 * herdada, mas SVG com `fill` próprio no arquivo ignora `color` — e um
+	 * `fill` no `<svg>` não alcança um `<path fill="…">`, que é presentation
+	 * attribute e ganha da herança. Daí o `svg *`.
+	 *
+	 * @var array<string,string>
+	 */
+	const HOVER_PROPERTY = [
+		'bg'     => 'background-color: {{VALUE}};',
+		'title'  => 'color: {{VALUE}};',
+		'accent' => 'color: {{VALUE}};',
+		'text'   => 'color: {{VALUE}};',
+		'icon'   => 'color: {{VALUE}}; fill: {{VALUE}};',
 	];
 
 	public function __construct() {
@@ -203,15 +226,13 @@ class WFAN_Controls {
 	 * @return void
 	 */
 	private function add_hover_color( $element, $slot, $args ) {
-		$property = 'bg' === $slot ? 'background-color' : 'color';
-
 		$element->add_control(
 			WFAN_Keys::ours( 'hover_' . $slot ),
 			array_merge(
 				[
 					'type'      => Controls_Manager::COLOR,
 					'selectors' => [
-						$this->scoped( self::HOVER_TARGETS[ $slot ], true ) => $property . ': {{VALUE}};',
+						$this->scoped( self::HOVER_TARGETS[ $slot ], true ) => self::HOVER_PROPERTY[ $slot ],
 					],
 					'condition' => [ WFAN_Keys::ours( 'preset' ) => WFAN_Presets::ids_with_param( 'hover_colors' ) ],
 				],
@@ -414,9 +435,10 @@ class WFAN_Controls {
 						array_merge(
 							self::HOVER_TARGETS['bg'],
 							self::HOVER_TARGETS['title'],
-							self::HOVER_TARGETS['text']
+							self::HOVER_TARGETS['text'],
+							self::HOVER_TARGETS['icon']
 						)
-					) => 'transition-property: background-color, color; transition-duration: {{SIZE}}ms; transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);',
+					) => 'transition-property: background-color, color, fill; transition-duration: {{SIZE}}ms; transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);',
 				],
 				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'hover_colors' ) ],
 			]
@@ -455,6 +477,15 @@ class WFAN_Controls {
 			[
 				'label'   => __( 'Cor dos textos no hover', 'wooflow-animations' ),
 				'default' => '#FFFFFF',
+			]
+		);
+
+		$this->add_hover_color(
+			$element,
+			'icon',
+			[
+				'label'       => __( 'Cor dos ícones e SVG', 'wooflow-animations' ),
+				'description' => __( 'Vale para ícone de fonte e para SVG, inclusive o que traz a cor dentro do arquivo.', 'wooflow-animations' ),
 			]
 		);
 

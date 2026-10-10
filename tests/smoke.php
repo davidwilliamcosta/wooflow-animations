@@ -796,7 +796,7 @@ ok( ! in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ), 'nenhum byte de
 $loose   = [];
 $no_test = [];
 
-foreach ( [ 'hover_bg', 'hover_title', 'hover_accent', 'hover_text' ] as $slot ) {
+foreach ( [ 'hover_bg', 'hover_title', 'hover_accent', 'hover_text', 'hover_icon' ] as $slot ) {
 	$control = $widget->controls[ $k( $slot ) ] ?? null;
 
 	foreach ( ( $control['selectors'] ?? [] ) as $selector => $css ) {
@@ -818,6 +818,19 @@ foreach ( [ 'hover_bg', 'hover_title', 'hover_accent', 'hover_text' ] as $slot )
 
 ok( ! $loose, 'toda cor sai de um seletor {{WRAPPER}}:hover', implode( ', ', array_unique( $loose ) ) );
 ok( ! $no_test, 'toda cor também responde à classe do ▶ Testar', implode( ', ', array_unique( $no_test ) ) );
+
+/*
+ * Ícone de fonte obedece à cor herdada, mas SVG com `fill` no próprio arquivo
+ * ignora `color`, e um `fill` no `<svg>` não alcança um `<path fill="…">` —
+ * presentation attribute ganha da herança. Sem as duas coisas, o ícone fica
+ * parado enquanto o resto do bloco inverte.
+ */
+$icon_control = $widget->controls[ $k( 'hover_icon' ) ]['selectors'] ?? [];
+$icon_css     = implode( ' ', $icon_control );
+$icon_sel     = (string) array_key_first( $icon_control ? $icon_control : [ '' => '' ] );
+
+ok( false !== strpos( $icon_css, 'fill: {{VALUE}}' ), 'a cor do ícone escreve fill, não só color', $icon_css );
+ok( false !== strpos( $icon_sel, 'svg *' ), 'a cor do ícone alcança os nós internos do SVG', $icon_sel );
 
 // Classe escrita no PHP e procurada no JS: se os dois nomes divergirem, o
 // botão não faz nada e ninguém vê erro nenhum.
@@ -849,6 +862,11 @@ ok(
 ok(
 	false === strpos( (string) array_key_first( $speed ), ':hover' ),
 	'a transição é declarada fora do hover, senão não há volta suave'
+);
+ok(
+	false !== strpos( $speed_css, 'fill' ) && false !== strpos( (string) array_key_first( $speed ), 'svg' ),
+	'a transição cobre o fill e alcança o SVG, senão o ícone troca de cor de uma vez',
+	$speed_css
 );
 
 // Controle que só o JS obedece não pode aparecer num preset sem JS, e o
@@ -886,7 +904,7 @@ ok( ! $hidden_too_much, 'a exclusão não alcança os presets com motor', implod
 $missing_color = [];
 $extra_color   = [];
 
-foreach ( [ 'hover_dur', 'hover_bg', 'hover_title', 'hover_accent', 'hover_text' ] as $slot ) {
+foreach ( [ 'hover_dur', 'hover_bg', 'hover_title', 'hover_accent', 'hover_text', 'hover_icon' ] as $slot ) {
 	if ( ! wfan_visible( $widget->controls[ $k( $slot ) ], $as_invert ) ) {
 		$missing_color[] = $slot;
 	}

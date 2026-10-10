@@ -87,6 +87,7 @@ class WFAN_Keys {
 		'hover_title',
 		'hover_accent',
 		'hover_text',
+		'hover_icon',
 		'hover_dur',
 		'off_mobile',
 	];

@@ -94,11 +94,11 @@ leitores de tela.
 ### Inverter cores no hover
 
 O preset **Inverter cores no hover** (grupo *Ênfase*) é o caso clássico da lista
-de itens em que o bloco inteiro troca de cor quando o mouse passa: fundo, títulos
-e textos de uma vez, com transição suave.
+de itens em que o bloco inteiro troca de cor quando o mouse passa: fundo, títulos,
+textos e ícones de uma vez, com transição suave.
 
 Aplique-o **no bloco do item**, não na lista — e leve para os outros itens com
-**Copiar / Colar**, que carrega as cores junto. Os controles são quatro cores e a
+**Copiar / Colar**, que carrega as cores junto. Os controles são cinco cores e a
 velocidade:
 
 | Controle | O que pinta |
@@ -107,6 +107,7 @@ velocidade:
 | Cor dos títulos no hover | todo `.elementor-heading-title` dentro dele |
 | Cor do número ou rótulo | só os títulos que estão **direto** no bloco — o `01`, `02`… de uma lista numerada |
 | Cor dos textos no hover | os widgets de editor de texto, parágrafos e listas |
+| Cor dos ícones e SVG | ícone de fonte e SVG, inclusive o que traz a cor dentro do arquivo |
 
 Ele é o único preset que não liga motor nenhum: o efeito é um **estado**, não uma
 linha do tempo, então sai inteiro no CSS que o Elementor já escreve para o
