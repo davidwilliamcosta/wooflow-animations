@@ -721,5 +721,10 @@ class WFAN_Controls {
 		);
 
 		$element->end_controls_section();
+
+		// Seção irmã, no mesmo ponto de injeção e sob o mesmo guard: o fundo
+		// animado não é preset e convive com uma animação de entrada no mesmo
+		// elemento, então não cabe na seção de cima.
+		WFAN_Overlay::add_controls( $element, $tab );
 	}
 }

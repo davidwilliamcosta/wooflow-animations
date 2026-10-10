@@ -90,6 +90,13 @@ class WFAN_Keys {
 		'hover_icon',
 		'hover_dur',
 		'off_mobile',
+		'ovl',
+		'ovl_c1',
+		'ovl_c2',
+		'ovl_speed',
+		'ovl_size',
+		'ovl_opacity',
+		'ovl_blend',
 	];
 
 	/**

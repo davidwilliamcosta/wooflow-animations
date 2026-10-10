@@ -1010,6 +1010,221 @@ if ( preg_match_all( '/animation-name:\s*([a-z0-9-]+)/i', $editor_css, $m ) ) {
 
 ok( ! $no_keyframes, 'toda animação de preview tem @keyframes', implode( ', ', $no_keyframes ) );
 
+section( '14. Fundo animado por elemento' );
+
+/*
+ * O fundo animado não é preset: tem seção própria, convive com uma animação de
+ * entrada no mesmo elemento e não passa pelo data-wfan. Todo parâmetro dele
+ * viaja em custom property escrita pelo Elementor a partir dos `selectors` —
+ * é o que o mantém vivo depois do re-render do editor, que apaga os atributos
+ * do PHP (regra 19).
+ */
+$ovl_section = WFAN_Keys::P . WFAN_Overlay::SECTION;
+
+ok( isset( $widget->sections[ $ovl_section ] ), 'a seção do fundo animado existe' );
+ok(
+	'content' === ( $widget->sections[ $ovl_section ]['tab'] ?? '' ),
+	'widget: fundo animado na aba Conteúdo',
+	$widget->sections[ $ovl_section ]['tab'] ?? '(sem aba)'
+);
+ok(
+	'layout' === ( $block->sections[ $ovl_section ]['tab'] ?? '' ),
+	'bloco: fundo animado na aba Layout',
+	$block->sections[ $ovl_section ]['tab'] ?? '(sem aba)'
+);
+
+// Os controles do fundo só aparecem com o toggle ligado, e o toggle aparece
+// sempre — inclusive sem animação escolhida, que é o ponto do módulo.
+$ovl_slots = [ 'ovl_c1', 'ovl_c2', 'ovl_speed', 'ovl_size', 'ovl_opacity', 'ovl_blend' ];
+$ovl_loose = [];
+$ovl_stuck = [];
+
+foreach ( $ovl_slots as $slot ) {
+	if ( wfan_visible( $widget->controls[ $k( $slot ) ] ?? [], [] ) ) {
+		$ovl_loose[] = $slot;
+	}
+
+	if ( ! wfan_visible( $widget->controls[ $k( $slot ) ] ?? [], [ $k( 'ovl' ) => 'yes' ] ) ) {
+		$ovl_stuck[] = $slot;
+	}
+}
+
+ok( ! $ovl_loose, 'nenhum controle do fundo aparece com o toggle desligado', implode( ', ', $ovl_loose ) );
+ok( ! $ovl_stuck, 'todos aparecem com o toggle ligado', implode( ', ', $ovl_stuck ) );
+ok( empty( $widget->controls[ $k( 'ovl' ) ]['condition'] ), 'o toggle não depende de preset nenhum' );
+
+/*
+ * Uma declaração por controle, sempre com o nome da propriedade antes do
+ * primeiro `:`. Com uma cor global escolhida, o Elementor troca tudo depois
+ * desse `:` pelo valor global — uma segunda declaração vizinha viraria lixo.
+ * Ver regra 18.
+ */
+$ovl_controls = [
+	'ovl'         => 'on',
+	'ovl_c1'      => 'c1',
+	'ovl_c2'      => 'c2',
+	'ovl_speed'   => 'speed',
+	'ovl_size'    => 'size',
+	'ovl_opacity' => 'opacity',
+	'ovl_blend'   => 'blend',
+];
+
+$ovl_bad = [];
+
+foreach ( $ovl_controls as $slot => $var ) {
+	$selectors = $widget->controls[ $k( $slot ) ]['selectors'] ?? [];
+
+	if ( 1 !== count( $selectors ) || '{{WRAPPER}}' !== array_key_first( $selectors ) ) {
+		$ovl_bad[] = $slot . ' (seletor)';
+		continue;
+	}
+
+	$css = (string) reset( $selectors );
+
+	if ( 0 !== strpos( $css, WFAN_Overlay::VARS[ $var ] . ': ' ) ) {
+		$ovl_bad[] = $slot . ' (propriedade)';
+	}
+
+	if ( 1 !== substr_count( $css, ';' ) ) {
+		$ovl_bad[] = $slot . ' (mais de uma declaração)';
+	}
+}
+
+ok( ! $ovl_bad, 'cada controle do fundo escreve uma só custom property no {{WRAPPER}}', implode( ', ', $ovl_bad ) );
+
+// Valor de opção que pareça inteiro vira int na chave do array e sai sem as
+// casas decimais no CSS.
+$ovl_ints = [];
+
+foreach ( array_merge( array_keys( WFAN_Overlay::speeds() ), array_keys( WFAN_Overlay::sizes() ) ) as $value ) {
+	if ( is_int( $value ) ) {
+		$ovl_ints[] = (string) $value;
+	}
+}
+
+ok( ! $ovl_ints, 'nenhum valor de velocidade ou tamanho vira inteiro', implode( ', ', $ovl_ints ) );
+ok(
+	isset( WFAN_Overlay::speeds()[ WFAN_Overlay::DEFAULTS['speed'] ] )
+	&& isset( WFAN_Overlay::sizes()[ WFAN_Overlay::DEFAULTS['size'] ] )
+	&& isset( WFAN_Overlay::blends()[ WFAN_Overlay::DEFAULTS['blend'] ] ),
+	'os padrões existem entre as opções'
+);
+
+/*
+ * Contrato nas três pontas. As cores são o caso especial: lidas direto da
+ * custom property, viriam como o texto cru — com uma cor global do Elementor,
+ * literalmente "var(--e-global-color-x)". Por isso o CSS as aplica a `color` e
+ * `outline-color` do canvas e o JS lê de lá, já resolvidas.
+ */
+$ovl_js  = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/overlay.js' );
+$ovl_css = (string) file_get_contents( WFAN_DIR . 'assets/css/frontend.css' );
+$ovl_both = $ovl_js . $ovl_css;
+$ovl_unread = [];
+
+foreach ( WFAN_Overlay::VARS as $slot => $var ) {
+	if ( false === strpos( $ovl_both, $var ) ) {
+		$ovl_unread[] = $slot;
+	}
+}
+
+ok( ! $ovl_unread, 'toda custom property do fundo é lida no JS ou no CSS', implode( ', ', $ovl_unread ) );
+
+$ovl_unsent = [];
+
+if ( preg_match_all( '/--wfan-ovl[a-z0-9-]*/', $ovl_both, $m ) ) {
+	$ovl_unsent = array_diff( array_unique( $m[0] ), array_values( WFAN_Overlay::VARS ) );
+}
+
+ok( ! $ovl_unsent, 'nenhuma custom property do fundo sem dono no PHP', implode( ', ', $ovl_unsent ) );
+
+ok(
+	false !== strpos( $ovl_css, 'color: var( ' . WFAN_Overlay::VARS['c1'] )
+	&& false !== strpos( $ovl_css, 'outline-color: var( ' . WFAN_Overlay::VARS['c2'] ),
+	'o CSS resolve as duas cores em propriedades de cor de verdade'
+);
+ok(
+	false !== strpos( $ovl_js, 'own.color' ) && false !== strpos( $ovl_js, 'own.outlineColor' ),
+	'o JS lê as cores já resolvidas, nunca o texto cru da custom property'
+);
+ok(
+	false === strpos( $ovl_js, WFAN_Overlay::VARS['c1'] ) && false === strpos( $ovl_js, WFAN_Overlay::VARS['c2'] ),
+	'nenhuma cor é lida direto da custom property no JS'
+);
+
+// Nome de classe é contrato entre as três pontas: divergir aqui é um fundo que
+// nunca aparece, sem erro nenhum.
+ok(
+	false !== strpos( $ovl_css, '.' . WFAN_Overlay::CANVAS_CLASS )
+	&& false !== strpos( $ovl_js, "'" . WFAN_Overlay::CANVAS_CLASS . "'" ),
+	'a classe do canvas tem o mesmo nome no CSS e no JS',
+	WFAN_Overlay::CANVAS_CLASS
+);
+ok(
+	false !== strpos( $ovl_js, "'" . WFAN_Overlay::HOST_CLASS . "'" ),
+	'a classe do elemento tem o mesmo nome no PHP e no JS',
+	WFAN_Overlay::HOST_CLASS
+);
+
+// Render: o fundo existe sem animação nenhuma, e um elemento sem o toggle não
+// ganha classe nem script.
+$only_bg = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'ovl' )    => 'yes',
+	WFAN_Keys::ours( 'ovl_c1' ) => '#112233',
+] ) );
+
+ok( in_array( WFAN_Overlay::HOST_CLASS, $only_bg->classes(), true ), 'o fundo marca o elemento sem preset nenhum' );
+ok( null === $only_bg->payload(), 'e não inventa um contrato de animação' );
+
+$both = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	WFAN_Keys::ours( 'preset' ) => 'fade-up',
+	WFAN_Keys::ours( 'ovl' )    => 'yes',
+] ) );
+
+ok(
+	in_array( WFAN_Overlay::HOST_CLASS, $both->classes(), true ) && 'fade-up' === ( $both->payload()['p'] ?? '' ),
+	'animação de entrada e fundo animado convivem no mesmo elemento'
+);
+
+$no_bg = render_with( new WFAN_Fake_Element( 'common', 'widget', [ WFAN_Keys::ours( 'preset' ) => 'fade-up' ] ) );
+
+ok( ! in_array( WFAN_Overlay::HOST_CLASS, $no_bg->classes(), true ), 'elemento sem o toggle não ganha a classe' );
+
+$ovlAssets = new WFAN_Assets();
+$ovlAssets->register();
+WFAN_Test_Hooks::$enqueued = [];
+$ovlAssets->require_overlay();
+$ovlAssets->enqueue_needed();
+
+ok( in_array( 'wfan-overlay', WFAN_Test_Hooks::$enqueued, true ), 'o fundo enfileira o próprio script' );
+ok( in_array( 'wfan-frontend', WFAN_Test_Hooks::$enqueued, true ), 'e a folha que posiciona o canvas' );
+ok( ! in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ), 'sem arrastar o core nem motor nenhum' );
+ok( [] === ( WFAN_Test_Hooks::$scripts['wfan-overlay']['deps'] ?? null ), 'o script do fundo não depende de biblioteca' );
+
+$quiet = new WFAN_Assets();
+$quiet->register();
+WFAN_Test_Hooks::$enqueued = [];
+$quiet->enqueue_needed();
+
+ok( ! in_array( 'wfan-overlay', WFAN_Test_Hooks::$enqueued, true ), 'página sem fundo animado não carrega o script' );
+
+// Regra 17 também aqui: o overlay.js testa cfg.offMobile e cfg.reduced por
+// veracidade, e "0" é verdadeiro no JavaScript.
+WFAN_Test_Hooks::$inline_js = [];
+( new WFAN_Assets() )->register();
+
+$ovl_cfg_raw = WFAN_Test_Hooks::$inline_js['wfan-overlay'] ?? '';
+$ovl_cfg     = json_decode( (string) preg_replace( '/^var wfanOverlayConfig = |;$/', '', trim( $ovl_cfg_raw ) ), true );
+
+ok( is_array( $ovl_cfg ), 'a configuração do fundo é JSON válido', $ovl_cfg_raw );
+
+foreach ( [ 'reduced', 'offMobile', 'debug', 'editor' ] as $flag ) {
+	ok(
+		is_bool( $ovl_cfg[ $flag ] ?? null ),
+		"wfanOverlayConfig.$flag chega como booleano, nunca \"0\"",
+		var_export( $ovl_cfg[ $flag ] ?? null, true )
+	);
+}
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

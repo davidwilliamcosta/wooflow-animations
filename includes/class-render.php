@@ -128,7 +128,13 @@ class WFAN_Render {
 			return;
 		}
 
-		$spec = $this->spec( $element->get_settings_for_display(), ! $this->is_preview() );
+		$settings = $element->get_settings_for_display();
+
+		// Antes do `return` do preset: o fundo animado não é animação e existe
+		// com ou sem uma escolhida no mesmo elemento.
+		WFAN_Overlay::attach( $element, $settings );
+
+		$spec = $this->spec( $settings, ! $this->is_preview() );
 
 		if ( ! $spec ) {
 			return;

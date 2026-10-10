@@ -1,8 +1,8 @@
 # WooFlow Animations for Elementor — índice para agentes
 
 Plugin WordPress que dá ao Elementor um painel de animações por elemento (39
-presets, gatilhos, cascata, scroll travado) e as ações de copiar/colar animação
-que originaram o projeto.
+presets, gatilhos, cascata, scroll travado, fundo animado) e as ações de
+copiar/colar animação que originaram o projeto.
 
 - **Versão:** `WFAN_VER` em [wooflow-animations.php](wooflow-animations.php) — o cabeçalho `Version:` **precisa** bater com a constante
 - **Slug e text domain:** ambos `wooflow-animations`, como o resto da família (`wooflow-admin`, `wooflow-delivery`, `wooflow-pdv`)
@@ -65,6 +65,12 @@ do Elementor 4.3.4.
 
 19. **No canvas do editor o nosso `data-wfan` não existe — para preset nenhum.** O wrapper ali é construído pelo Backbone do Elementor: `BaseElementView.attributes()` devolve só `data-id`, `data-element_type` e `data-model-cid`, e `className()` monta as classes dele. Os atributos do `_wrapper` do PHP saem do `print_element()`, que roda no front-end e na carga inicial do preview; a re-renderização de um elemento no editor passa pelo ajax `render_widget` → `Document::render_element()` → `render_content()`, que **não** dispara `elementor/frontend/before_render`. Consequência medida: o ▶ Testar ficou desde sempre mostrando "Reproduzindo no preview…" sem reproduzir nada, porque o `setup()` do `core.js` não achava atributo para ler. O caminho é `WFAN_Render::spec()` — o mesmo que o `before_render()` usa — exposto ao painel pelo ajax `WFAN_Editor::PREVIEW_ACTION`; o `panel.js` entrega o contrato pronto em `wfanPlay( id, spec )` e só então mostra o toast. **Nunca** redecidir motor ou gatilho em JavaScript para resolver isto: é o servidor que decide (seção 3), e uma segunda implementação divergiria em silêncio.
 
+20. **O fundo animado não é preset, e o contrato dele viaja em CSS — não em atributo.** O "Overlay Animated" ([includes/class-overlay.php](includes/class-overlay.php)) é um `<canvas>` de ruído simplex que roda sem parar atrás do conteúdo: não tem gatilho, não tem fim, não esconde nada e convive com uma animação de entrada no mesmo elemento. Por isso tem seção própria no painel (registrada no mesmo ponto de injeção da regra 2, sob o mesmo guard) e fica fora do catálogo. Quatro consequências:
+    - **todo parâmetro sai nos `selectors` dos controles, em custom property.** É a única forma de o fundo sobreviver no editor: pela regra 19, o wrapper do canvas perde os atributos do PHP a cada re-render, mas o CSS que o Elementor gera por elemento sobrevive — e ainda é reescrito a cada mexida no controle, sem ida ao servidor. O `WFAN_Overlay::VARS` é o mapa único; o smoke test confere os dois sentidos, como na regra 15;
+    - **as duas cores são lidas de `color` e `outline-color` do canvas, nunca da custom property.** `getPropertyValue('--wfan-ovl-c1')` devolve o texto como foi escrito — com uma cor global do Elementor, literalmente `var(--e-global-color-x)`. Aplicada a uma propriedade de cor de verdade, no [frontend.css](assets/css/frontend.css), o navegador resolve e o `getComputedStyle` devolve `rgb()`. Nenhuma das duas pinta coisa alguma num `<canvas>` sem borda nem texto. O smoke test reprova quem ler a cor direto da variável;
+    - **vale a regra 18 inteira sobre declaração vizinha**: uma declaração por controle, com o nome da propriedade antes do primeiro `:`, senão a cor global leva a vizinha junto;
+    - **o canvas sobe com `z-index:-1` dentro de um `isolation:isolate` inline**, posto pelo [overlay.js](assets/js/frontend/overlay.js) — acima do fundo do elemento, abaixo de todo o conteúdo. Inline, e não pela classe `.wfan-ovl`, porque a classe também se perde no re-render do editor; a classe serve só de seletor rápido no front-end, e quem decide se o fundo existe é sempre a custom property. O `isolation` cria um contexto de empilhamento no elemento, então um filho que precise escapar por `z-index` — submenu, tooltip — fica preso dentro dele: é o preço do `z-index:-1`, e vale só para quem ligou o fundo.
+
 ---
 
 ## 3. Arquitetura
@@ -77,10 +83,11 @@ includes/
   class-keys.php            REGRA 1 e 3: dono único dos nomes de chave
   class-presets.php         catálogo (39), grupos, gatilhos, curvas, css_only; filtro wfan_presets
   class-controls.php        REGRA 2 e 18: injeta a seção na primeira aba dos 5 tipos
+  class-overlay.php         REGRA 20: fundo animado por elemento; dono das custom properties
   class-control-picker.php  controle `wfan-picker` (template da grade)
   class-editor.php          assets do editor + config tipada (REGRA 17) + contrato do ▶ Testar (REGRA 19)
-  class-render.php          REGRA 4 e 18: escreve data-wfan; resolve motor e gatilho
-  class-assets.php          REGRA 5, 8, 17 e 18: registry, carregamento sob demanda, pré-esconde, config tipada
+  class-render.php          REGRA 4, 18 e 20: escreve data-wfan; resolve motor e gatilho
+  class-assets.php          REGRA 5, 8, 17, 18 e 20: registry, carregamento sob demanda, pré-esconde, config tipada
   class-lenis.php           scroll suave global
   class-blur.php            blur progressivo global; efeito de borda, não preset
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
@@ -88,7 +95,7 @@ includes/
   class-library.php         "minhas animações" (option + ajax)
 templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.php (REGRA 16)
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js
-assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js
+assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js · overlay.js (REGRA 20)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · admin.css (REGRA 16)
 tests/                 smoke.php + stubs.php
 ```
@@ -112,7 +119,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 169 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 199 verificações, sem WordPress e sem banco
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -121,10 +128,11 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18 e 19. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19 e 20. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da
 grade no painel, o ▶ Testar, os atalhos de teclado, o Lenis junto do ScrollTrigger
 e qualquer coisa que dependa de layout real (a quebra de linhas do texto mede
-`offsetTop`).
+`offsetTop`; o fundo animado mede `clientWidth`/`clientHeight` para corrigir a
+proporção da mancha, e só o navegador resolve a cor global que ele lê do CSS).

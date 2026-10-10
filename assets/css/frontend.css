@@ -22,6 +22,39 @@
 	line-height: 0;
 }
 
+/*
+ * Fundo animado (WFAN_Overlay). O canvas é criado pelo overlay.js; estas
+ * regras é que o posicionam e traduzem as custom properties que o Elementor
+ * escreve por elemento.
+ *
+ * O `z-index: -1`, dentro do `isolation: isolate` que o JS põe no elemento,
+ * é o que coloca o canvas acima do fundo e abaixo de todo o conteúdo.
+ */
+.wfan-ovl-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
+	pointer-events: none;
+	border-radius: inherit;
+	opacity: var( --wfan-ovl-op, 100% );
+	mix-blend-mode: var( --wfan-ovl-bl, normal );
+
+	/*
+	 * As duas cores chegam ao JavaScript por aqui, e não pelo valor cru da
+	 * custom property: `getPropertyValue('--wfan-ovl-c1')` devolveria o texto
+	 * como foi escrito — com uma cor global do Elementor, literalmente
+	 * `var(--e-global-color-x)`. Aplicadas a propriedades de cor de verdade, o
+	 * navegador resolve, e o overlay.js lê `color` e `outline-color` já em rgb.
+	 * Nenhuma das duas desenha coisa alguma num <canvas> sem borda nem texto.
+	 */
+	color: var( --wfan-ovl-c1, #115CFA );
+	outline-color: var( --wfan-ovl-c2, #6442FF );
+}
+
 /* O conteúdo sempre aparece: sem movimento, mas aparece. */
 @media ( prefers-reduced-motion: reduce ) {
 

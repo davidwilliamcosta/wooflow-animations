@@ -13,7 +13,8 @@ O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
 Este plugin preenche essa lacuna: **39 presets** escolhidos numa grade visual que
 anima no hover, com gatilho, duração, curva e cascata configuráveis em cada
-elemento.
+elemento — mais um **fundo animado** por elemento, que não é animação de entrada
+e convive com uma.
 
 > O módulo `interactions` do Elementor 4 resolve parte disso, mas **só para
 > elementos atômicos**, atrás do experimento `e_atomic_elements`. Widget
@@ -121,6 +122,39 @@ mostra o efeito sem mouse, e é como se deixa um item **já invertido** — o
 
 ---
 
+## Fundo animado
+
+Um degradê de ruído que se move sem parar atrás do conteúdo do elemento — o
+efeito de abertura que temas como o Uncode usam no topo da página. **Não é
+animação**: não tem gatilho, não começa nem termina, e por isso tem seção
+própria, a **WooFlow — Fundo animado**, logo abaixo da de animações. O mesmo
+elemento pode ter os dois ligados.
+
+Vale em widget, container, seção e coluna. São seis controles:
+
+| Controle | O que faz |
+|---|---|
+| Fundo animado | liga o efeito |
+| Cor 1 / Cor 2 | as duas cores que o ruído mistura; aceitam cor global do Elementor. Repita a mesma nas duas para um fundo de uma cor só, que respira pela transparência |
+| Velocidade | lenta, média ou rápida |
+| Tamanho das manchas | grandes, médias ou pequenas |
+| Opacidade | 0 a 100% |
+| Mistura com o fundo | `normal`, multiplicar, tela, sobrepor, luz suave, subexposição, luminosidade — sobre uma imagem de fundo, *multiplicar* escurece e *tela* clareia |
+
+O desenho é um `<canvas>` de 110 × 110 px, pintado pixel a pixel com ruído
+simplex 3D e esticado pelo CSS até o tamanho do elemento: a resolução baixa é o
+que torna o efeito barato, porque o borrão do upscale sai de graça. São ~0,5 ms
+por quadro, a 30 fps no máximo, e **o laço para quando o elemento sai da tela**.
+Com *reduzir movimento* ligado no sistema, o fundo é desenhado uma vez e
+congela.
+
+O canvas entra acima do fundo do elemento e abaixo de todo o conteúdo. Para
+isso o elemento ganha um contexto de empilhamento próprio (`isolation: isolate`)
+— o que significa que um filho que precise escapar por `z-index`, um submenu ou
+um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
+
+---
+
 ## Presets
 
 | Grupo | Presets | Motor |
@@ -162,6 +196,7 @@ explícita: **nenhuma biblioteca é carregada por padrão.**
 |---|---|
 | Sem animação | nada (só ~400 bytes de CSS no `<head>`) |
 | Inverter cores no hover | **nenhum JS** — só o CSS que o Elementor já gera para o elemento |
+| Fundo animado | `overlay.js`, ~7 KB, sem biblioteca nenhuma e sem o `core.js` |
 | Fade, slide, texto, ênfase | `core.js` + motor próprio, ~10 KB |
 | Scroll travado, pin, parallax, contador | \+ GSAP e ScrollTrigger, ~115 KB |
 | Desenho de SVG | \+ Anime.js, ~115 KB |
@@ -299,6 +334,35 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.3.0
+
+- **Fundo animado por elemento**: degradê de ruído em `<canvas>` que roda sem
+  parar atrás do conteúdo, com duas cores, velocidade, tamanho das manchas,
+  opacidade e modo de mistura. Seção própria no painel, convive com uma animação
+  de entrada no mesmo elemento e não carrega biblioteca nenhuma.
+
+### 2.2.1
+
+- Correção no preset **Inverter cores no hover**: ícones e SVG passam a inverter
+  junto com o resto do bloco, pelo novo controle **Cor dos ícones e SVG** — que
+  alcança também o SVG que traz a cor dentro do próprio arquivo.
+
+### 2.2.0
+
+- **Tela de ajustes em abas**, no padrão da linha WooFlow, em *Elementor →
+  WooFlow Animations*. O menu-pai é resolvido em tempo de execução: o hub da
+  família quando ele existe, o menu do Elementor quando o plugin está sozinho.
+- **Blur progressivo** como efeito global de borda, com altura, intensidade e
+  desligamento em telas pequenas.
+- Preset **Inverter cores no hover**, o primeiro resolvido só em CSS: a página
+  não baixa um byte de JavaScript por causa dele.
+- O **▶ Testar** passa a reproduzir no preview. No canvas do editor o wrapper é
+  construído pelo Elementor e nunca carregou o atributo que o plugin lê, então o
+  botão não fazia nada desde que existe.
+- Nenhuma configuração vai mais ao JavaScript por `wp_localize_script()`, que
+  transforma todo valor em texto — e `"0"` é verdadeiro em JavaScript. Um toggle
+  desligado chegava ligado, e era isso que apagava a animação inteira no celular.
 
 ### 2.1.0
 

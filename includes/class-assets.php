@@ -38,6 +38,13 @@ class WFAN_Assets {
 	 */
 	private $used = false;
 
+	/**
+	 * Algum elemento desta página ligou o fundo animado.
+	 *
+	 * @var bool
+	 */
+	private $overlay = false;
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', [ $this, 'register' ], 5 );
 		add_action( 'wp_head', [ $this, 'print_prehide' ], 1 );
@@ -127,6 +134,31 @@ class WFAN_Assets {
 		}
 
 		wp_register_script( 'wfan-lenis-boot', self::url( 'assets/js/frontend/lenis-boot.js' ), [ 'wfan-lenis' ], self::ver( 'assets/js/frontend/lenis-boot.js' ), true );
+
+		// Fundo animado: não depende do core nem de biblioteca nenhuma, e um
+		// elemento pode tê-lo sem ter animação alguma.
+		wp_register_script( 'wfan-overlay', self::url( 'assets/js/frontend/overlay.js' ), [], self::ver( 'assets/js/frontend/overlay.js' ), true );
+		self::localize( 'wfan-overlay', 'wfanOverlayConfig', $this->overlay_config() );
+	}
+
+	/**
+	 * Configuração do fundo animado. Vai tipada pelo mesmo caminho do core, e
+	 * pela mesma razão: `cfg.reduced` e `cfg.offMobile` são testados por
+	 * veracidade no overlay.js. Ver CLAUDE.md, regra 17.
+	 *
+	 * @return array
+	 */
+	private function overlay_config() {
+		return [
+			'reduced'   => WFAN_Settings::is_on( 'respect_reduced' ),
+			'offMobile' => WFAN_Settings::is_on( 'off_mobile' ),
+			'mobileBp'  => (int) WFAN_Settings::get( 'mobile_bp', 767 ),
+			'debug'     => WFAN_Settings::is_on( 'debug' ),
+			'editor'    => $this->is_preview(),
+			'hostClass' => WFAN_Overlay::HOST_CLASS,
+			'canvas'    => WFAN_Overlay::CANVAS_CLASS,
+			'vars'      => WFAN_Overlay::VARS,
+		];
 	}
 
 	/**
@@ -193,6 +225,20 @@ class WFAN_Assets {
 	}
 
 	/**
+	 * Um elemento renderizado ligou o fundo animado.
+	 *
+	 * A folha do front-end vem junto porque é ela que posiciona o canvas e
+	 * traduz as custom properties em opacidade, mistura e cor.
+	 *
+	 * @return void
+	 */
+	public function require_overlay() {
+		$this->used    = true;
+		$this->styles  = true;
+		$this->overlay = true;
+	}
+
+	/**
 	 * @return bool
 	 */
 	public function is_used() {
@@ -229,6 +275,10 @@ class WFAN_Assets {
 		}
 
 		wp_enqueue_style( 'wfan-frontend' );
+
+		if ( $this->overlay ) {
+			wp_enqueue_script( 'wfan-overlay' );
+		}
 
 		if ( ! $this->needed ) {
 			return;
@@ -281,6 +331,10 @@ class WFAN_Assets {
 		wp_enqueue_style( 'wfan-frontend' );
 		wp_enqueue_script( 'wfan-core' );
 		wp_enqueue_script( 'wfan-engine-css' );
+
+		// O fundo animado precisa estar lá antes de o usuário ligar o toggle:
+		// no editor não há segunda chance de enfileirar.
+		wp_enqueue_script( 'wfan-overlay' );
 
 		foreach ( [ 'gsap', 'anime' ] as $engine ) {
 			if ( WFAN_Settings::lib_allowed( $engine ) ) {
