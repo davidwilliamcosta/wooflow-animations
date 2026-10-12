@@ -143,6 +143,25 @@ class WFAN_Overlay {
 	}
 
 	/**
+	 * Registra um controle do fundo animado.
+	 *
+	 * `render_type` é `ui` em todos: o Elementor reescreve o CSS do elemento e
+	 * mais nada. Sem isso, cada mexida num controle re-renderizaria o widget
+	 * inteiro por Ajax, destruindo o canvas e o conteúdo junto — e o fundo
+	 * ficaria piscando enquanto se escolhe a cor. Ver WFAN_Controls::add().
+	 *
+	 * @param \Elementor\Controls_Stack $element Elemento.
+	 * @param string                    $id      Id do controle.
+	 * @param array                     $args    Argumentos.
+	 * @return void
+	 */
+	private static function add( $element, $id, $args ) {
+		$args['render_type'] = 'ui';
+
+		$element->add_control( $id, $args );
+	}
+
+	/**
 	 * Seção própria, registrada logo depois da seção de animação e no mesmo
 	 * ponto de injeção — o guard por nome de stack da WFAN_Controls já cobre as
 	 * duas (ver CLAUDE.md, regra 2).
@@ -162,7 +181,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl' ),
 			[
 				'label'        => __( 'Fundo animado', 'wooflow-animations' ),
@@ -173,7 +193,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_c1' ),
 			[
 				'label'     => __( 'Cor 1', 'wooflow-animations' ),
@@ -184,7 +205,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_c2' ),
 			[
 				'label'       => __( 'Cor 2', 'wooflow-animations' ),
@@ -196,7 +218,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_speed' ),
 			[
 				'label'     => __( 'Velocidade', 'wooflow-animations' ),
@@ -208,7 +231,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_size' ),
 			[
 				'label'     => __( 'Tamanho das manchas', 'wooflow-animations' ),
@@ -220,7 +244,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_opacity' ),
 			[
 				'label'      => __( 'Opacidade', 'wooflow-animations' ),
@@ -233,7 +258,8 @@ class WFAN_Overlay {
 			]
 		);
 
-		$element->add_control(
+		self::add(
+			$element,
 			self::k( 'ovl_blend' ),
 			[
 				'label'       => __( 'Mistura com o fundo', 'wooflow-animations' ),

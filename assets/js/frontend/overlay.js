@@ -547,8 +547,25 @@
 		}
 	}
 
+	/**
+	 * Usado pelo painel do editor quando um controle do fundo animado muda.
+	 *
+	 * Ligar o toggle não re-renderiza o elemento — só reescreve o CSS dele —,
+	 * então sem este empurrão o canvas só nasceria no próximo re-render, ou na
+	 * próxima vez que o editor fosse carregado. O id é o `data-id` do elemento;
+	 * quem sabe achá-lo no documento é este arquivo, não o painel.
+	 */
+	function syncId( id ) {
+		if ( ! id || ! /^[A-Za-z0-9_-]+$/.test( String( id ) ) ) {
+			return;
+		}
+
+		sync( document.querySelector( '.elementor-element[data-id="' + id + '"]' ) );
+	}
+
 	window.wfanOverlay = {
 		sync: sync,
+		syncId: syncId,
 		refresh: scan,
 		instances: instances
 	};

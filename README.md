@@ -11,10 +11,15 @@ ações **Copiar animação** / **Colar animação** que deram origem ao plugin.
 
 O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
-Este plugin preenche essa lacuna: **39 presets** escolhidos numa grade visual que
+Este plugin preenche essa lacuna: **75 presets** escolhidos numa grade visual que
 anima no hover, com gatilho, duração, curva e cascata configuráveis em cada
 elemento — mais um **fundo animado** por elemento, que não é animação de entrada
 e convive com uma.
+
+As 36 animações de entrada do próprio Elementor estão lá dentro, no grupo
+**Nativas**: escolhidas por aqui elas ganham preview no card, duração e curva
+exatas (o painel do Elementor só oferece lento/normal/rápido) e não põem um byte
+de JavaScript deste plugin na página — quem anima é o Elementor.
 
 > O módulo `interactions` do Elementor 4 resolve parte disso, mas **só para
 > elementos atômicos**, atrás do experimento `e_atomic_elements`. Widget
@@ -51,8 +56,8 @@ aba: **Layout** em container, seção e coluna (no topo, antes de tudo) e
 ```
 ┌─ WooFlow Animations ──────────────┐
 │ [Buscar animação…        ]  │
-│ Todas Entrada Texto Scroll  │
-│ Ênfase SVG Lottie           │
+│ Todas Entrada Nativas Texto │
+│ Scroll Ênfase SVG Lottie    │
 │ ┌────┐ ┌────┐ ┌────┐        │
 │ │ ↑  │ │ ↗  │ │ ⤢  │  ← animam no hover
 │ │Fade│ │Slid│ │Zoom│        │
@@ -64,7 +69,10 @@ aba: **Layout** em container, seção e coluna (no topo, antes de tudo) e
 └─────────────────────────────┘
 ```
 
-- **▶ Testar** reproduz a animação no preview sem salvar nada.
+- **O preview toca sozinho**: escolheu a animação, ela acontece no canvas; mexeu
+  na duração, na distância ou na curva, ela repete. O mesmo vale para o fundo
+  animado, que aparece no instante em que o toggle liga.
+- **▶ Testar** repete quando você quiser, sem salvar nada.
 - **Copiar / Colar** levam a configuração inteira para outro elemento — inclusive
   a animação nativa do Elementor, se houver. Funcionam também pelo botão direito
   e por `Ctrl+Alt+C` / `Ctrl+Alt+V` (`Cmd+Alt+…` no Mac).
@@ -160,6 +168,7 @@ um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 | Grupo | Presets | Motor |
 |---|---|---|
 | **Entrada** (17) | fade, fade/slide nas 4 direções, zoom in/out, desfoque, girar, virar H/V, cortina vertical/horizontal | próprio |
+| **Nativas** (36) | as animações de entrada do Elementor: fade, zoom, quicar, deslizar, girar, velocidade da luz, rolar e os dez chamarizes (pulsar, tremer, tada…) | Elementor |
 | **Texto** (4) | revelar por linha, por palavra, por letra, cortina por linha | próprio |
 | **Scroll** (9) | parallax H/V, fade/escala/giro/cortina travados no scroll, fixar na tela, barra de progresso, contador | GSAP |
 | **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
@@ -195,6 +204,7 @@ explícita: **nenhuma biblioteca é carregada por padrão.**
 | Página | O que carrega |
 |---|---|
 | Sem animação | nada (só ~400 bytes de CSS no `<head>`) |
+| Animação nativa | **nada do plugin** — só a folha de ~500 bytes que o Elementor já usa para aquela animação |
 | Inverter cores no hover | **nenhum JS** — só o CSS que o Elementor já gera para o elemento |
 | Fundo animado | `overlay.js`, ~7 KB, sem biblioteca nenhuma e sem o `core.js` |
 | Fade, slide, texto, ênfase | `core.js` + motor próprio, ~10 KB |
@@ -292,8 +302,12 @@ Cada elemento animado sai com um JSON no wrapper:
                     "d":800,"dl":0,"e":"power2.out","dist":40}'>
 ```
 
-O `core.js` lê o atributo, resolve o gatilho e entrega a um motor. Motor novo se
-registra assim:
+O `core.js` lê o atributo, resolve o gatilho e entrega a um motor. Preset do
+grupo **Nativas** é a exceção: ele não sai com atributo nenhum, porque quem anima
+é o Elementor — o wrapper leva só as classes `wfan wfan-native` e o campo
+`_animation` preenchido.
+
+Motor novo se registra assim:
 
 ```js
 window.wfan.register( 'meu-motor', {
@@ -309,12 +323,14 @@ window.wfan.register( 'meu-motor', {
 php tests/smoke.php
 ```
 
-128 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+272 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
-contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, as
-medidas do blur progressivo, e a tela de ajustes — padrão de UI, cobertura de
-classes e o recorte por aba que impede uma aba de zerar as outras ao salvar.
+contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
+entrega à animação nativa do Elementor sem levar asset nosso junto, o
+`render_type` de cada controle, as medidas do blur progressivo, e a tela de
+ajustes — padrão de UI, cobertura de classes e o recorte por aba que impede uma
+aba de zerar as outras ao salvar.
 
 ---
 
@@ -334,6 +350,28 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.4.0
+
+- **Grupo "Nativas" no catálogo**: as 36 animações de entrada do próprio
+  Elementor, com preview no card. Escolhida uma delas, o plugin preenche o campo
+  *Avançado → Efeitos de movimento → Animação de entrada* e sai de cena —
+  **nenhum JavaScript do WooFlow entra na página**. Duração, espera e curva
+  continuam exatas, pelo CSS que o Elementor gera para o elemento.
+- **Preview automático**: mexer em qualquer controle da seção reproduz a
+  animação no canvas, como na animação de entrada nativa. O ▶ Testar continua,
+  para repetir, e agora responde na hora — o contrato da configuração já veio
+  junto com o preview.
+- **Painel bem mais leve**: nenhum controle nosso re-renderiza mais o widget
+  inteiro por Ajax a cada mexida, que era de onde vinham o atraso e os
+  travamentos ao arrastar um slider.
+- **Scroll travado**: novo controle **Começar quando** e a opção *terminar depois
+  de a página rolar uma porcentagem da tela*, com o campo da porcentagem. Testar
+  uma animação travada no scroll também não desamarra mais o gatilho dela.
+- **Fundo animado ao vivo**: ligar o toggle mostra o canvas na hora, sem esperar
+  um re-render do elemento.
+- Correção: opções do campo **Gatilho** sumiam depois de trocar de elemento e só
+  voltavam recarregando o editor.
 
 ### 2.3.0
 

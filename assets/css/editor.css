@@ -289,6 +289,57 @@
 .wfan-card:hover .wfan-pv-pin,
 .wfan-card:hover .wfan-pv-lottie-scrub { animation-name: wfan-pv-travel; }
 
+/* ---------- Preview das nativas ----------
+ *
+ * Aqui só vai o nome da animação: os @keyframes são os do próprio Elementor,
+ * enfileirados no painel por WFAN_Editor::enqueue_native_keyframes(). O card
+ * mostra, no hover, exatamente o que vai acontecer na página — e não uma
+ * imitação nossa que envelheceria sozinha.
+ */
+
+.wfan-card:hover .wfan-pv-nat-fadeIn { animation-name: fadeIn; }
+.wfan-card:hover .wfan-pv-nat-fadeInUp { animation-name: fadeInUp; }
+.wfan-card:hover .wfan-pv-nat-fadeInDown { animation-name: fadeInDown; }
+.wfan-card:hover .wfan-pv-nat-fadeInLeft { animation-name: fadeInLeft; }
+.wfan-card:hover .wfan-pv-nat-fadeInRight { animation-name: fadeInRight; }
+
+.wfan-card:hover .wfan-pv-nat-zoomIn { animation-name: zoomIn; }
+.wfan-card:hover .wfan-pv-nat-zoomInUp { animation-name: zoomInUp; }
+.wfan-card:hover .wfan-pv-nat-zoomInDown { animation-name: zoomInDown; }
+.wfan-card:hover .wfan-pv-nat-zoomInLeft { animation-name: zoomInLeft; }
+.wfan-card:hover .wfan-pv-nat-zoomInRight { animation-name: zoomInRight; }
+
+.wfan-card:hover .wfan-pv-nat-bounceIn { animation-name: bounceIn; }
+.wfan-card:hover .wfan-pv-nat-bounceInUp { animation-name: bounceInUp; }
+.wfan-card:hover .wfan-pv-nat-bounceInDown { animation-name: bounceInDown; }
+.wfan-card:hover .wfan-pv-nat-bounceInLeft { animation-name: bounceInLeft; }
+.wfan-card:hover .wfan-pv-nat-bounceInRight { animation-name: bounceInRight; }
+
+.wfan-card:hover .wfan-pv-nat-slideInUp { animation-name: slideInUp; }
+.wfan-card:hover .wfan-pv-nat-slideInDown { animation-name: slideInDown; }
+.wfan-card:hover .wfan-pv-nat-slideInLeft { animation-name: slideInLeft; }
+.wfan-card:hover .wfan-pv-nat-slideInRight { animation-name: slideInRight; }
+
+.wfan-card:hover .wfan-pv-nat-rotateIn { animation-name: rotateIn; }
+.wfan-card:hover .wfan-pv-nat-rotateInUpLeft { animation-name: rotateInUpLeft; }
+.wfan-card:hover .wfan-pv-nat-rotateInUpRight { animation-name: rotateInUpRight; }
+.wfan-card:hover .wfan-pv-nat-rotateInDownLeft { animation-name: rotateInDownLeft; }
+.wfan-card:hover .wfan-pv-nat-rotateInDownRight { animation-name: rotateInDownRight; }
+
+.wfan-card:hover .wfan-pv-nat-lightSpeedIn { animation-name: lightSpeedIn; animation-timing-function: ease-out; }
+.wfan-card:hover .wfan-pv-nat-rollIn { animation-name: rollIn; }
+
+.wfan-card:hover .wfan-pv-nat-bounce { animation-name: bounce; transform-origin: center bottom; }
+.wfan-card:hover .wfan-pv-nat-flash { animation-name: flash; }
+.wfan-card:hover .wfan-pv-nat-pulse { animation-name: pulse; }
+.wfan-card:hover .wfan-pv-nat-rubberBand { animation-name: rubberBand; }
+.wfan-card:hover .wfan-pv-nat-shake { animation-name: shake; }
+.wfan-card:hover .wfan-pv-nat-headShake { animation-name: headShake; animation-timing-function: ease-in-out; }
+.wfan-card:hover .wfan-pv-nat-swing { animation-name: swing; transform-origin: top center; }
+.wfan-card:hover .wfan-pv-nat-tada { animation-name: tada; }
+.wfan-card:hover .wfan-pv-nat-wobble { animation-name: wobble; }
+.wfan-card:hover .wfan-pv-nat-jello { animation-name: jello; transform-origin: center; }
+
 /* ---------- Ações ---------- */
 
 .wfan-actions {
@@ -383,4 +434,8 @@
 
 .wfan-warning {
 	color: #f0c36d;
+}
+
+.wfan-note {
+	color: #9bb4c9;
 }

@@ -89,6 +89,10 @@ class WFAN_Editor {
 	 * @return void
 	 */
 	public function styles() {
+		// Os @keyframes das nativas, para o card se mexer no hover. Quem
+		// enfileira é o registry, como tudo (regra 5).
+		WFAN_Assets::enqueue_native_keyframes();
+
 		wp_enqueue_style(
 			'wfan-editor',
 			WFAN_Assets::url( 'assets/css/editor.css' ),

@@ -30,12 +30,113 @@ class WFAN_Presets {
 	public static function groups() {
 		return [
 			'entrada' => __( 'Entrada', 'wooflow-animations' ),
+			'nativa'  => __( 'Nativas', 'wooflow-animations' ),
 			'texto'   => __( 'Texto', 'wooflow-animations' ),
 			'scroll'  => __( 'Scroll', 'wooflow-animations' ),
 			'enfase'  => __( 'Ênfase', 'wooflow-animations' ),
 			'svg'     => __( 'SVG', 'wooflow-animations' ),
 			'lottie'  => __( 'Lottie', 'wooflow-animations' ),
 		];
+	}
+
+	/**
+	 * Prefixo dos ids do grupo "Nativas". O que vem depois dele é, letra por
+	 * letra, o nome que o Elementor grava em `_animation` — nada de tabela de
+	 * tradução no meio do caminho.
+	 */
+	const NATIVE_PREFIX = 'nat-';
+
+	/**
+	 * As animações de entrada do próprio Elementor, com rótulo em pt-BR.
+	 *
+	 * A lista é fixa e não sai de `Control_Animation::get_animations()` de
+	 * propósito: aquele método devolve rótulo em inglês, muda de conteúdo com
+	 * filtro de terceiro e não existe fora do editor — e o catálogo daqui
+	 * precisa ser o mesmo no CLI, no smoke test e no front-end. Nome inválido
+	 * não quebra nada: o Elementor simplesmente não acha a folha
+	 * `e-animation-<nome>` e a animação não acontece.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function native_catalog() {
+		return [
+			// Fading.
+			'fadeIn'            => __( 'Fade', 'wooflow-animations' ),
+			'fadeInUp'          => __( 'Fade subindo', 'wooflow-animations' ),
+			'fadeInDown'        => __( 'Fade descendo', 'wooflow-animations' ),
+			'fadeInLeft'        => __( 'Fade da esquerda', 'wooflow-animations' ),
+			'fadeInRight'       => __( 'Fade da direita', 'wooflow-animations' ),
+
+			// Zooming.
+			'zoomIn'            => __( 'Zoom', 'wooflow-animations' ),
+			'zoomInUp'          => __( 'Zoom subindo', 'wooflow-animations' ),
+			'zoomInDown'        => __( 'Zoom descendo', 'wooflow-animations' ),
+			'zoomInLeft'        => __( 'Zoom da esquerda', 'wooflow-animations' ),
+			'zoomInRight'       => __( 'Zoom da direita', 'wooflow-animations' ),
+
+			// Bouncing.
+			'bounceIn'          => __( 'Quicar', 'wooflow-animations' ),
+			'bounceInUp'        => __( 'Quicar subindo', 'wooflow-animations' ),
+			'bounceInDown'      => __( 'Quicar descendo', 'wooflow-animations' ),
+			'bounceInLeft'      => __( 'Quicar da esquerda', 'wooflow-animations' ),
+			'bounceInRight'     => __( 'Quicar da direita', 'wooflow-animations' ),
+
+			// Sliding.
+			'slideInUp'         => __( 'Deslizar subindo', 'wooflow-animations' ),
+			'slideInDown'       => __( 'Deslizar descendo', 'wooflow-animations' ),
+			'slideInLeft'       => __( 'Deslizar da esquerda', 'wooflow-animations' ),
+			'slideInRight'      => __( 'Deslizar da direita', 'wooflow-animations' ),
+
+			// Rotating.
+			'rotateIn'          => __( 'Girar', 'wooflow-animations' ),
+			'rotateInUpLeft'    => __( 'Girar de baixo à esquerda', 'wooflow-animations' ),
+			'rotateInUpRight'   => __( 'Girar de baixo à direita', 'wooflow-animations' ),
+			'rotateInDownLeft'  => __( 'Girar de cima à esquerda', 'wooflow-animations' ),
+			'rotateInDownRight' => __( 'Girar de cima à direita', 'wooflow-animations' ),
+
+			// Light Speed e Specials.
+			'lightSpeedIn'      => __( 'Velocidade da luz', 'wooflow-animations' ),
+			'rollIn'            => __( 'Rolar', 'wooflow-animations' ),
+
+			// Attention Seekers.
+			'bounce'            => __( 'Pular', 'wooflow-animations' ),
+			'flash'             => __( 'Piscar', 'wooflow-animations' ),
+			'pulse'             => __( 'Pulsar', 'wooflow-animations' ),
+			'rubberBand'        => __( 'Elástico', 'wooflow-animations' ),
+			'shake'             => __( 'Tremer', 'wooflow-animations' ),
+			'headShake'         => __( 'Negar com a cabeça', 'wooflow-animations' ),
+			'swing'             => __( 'Balançar', 'wooflow-animations' ),
+			'tada'              => __( 'Tchã-rã', 'wooflow-animations' ),
+			'wobble'            => __( 'Cambalear', 'wooflow-animations' ),
+			'jello'             => __( 'Gelatina', 'wooflow-animations' ),
+		];
+	}
+
+	/**
+	 * O grupo "Nativas" do catálogo.
+	 *
+	 * Gatilho preso em `scroll-in` e nenhum `params`: é tudo o que a animação
+	 * de entrada do Elementor sabe fazer, e controle que o motor não obedece é
+	 * configuração que não faz nada. Duração, espera e curva continuam valendo
+	 * — ver WFAN_Controls e CLAUDE.md, regra 21.
+	 *
+	 * @return array<string,array>
+	 */
+	private static function native_presets() {
+		$out = [];
+
+		foreach ( self::native_catalog() as $name => $label ) {
+			$out[ self::NATIVE_PREFIX . $name ] = [
+				'label'    => $label,
+				'group'    => 'nativa',
+				'engine'   => 'native',
+				'params'   => [],
+				'triggers' => [ 'scroll-in' ],
+				'native'   => $name,
+			];
+		}
+
+		return $out;
 	}
 
 	/**
@@ -104,6 +205,7 @@ class WFAN_Presets {
 	 *  - params   controles extras que o preset usa
 	 *  - triggers gatilhos aceitos (vazio = todos)
 	 *  - css_only efeito de estado, resolvido só em CSS: não carrega motor nenhum
+	 *  - native   nome da animação de entrada nativa equivalente, quando existe
 	 *
 	 * @return array<string,array>
 	 */
@@ -177,6 +279,10 @@ class WFAN_Presets {
 			'lottie-scrub' => [ 'label' => __( 'Lottie travado no scroll', 'wooflow-animations' ), 'group' => 'lottie', 'engine' => 'lottie', 'params' => [ 'lottie_url', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 		];
 
+		// As nativas entram antes do filtro, como qualquer outro preset: quem
+		// quiser tirar uma da grade usa o mesmo `wfan_presets`.
+		$presets = array_merge( $presets, self::native_presets() );
+
 		/**
 		 * Permite adicionar, remover ou ajustar presets.
 		 *
@@ -195,6 +301,7 @@ class WFAN_Presets {
 					'triggers' => [],
 					'split'    => '',
 					'css_only' => false,
+					'native'   => '',
 				]
 			);
 		}
@@ -255,6 +362,38 @@ class WFAN_Presets {
 		$preset = self::get( $id );
 
 		return $preset ? ! empty( $preset['css_only'] ) : false;
+	}
+
+	/**
+	 * Nome da animação de entrada nativa que este preset entrega ao Elementor,
+	 * ou string vazia se ele é animado pelo nosso motor.
+	 *
+	 * @param string $id Id do preset.
+	 * @return string
+	 */
+	public static function native_name( $id ) {
+		$preset = self::get( $id );
+
+		return $preset && ! empty( $preset['native'] ) ? (string) $preset['native'] : '';
+	}
+
+	/**
+	 * Ids dos presets entregues à animação de entrada do Elementor. Usado para
+	 * tirar do painel o que o motor nativo não sabe obedecer: ponto de disparo,
+	 * "animar só uma vez" e o aviso de animação nativa duplicada.
+	 *
+	 * @return string[]
+	 */
+	public static function ids_native() {
+		$ids = [];
+
+		foreach ( self::all() as $id => $preset ) {
+			if ( ! empty( $preset['native'] ) ) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
 	}
 
 	/**
@@ -324,6 +463,7 @@ class WFAN_Presets {
 				'group'    => $preset['group'],
 				'engine'   => $preset['engine'],
 				'params'   => $preset['params'],
+				'native'   => $preset['native'],
 				'triggers' => $preset['triggers'] ? $preset['triggers'] : array_keys( self::triggers() ),
 			];
 		}

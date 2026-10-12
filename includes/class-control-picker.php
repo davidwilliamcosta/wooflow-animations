@@ -69,20 +69,31 @@ class WFAN_Control_Picker extends \Elementor\Base_Data_Control {
 						<span class="wfan-card__label"><?php echo esc_html__( 'Nenhuma', 'wooflow-animations' ); ?></span>
 					</button>
 
-					<?php foreach ( $presets as $id => $preset ) : ?>
+					<?php
+					foreach ( $presets as $id => $preset ) :
+						// O selo diz com o que a animação é feita. Na nativa ele
+						// é o próprio argumento de venda: nenhum JavaScript
+						// nosso entra na página.
+						$native = ! empty( $preset['native'] );
+						$badge  = $native ? __( 'Elementor', 'wooflow-animations' ) : $preset['engine'];
+						$title  = $native
+							/* translators: %s: nome da animação */
+							? sprintf( __( '%s — animação nativa do Elementor, sem JavaScript do WooFlow', 'wooflow-animations' ), $preset['label'] )
+							: $preset['label'];
+						?>
 						<button type="button"
 							class="wfan-card"
 							data-value="<?php echo esc_attr( $id ); ?>"
 							data-group="<?php echo esc_attr( $preset['group'] ); ?>"
 							data-engine="<?php echo esc_attr( $preset['engine'] ); ?>"
 							data-label="<?php echo esc_attr( $preset['label'] ); ?>"
-							title="<?php echo esc_attr( $preset['label'] ); ?>">
+							title="<?php echo esc_attr( $title ); ?>">
 							<span class="wfan-card__stage">
 								<span class="wfan-card__box wfan-pv-<?php echo esc_attr( $id ); ?>"></span>
 							</span>
 							<span class="wfan-card__label"><?php echo esc_html( $preset['label'] ); ?></span>
 							<?php if ( 'css' !== $preset['engine'] ) : ?>
-								<span class="wfan-card__engine"><?php echo esc_html( $preset['engine'] ); ?></span>
+								<span class="wfan-card__engine"><?php echo esc_html( $badge ); ?></span>
 							<?php endif; ?>
 						</button>
 					<?php endforeach; ?>

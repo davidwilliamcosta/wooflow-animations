@@ -44,7 +44,35 @@
 		elementorFrontend.hooks.addAction( 'frontend/element_ready/global', refresh );
 	}
 
+	/**
+	 * Ponto em que a linha do tempo começa a obedecer ao scroll.
+	 */
+	function startFor( spec ) {
+		if ( 'center' === spec.start ) {
+			return 'center center';
+		}
+
+		if ( 'top' === spec.start ) {
+			return 'top top';
+		}
+
+		if ( 'quarter' === spec.start ) {
+			return 'top bottom-=25%';
+		}
+
+		return 'top bottom';
+	}
+
+	/**
+	 * Ponto em que ela termina. O `+=N%` do ScrollTrigger é uma distância a
+	 * partir do início, medida em porcentagem da altura da tela — é com ele
+	 * que "terminar depois de rolar uma tela" vira uma conta só.
+	 */
 	function endFor( spec ) {
+		if ( 'pct' === spec.end ) {
+			return '+=' + Math.max( 10, spec.pct ) + '%';
+		}
+
 		if ( 'center' === spec.end ) {
 			return 'center center';
 		}
@@ -101,6 +129,34 @@
 			case 'wobble': return { rotation: spec.rot };
 			default: return null;
 		}
+	}
+
+	/**
+	 * Guarda o ScrollTrigger criado para este elemento. O GSAP não desfaz isso
+	 * sozinho: `tween.kill()` mata a tween e deixa o gatilho vivo, segurando
+	 * pin, espaçador e cálculo de posição.
+	 */
+	function remember( el, instance ) {
+		if ( ! instance ) {
+			return;
+		}
+
+		el.__wfanST = el.__wfanST || [];
+		el.__wfanST.push( instance );
+	}
+
+	function killTriggers( el ) {
+		if ( ! el.__wfanST ) {
+			return;
+		}
+
+		el.__wfanST.forEach( function ( instance ) {
+			if ( instance && typeof instance.kill === 'function' ) {
+				instance.kill( true );
+			}
+		} );
+
+		el.__wfanST = null;
 	}
 
 	function clear( targets ) {
@@ -179,9 +235,15 @@
 				return;
 			}
 
+			// Amarrar de novo sem desamarrar o de antes é o que fazia o ▶
+			// Testar empilhar ScrollTrigger a cada clique: matar a tween não
+			// mata o gatilho dela, e os antigos continuavam disputando o
+			// mesmo elemento a cada rolagem.
+			killTriggers( el );
+
 			var trigger = {
 				trigger: el,
-				start: 'top bottom',
+				start: startFor( spec ),
 				end: endFor( spec ),
 				scrub: true,
 				pin: spec.pin ? el : false,
@@ -189,14 +251,14 @@
 			};
 
 			if ( 'pin' === spec.preset ) {
-				ScrollTrigger.create( {
+				remember( el, ScrollTrigger.create( {
 					trigger: el,
 					start: 'top top',
 					end: endFor( spec ),
 					pin: true,
 					pinSpacing: true,
 					invalidateOnRefresh: true
-				} );
+				} ) );
 
 				return;
 			}
@@ -252,6 +314,10 @@
 			to.scrollTrigger = trigger;
 
 			el.__wfanTween = gsap.fromTo( targets, from, to );
+
+			if ( el.__wfanTween.scrollTrigger ) {
+				remember( el, el.__wfanTween.scrollTrigger );
+			}
 		},
 
 		reset: function ( el, spec, targets ) {
@@ -260,6 +326,7 @@
 				el.__wfanTween = null;
 			}
 
+			killTriggers( el );
 			clear( targets );
 		},
 

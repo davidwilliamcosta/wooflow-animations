@@ -84,6 +84,20 @@ class WFAN_Controls {
 	 */
 	const HOVER_PREVIEW_CLASS = 'wfan-hv-on';
 
+	/**
+	 * Classe do elemento entregue à animação de entrada do Elementor.
+	 *
+	 * Serve de âncora para a duração e a curva exatas, que o painel nativo não
+	 * oferece: a regra nasce em `{{WRAPPER}}.wfan-native.animated` e ganha de
+	 * `.animated{animation-duration:1.25s}` do Elementor sem `!important`.
+	 * Presa ao preset, e não ao `{{WRAPPER}}` sozinho, para não vazar para a
+	 * animação de entrada que o usuário tenha escolhido à mão.
+	 *
+	 * O mesmo nome é usado pelo core.js (▶ Testar) e pelo resgate do
+	 * `WFAN_Assets::print_prehide()`.
+	 */
+	const NATIVE_CLASS = 'wfan-native';
+
 	const HOVER_TARGETS = [
 		'bg'     => [ '' ],
 		'title'  => [ '.elementor-heading-title' ],
@@ -213,6 +227,39 @@ class WFAN_Controls {
 	}
 
 	/**
+	 * Registra um controle nosso, decidindo o `render_type` por ele.
+	 *
+	 * Esta é a diferença entre um painel que responde e um que trava. Controle
+	 * sem `render_type` declarado e que não seja de estilo faz o Elementor
+	 * marcar `isContentChanged` e re-renderizar o WIDGET INTEIRO por Ajax a
+	 * cada mexida (`BaseElementView.renderChanges()`) — arrastar o slider de
+	 * duração disparava uma requisição por parada do mouse, e o canvas piscava
+	 * em cima do preview que a gente acabara de tocar.
+	 *
+	 * Nenhum controle nosso muda o HTML do elemento: o contrato é escrito no
+	 * servidor e, no canvas, o Elementor nem o lê (regra 19). Então:
+	 *  - com `selectors`, `ui` — o Elementor só reescreve o CSS do elemento,
+	 *    que é justamente o que o preset de estado e o fundo animado precisam;
+	 *  - sem `selectors`, `none` — nada é re-renderizado, e quem mostra o
+	 *    resultado é o preview automático do painel.
+	 *
+	 * É o mesmo que o Elementor faz com os controles da animação de entrada
+	 * dele (`Control_Animation::get_default_settings()`).
+	 *
+	 * @param \Elementor\Controls_Stack $element Elemento.
+	 * @param string                    $id      Id do controle.
+	 * @param array                     $args    Argumentos.
+	 * @return void
+	 */
+	private function add( $element, $id, $args ) {
+		if ( ! isset( $args['render_type'] ) ) {
+			$args['render_type'] = isset( $args['selectors'] ) ? 'ui' : 'none';
+		}
+
+		$element->add_control( $id, $args );
+	}
+
+	/**
 	 * Controle de cor de um dos alvos da inversão no hover.
 	 *
 	 * A cor vai sozinha nos `selectors`: declaração estática junto viraria lixo
@@ -226,7 +273,8 @@ class WFAN_Controls {
 	 * @return void
 	 */
 	private function add_hover_color( $element, $slot, $args ) {
-		$element->add_control(
+		$this->add(
+			$element,
 			WFAN_Keys::ours( 'hover_' . $slot ),
 			array_merge(
 				[
@@ -275,6 +323,12 @@ class WFAN_Controls {
 		// sem preset, ou com um preset resolvido só em CSS, eles não aparecem.
 		$timed = array_merge( [ '' ], WFAN_Presets::ids_css_only() );
 
+		// Preset nativo é tocado pelo próprio Elementor: ponto de disparo e
+		// "animar só uma vez" não são ajustáveis lá, e controle que não é
+		// obedecido é configuração que não faz nada. Ver CLAUDE.md, regra 21.
+		$native_ids = WFAN_Presets::ids_native();
+		$own_engine = array_merge( $timed, $native_ids );
+
 		// A chave da animação nativa muda conforme o tipo de elemento.
 		$native = in_array( $element->get_name(), [ 'common', 'common-optimized' ], true )
 			? WFAN_Keys::NATIVE_WIDGET['name']
@@ -288,7 +342,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'native_warning' ),
 			[
 				'type'            => Controls_Manager::RAW_HTML,
@@ -296,16 +351,18 @@ class WFAN_Controls {
 					. esc_html__( 'Este elemento também tem a animação de entrada nativa do Elementor ligada. As duas vão rodar juntas — desligue uma delas.', 'wooflow-animations' )
 					. '</div>',
 				'content_classes' => 'elementor-panel-alert elementor-panel-alert-warning',
-				// Preset de estado não briga com a animação de entrada nativa:
-				// o aviso ali seria alarme falso.
+				// Preset de estado não briga com a animação de entrada nativa,
+				// e preset nativo *é* ela — nos dois casos o aviso seria alarme
+				// falso.
 				'condition'       => [
-					$k( 'preset' ) . '!' => $timed,
+					$k( 'preset' ) . '!' => $own_engine,
 					$native . '!'       => '',
 				],
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'preset' ),
 			[
 				'label'   => __( 'Animação', 'wooflow-animations' ),
@@ -314,7 +371,21 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
+			$k( 'native_note' ),
+			[
+				'type'            => Controls_Manager::RAW_HTML,
+				'raw'             => '<div class="wfan-note">'
+					. esc_html__( 'Animação do próprio Elementor: nenhum JavaScript do WooFlow entra na página. Ela ocupa o campo Avançado → Efeitos de movimento → Animação de entrada deste elemento.', 'wooflow-animations' )
+					. '</div>',
+				'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
+				'condition'       => [ $k( 'preset' ) => $native_ids ],
+			]
+		);
+
+		$this->add(
+			$element,
 			$k( 'actions' ),
 			[
 				'type' => Controls_Manager::RAW_HTML,
@@ -327,7 +398,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'trigger' ),
 			[
 				'label'     => __( 'Gatilho', 'wooflow-animations' ),
@@ -338,7 +410,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'viewport' ),
 			[
 				'label'      => __( 'Disparar quando estiver visível (%)', 'wooflow-animations' ),
@@ -347,27 +420,30 @@ class WFAN_Controls {
 				'range'      => [ '%' => [ 'min' => 0, 'max' => 100, 'step' => 5 ] ],
 				'default'    => [ 'unit' => '%', 'size' => 20 ],
 				'condition'  => [
-					$k( 'preset' ) . '!' => '',
+					$k( 'preset' ) . '!' => array_merge( [ '' ], $native_ids ),
 					$k( 'trigger' )      => [ 'scroll-in', 'scroll-out' ],
 				],
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'once' ),
 			[
 				'label'        => __( 'Animar só uma vez', 'wooflow-animations' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'default'      => 'yes',
 				'return_value' => 'yes',
+				// O nativo só toca uma vez, e não há como pedir o contrário.
 				'condition'    => [
-					$k( 'preset' ) . '!' => '',
+					$k( 'preset' ) . '!' => array_merge( [ '' ], $native_ids ),
 					$k( 'trigger' )      => [ 'scroll-in', 'scroll-out' ],
 				],
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'duration' ),
 			[
 				'label'      => __( 'Duração (ms)', 'wooflow-animations' ),
@@ -375,6 +451,15 @@ class WFAN_Controls {
 				'size_units' => [ 'px' ],
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 4000, 'step' => 50 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 800 ],
+				// O nativo só oferece lento/normal/rápido no painel do
+				// Elementor; aqui o número é exato, porque a declaração sai
+				// no CSS que o próprio Elementor gera para este elemento. A
+				// classe `.wfan-native` é o que prende a regra ao preset
+				// nativo: sem ela, a duração vazaria para a animação de
+				// entrada que o usuário tenha escolhido à mão.
+				'selectors'  => [
+					'{{WRAPPER}}.' . self::NATIVE_CLASS . '.animated' => 'animation-duration: {{SIZE}}ms;',
+				],
 				'condition'  => [
 					$k( 'preset' ) . '!'  => $timed,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
@@ -382,7 +467,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'delay' ),
 			[
 				'label'      => __( 'Espera antes de começar (ms)', 'wooflow-animations' ),
@@ -398,19 +484,29 @@ class WFAN_Controls {
 		);
 
 		$easings = [];
+		$beziers = [];
 
 		foreach ( WFAN_Presets::easings() as $name => $data ) {
 			$easings[ $name ] = $data['label'];
+			$beziers[ $name ] = $data['bezier'];
 		}
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'easing' ),
 			[
-				'label'     => __( 'Curva', 'wooflow-animations' ),
-				'type'      => Controls_Manager::SELECT,
-				'default'   => 'power2.out',
-				'options'   => $easings,
-				'condition' => [
+				'label'               => __( 'Curva', 'wooflow-animations' ),
+				'type'                => Controls_Manager::SELECT,
+				'default'             => 'power2.out',
+				'options'             => $easings,
+				// O valor gravado é o nome GSAP, que não diz nada ao CSS: o
+				// dicionário é quem traduz para o cubic-bezier na hora de
+				// escrever a regra do preset nativo.
+				'selectors_dictionary' => $beziers,
+				'selectors'           => [
+					'{{WRAPPER}}.' . self::NATIVE_CLASS . '.animated' => 'animation-timing-function: {{VALUE}};',
+				],
+				'condition'           => [
 					$k( 'preset' ) . '!'  => $timed,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
@@ -422,7 +518,8 @@ class WFAN_Controls {
 		 * desenha é o CSS que o Elementor gera a partir destes `selectors`, e
 		 * nenhum motor sai do rodapé por causa dele.
 		 */
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'hover_dur' ),
 			[
 				'label'      => __( 'Velocidade da transição (ms)', 'wooflow-animations' ),
@@ -489,7 +586,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'distance' ),
 			[
 				'label'      => __( 'Distância (px)', 'wooflow-animations' ),
@@ -501,7 +599,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'scale_from' ),
 			[
 				'label'     => __( 'Escala inicial', 'wooflow-animations' ),
@@ -514,7 +613,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'blur' ),
 			[
 				'label'      => __( 'Desfoque (px)', 'wooflow-animations' ),
@@ -526,7 +626,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'rotate' ),
 			[
 				'label'      => __( 'Rotação (graus)', 'wooflow-animations' ),
@@ -538,7 +639,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'counter_to' ),
 			[
 				'label'       => __( 'Contar até', 'wooflow-animations' ),
@@ -549,7 +651,25 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
+			$k( 'scrub_start' ),
+			[
+				'label'     => __( 'Começar quando', 'wooflow-animations' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => 'enter',
+				'options'   => [
+					'enter'  => __( 'o elemento entrar na tela', 'wooflow-animations' ),
+					'quarter' => __( 'o elemento estiver a um quarto da tela', 'wooflow-animations' ),
+					'center' => __( 'o elemento chegar ao centro da tela', 'wooflow-animations' ),
+					'top'    => __( 'o topo do elemento chegar ao topo da tela', 'wooflow-animations' ),
+				],
+				'condition' => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'scrub_end' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
 			$k( 'scrub_end' ),
 			[
 				'label'     => __( 'Terminar quando', 'wooflow-animations' ),
@@ -559,12 +679,31 @@ class WFAN_Controls {
 					'center' => __( 'o elemento chegar ao centro da tela', 'wooflow-animations' ),
 					'top'    => __( 'o topo do elemento chegar ao topo da tela', 'wooflow-animations' ),
 					'out'    => __( 'o elemento sair da tela', 'wooflow-animations' ),
+					'pct'    => __( 'a página rolar uma porcentagem da tela', 'wooflow-animations' ),
 				],
 				'condition' => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'scrub_end' ) ],
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
+			$k( 'scrub_pct' ),
+			[
+				'label'       => __( 'Porcentagem da tela rolada', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '%' ],
+				'range'       => [ '%' => [ 'min' => 10, 'max' => 400, 'step' => 10 ] ],
+				'default'     => [ 'unit' => '%', 'size' => 100 ],
+				'description' => __( 'Contada a partir do ponto de início: 100% é uma tela inteira de rolagem até a animação se completar.', 'wooflow-animations' ),
+				'condition'   => [
+					$k( 'preset' )    => WFAN_Presets::ids_with_param( 'scrub_end' ),
+					$k( 'scrub_end' ) => 'pct',
+				],
+			]
+		);
+
+		$this->add(
+			$element,
 			$k( 'pin' ),
 			[
 				'label'        => __( 'Fixar o elemento durante a animação', 'wooflow-animations' ),
@@ -577,7 +716,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'loop' ),
 			[
 				'label'        => __( 'Repetir sem parar', 'wooflow-animations' ),
@@ -588,7 +728,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'lottie_url' ),
 			[
 				'label'       => __( 'Arquivo Lottie (.json)', 'wooflow-animations' ),
@@ -600,7 +741,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'lottie_loop' ),
 			[
 				'label'        => __( 'Repetir o Lottie', 'wooflow-animations' ),
@@ -611,7 +753,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'lottie_speed' ),
 			[
 				'label'     => __( 'Velocidade do Lottie', 'wooflow-animations' ),
@@ -624,7 +767,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'stagger' ),
 			[
 				'label'        => __( 'Animar os filhos em cascata', 'wooflow-animations' ),
@@ -635,7 +779,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'stagger_target' ),
 			[
 				'label'       => __( 'Filhos a animar', 'wooflow-animations' ),
@@ -662,7 +807,8 @@ class WFAN_Controls {
 			],
 		];
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'stagger_each' ),
 			[
 				'label'      => __( 'Intervalo entre cada um (ms)', 'wooflow-animations' ),
@@ -674,7 +820,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'stagger_from' ),
 			[
 				'label'      => __( 'Começar pelo', 'wooflow-animations' ),
@@ -690,7 +837,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'off_mobile' ),
 			[
 				'label'        => __( 'Desligar no celular', 'wooflow-animations' ),
@@ -703,7 +851,8 @@ class WFAN_Controls {
 			]
 		);
 
-		$element->add_control(
+		$this->add(
+			$element,
 			$k( 'engine' ),
 			[
 				'label'       => __( 'Motor', 'wooflow-animations' ),

@@ -1,8 +1,9 @@
 # WooFlow Animations for Elementor — índice para agentes
 
-Plugin WordPress que dá ao Elementor um painel de animações por elemento (39
-presets, gatilhos, cascata, scroll travado, fundo animado) e as ações de
-copiar/colar animação que originaram o projeto.
+Plugin WordPress que dá ao Elementor um painel de animações por elemento (75
+presets — 39 nossos e 36 entregues à animação de entrada do próprio Elementor —,
+gatilhos, cascata, scroll travado, fundo animado) e as ações de copiar/colar
+animação que originaram o projeto.
 
 - **Versão:** `WFAN_VER` em [wooflow-animations.php](wooflow-animations.php) — o cabeçalho `Version:` **precisa** bater com a constante
 - **Slug e text domain:** ambos `wooflow-animations`, como o resto da família (`wooflow-admin`, `wooflow-delivery`, `wooflow-pdv`)
@@ -71,6 +72,18 @@ do Elementor 4.3.4.
     - **vale a regra 18 inteira sobre declaração vizinha**: uma declaração por controle, com o nome da propriedade antes do primeiro `:`, senão a cor global leva a vizinha junto;
     - **o canvas sobe com `z-index:-1` dentro de um `isolation:isolate` inline**, posto pelo [overlay.js](assets/js/frontend/overlay.js) — acima do fundo do elemento, abaixo de todo o conteúdo. Inline, e não pela classe `.wfan-ovl`, porque a classe também se perde no re-render do editor; a classe serve só de seletor rápido no front-end, e quem decide se o fundo existe é sempre a custom property. O `isolation` cria um contexto de empilhamento no elemento, então um filho que precise escapar por `z-index` — submenu, tooltip — fica preso dentro dele: é o preço do `z-index:-1`, e vale só para quem ligou o fundo.
 
+21. **A animação de entrada do Elementor é um grupo do catálogo, não uma conversão dos nossos presets.** Os 36 presets `nat-*` ([class-presets.php](includes/class-presets.php), `native_catalog()`) não têm motor: o render preenche `_animation` (widget) ou `animation` (bloco) e sai de cena — zero bytes de JavaScript nosso na página, e quem esconde, observa a tela e anima é o `GlobalHandler` do Elementor. O que **não** dá para fazer é converter `fade-up` em `fadeInUp` automaticamente: os keyframes do Elementor têm o deslocamento cravado (`translate3d(0,100%,0)`, escala 0.3, −200°) e os controles de distância, escala e rotação sumiriam de vista obedecendo a outro número. Seis consequências:
+    - **a chave nativa é escrita ANTES de qualquer `get_settings_for_display()`.** O Elementor guarda o resultado em `parsed_active_settings` na primeira chamada, e é desse cache que o `add_render_attributes()` lê `_animation` para pôr a classe `elementor-invisible` e montar o `data-settings`. Escrever depois não chega a lugar nenhum — por isso `WFAN_Render::apply_native()` lê os ajustes crus (`get_settings()`) e roda antes de tudo no `before_render()`;
+    - **preset nativo não escreve `data-wfan` e não pede motor.** Só a classe `wfan wfan-native` e a folha `e-animation-<nome>`, que o Elementor registra e ninguém enfileira sozinho: a varredura que ele faz dos dados salvos não vê a nossa chave, porque a animação nativa só existe em tempo de render. Quem enfileira é `WFAN_Assets::require_native()`;
+    - **duração e curva exatas saem dos `selectors`**, presas a `{{WRAPPER}}.wfan-native.animated` (0,5,0, ganha de `.animated{animation-duration:1.25s}` sem `!important`). A classe no seletor não é enfeite: sem ela a regra vazaria para a animação de entrada que o usuário tenha escolhido à mão no mesmo elemento. A curva precisa de `selectors_dictionary` — o valor gravado é o nome GSAP, que não diz nada ao CSS. A espera vai pela chave nativa (`_animation_delay`, em ms), e "desligar no celular" vira `_animation_mobile = 'none'`, com o corte no breakpoint do Elementor, não no `mobile_bp` dos nossos ajustes;
+    - **ponto de disparo e "animar só uma vez" saem do painel** (`condition` com `preset!` listando `WFAN_Presets::ids_native()`): o nativo dispara ao encostar na tela e toca uma vez só, e controle que não é obedecido é configuração que não faz nada. O gatilho é `['scroll-in']` no próprio preset;
+    - **o resgate de 3 s não vale para `elementor-invisible`** — é o Elementor quem revela, e um elemento abaixo da dobra está legitimamente escondido aos 3 s. O `print_prehide()` só tira a classe de `.wfan-native` **se o `elementorFrontend` não tiver subido**, que é o caso em que ninguém mais vai revelar;
+    - **no canvas do editor nada disso existe** (regra 19): o `playNative()` do [core.js](assets/js/frontend/core.js) refaz à mão o que o `GlobalHandler` faz, e os `@keyframes` vêm da folha única do Elementor, enfileirada por `WFAN_Assets::enqueue_native_keyframes()` no painel (para o card se mexer, regra 14) e no preview (para o ▶ Testar ter o que tocar).
+22. **Todo controle nosso declara `render_type`, e é isso que separa um painel que responde de um que trava.** Controle sem `render_type` que não seja de estilo faz o Elementor marcar `isContentChanged` e **re-renderizar o widget inteiro por Ajax a cada mexida** (`BaseElementView.renderChanges()`): arrastar o slider de duração disparava uma requisição por parada do mouse, e o canvas piscava por cima do preview recém-tocado. Nenhum controle nosso muda o HTML do elemento — o contrato é escrito no servidor e, no canvas, o Elementor nem o lê. Então `WFAN_Controls::add()` e `WFAN_Overlay::add()` decidem por todo mundo: `ui` quando há `selectors` (só o CSS do elemento é reescrito, que é o que o preset de estado e o fundo animado precisam) e `none` quando não há. O smoke test reprova quem registrar um controle fora desses dois helpers. É o mesmo que o Elementor faz com os controles de animação dele (`Control_Animation::get_default_settings()`).
+23. **O painel mostra o resultado sozinho, e a lista de gatilhos é reescrita — nunca escondida.** Duas coisas que o ▶ Testar sozinho não resolvia:
+    - **mexeu num controle nosso, o preview toca** (`panel.js`, `schedulePreview()`, 250 ms depois da última mexida), como na animação de entrada nativa. O contrato continua vindo do servidor (regra 19), mas fica guardado por assinatura dos ajustes: quando o usuário clica em ▶ Testar, a resposta daquela configuração já chegou junto com o preview automático. O botão continua lá para repetir, e é o único que fala por toast — preview automático que avisa a cada mexida enche a tela. O fundo animado não passa pelo servidor: `wfanOverlay.syncId()` monta o canvas na hora, porque todo parâmetro dele já está no CSS que o Elementor acabou de reescrever (regra 20);
+    - **a lista de gatilhos é reconstruída inteira a cada passada**, nunca marcada com `hidden`. Opção escondida deixa estado no DOM, e o DOM do painel sobrevive à troca de elemento: era isso que fazia opções sumirem do "Gatilho" até recarregar a página do editor. A reescrita é idempotente (marcada no próprio `<select>`, em `data-wfan-triggers`) e o preset é lido do modelo do container, não do DOM. Ela roda no `change` do painel, no `section:activated` e nos quatro `panel/open_editor/*`.
+
 ---
 
 ## 3. Arquitetura
@@ -81,20 +94,20 @@ includes/
   class-plugin.php          singleton; carrega e liga os módulos
   class-requirements.php    PHP/WP/Elementor; admin notice, nunca fatal
   class-keys.php            REGRA 1 e 3: dono único dos nomes de chave
-  class-presets.php         catálogo (39), grupos, gatilhos, curvas, css_only; filtro wfan_presets
-  class-controls.php        REGRA 2 e 18: injeta a seção na primeira aba dos 5 tipos
+  class-presets.php         catálogo (39 nossos + 36 nativas, REGRA 21), grupos, gatilhos, curvas, css_only; filtro wfan_presets
+  class-controls.php        REGRA 2, 18, 21 e 22: injeta a seção na primeira aba dos 5 tipos
   class-overlay.php         REGRA 20: fundo animado por elemento; dono das custom properties
   class-control-picker.php  controle `wfan-picker` (template da grade)
   class-editor.php          assets do editor + config tipada (REGRA 17) + contrato do ▶ Testar (REGRA 19)
-  class-render.php          REGRA 4, 18 e 20: escreve data-wfan; resolve motor e gatilho
-  class-assets.php          REGRA 5, 8, 17, 18 e 20: registry, carregamento sob demanda, pré-esconde, config tipada
+  class-render.php          REGRA 4, 18, 20 e 21: escreve data-wfan; resolve motor, gatilho e animação nativa
+  class-assets.php          REGRA 5, 8, 17, 18, 20 e 21: registry, carregamento sob demanda, pré-esconde, config tipada
   class-lenis.php           scroll suave global
   class-blur.php            blur progressivo global; efeito de borda, não preset
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
   class-settings.php        REGRA 16: ajustes globais; menu-pai resolvido em runtime
   class-library.php         "minhas animações" (option + ajax)
 templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.php (REGRA 16)
-assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js
+assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js (REGRA 23)
 assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js · overlay.js (REGRA 20)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · admin.css (REGRA 16)
 tests/                 smoke.php + stubs.php
@@ -119,7 +132,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 199 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 272 verificações, sem WordPress e sem banco
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -128,11 +141,12 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19 e 20. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22 e 23. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da
-grade no painel, o ▶ Testar, os atalhos de teclado, o Lenis junto do ScrollTrigger
+grade no painel, o preview automático, o ▶ Testar, os atalhos de teclado, o Lenis
+junto do ScrollTrigger
 e qualquer coisa que dependa de layout real (a quebra de linhas do texto mede
 `offsetTop`; o fundo animado mede `clientWidth`/`clientHeight` para corrigir a
 proporção da mancha, e só o navegador resolve a cor global que ele lê do CSS).

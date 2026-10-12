@@ -150,6 +150,13 @@ function wp_script_is( $handle, $list = 'enqueued' ) {
 	return in_array( $handle, WFAN_Test_Hooks::$enqueued, true );
 }
 
+function wp_style_is( $handle, $list = 'enqueued' ) {
+	if ( 'registered' === $list ) {
+		return isset( WFAN_Test_Hooks::$styles[ $handle ] );
+	}
+	return in_array( $handle, WFAN_Test_Hooks::$enqueued, true );
+}
+
 function wp_localize_script( $handle, $object, $data ) {
 	WFAN_Test_Hooks::$localized[ $object ] = $data;
 	return true;

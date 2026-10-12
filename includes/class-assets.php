@@ -45,6 +45,16 @@ class WFAN_Assets {
 	 */
 	private $overlay = false;
 
+	/**
+	 * Animações de entrada nativas usadas nesta página.
+	 *
+	 * @var array<string,bool>
+	 */
+	private $natives = [];
+
+	/** Prefixo dos handles de folha de animação registrados pelo Elementor. */
+	const NATIVE_STYLE = 'e-animation-';
+
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', [ $this, 'register' ], 5 );
 		add_action( 'wp_head', [ $this, 'print_prehide' ], 1 );
@@ -239,6 +249,28 @@ class WFAN_Assets {
 	}
 
 	/**
+	 * Um elemento renderizado foi entregue à animação de entrada do Elementor.
+	 *
+	 * A folha de cada animação é registrada pelo próprio Elementor
+	 * (`Core\Page_Assets\Loader`), uma por animação, com ~500 bytes. Quem
+	 * costuma enfileirá-la é a varredura que o Elementor faz dos dados salvos
+	 * do documento — e lá a nossa chave não existe, porque a animação nativa é
+	 * escrita em tempo de render. Então é aqui.
+	 *
+	 * Nada do WooFlow entra junto: nem core.js, nem frontend.css.
+	 *
+	 * @param string $name Nome da animação (fadeInUp, bounceIn…).
+	 * @return void
+	 */
+	public function require_native( $name ) {
+		$this->used = true;
+
+		if ( '' !== (string) $name ) {
+			$this->natives[ (string) $name ] = true;
+		}
+	}
+
+	/**
 	 * @return bool
 	 */
 	public function is_used() {
@@ -261,7 +293,7 @@ class WFAN_Assets {
 
 		?>
 <style id="wfan-prehide">html.wfan-js .wfan-pending{opacity:0!important}html.wfan-js .wfan-pending.wfan-mask{clip-path:inset(0 0 100% 0)}@media(prefers-reduced-motion:reduce){html.wfan-js .wfan-pending{opacity:1!important;clip-path:none!important}}</style>
-<script id="wfan-boot">document.documentElement.className+=" wfan-js";setTimeout(function(){if(!window.wfanLoaded){document.documentElement.classList.remove("wfan-js")}},<?php echo (int) self::FAILSAFE_MS; ?>);</script>
+<script id="wfan-boot">document.documentElement.className+=" wfan-js";setTimeout(function(){if(!window.wfanLoaded){document.documentElement.classList.remove("wfan-js")}if(!window.elementorFrontend){var n=document.querySelectorAll(".<?php echo esc_js( WFAN_Controls::NATIVE_CLASS ); ?>.elementor-invisible");for(var i=0;i<n.length;i++){n[i].classList.remove("elementor-invisible")}}},<?php echo (int) self::FAILSAFE_MS; ?>);</script>
 <noscript><style>html.wfan-js .wfan-pending{opacity:1!important;clip-path:none!important}</style></noscript>
 		<?php
 	}
@@ -270,6 +302,8 @@ class WFAN_Assets {
 	 * @return void
 	 */
 	public function enqueue_needed() {
+		$this->enqueue_natives();
+
 		if ( ! $this->needed && ! $this->styles ) {
 			return;
 		}
@@ -293,6 +327,65 @@ class WFAN_Assets {
 			}
 
 			wp_enqueue_script( 'wfan-engine-' . $engine );
+		}
+	}
+
+	/**
+	 * Todos os @keyframes das animações nativas de uma vez.
+	 *
+	 * Dois lugares precisam disso: o painel, onde o card de cada nativa tem de
+	 * se mexer no hover (regra 14), e o canvas do editor, onde o ▶ Testar
+	 * reproduz uma animação que o elemento ainda não tem — a folha dela não foi
+	 * enfileirada por render nenhum. Copiar os 36 conjuntos de keyframes para o
+	 * nosso CSS seria manter uma segunda cópia envelhecendo sozinha.
+	 *
+	 * Primeiro a folha única do Elementor, que é uma requisição só; sem ela, os
+	 * handles por animação que ele registra. Se nem isso existir, a animação
+	 * não acontece no editor — degrada, não quebra, e o front-end continua
+	 * inteiro, porque lá quem enfileira é o `enqueue_natives()`.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_native_keyframes() {
+		$has_paths = defined( 'ELEMENTOR_PATH' ) && defined( 'ELEMENTOR_ASSETS_URL' );
+		$bundle    = $has_paths ? ELEMENTOR_PATH . 'assets/lib/animations/animations.min.css' : '';
+
+		if ( $bundle && file_exists( $bundle ) ) {
+			wp_enqueue_style(
+				'wfan-native-keyframes',
+				ELEMENTOR_ASSETS_URL . 'lib/animations/animations.min.css',
+				[],
+				defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : WFAN_VER
+			);
+
+			return;
+		}
+
+		foreach ( array_keys( WFAN_Presets::native_catalog() ) as $name ) {
+			$handle = self::NATIVE_STYLE . $name;
+
+			if ( wp_style_is( $handle, 'registered' ) ) {
+				wp_enqueue_style( $handle );
+			}
+		}
+	}
+
+	/**
+	 * As folhas das animações de entrada usadas na página.
+	 *
+	 * Só enfileira o que o Elementor registrou: handle inexistente é descartado
+	 * em silêncio pelo WordPress, e um nome de animação que mudou de versão
+	 * sairia como animação que não acontece.
+	 *
+	 * @return void
+	 */
+	private function enqueue_natives() {
+		foreach ( array_keys( $this->natives ) as $name ) {
+			$handle = self::NATIVE_STYLE . $name;
+
+			if ( wp_style_is( $handle, 'registered' ) ) {
+				wp_enqueue_style( $handle );
+			}
 		}
 	}
 
@@ -335,6 +428,11 @@ class WFAN_Assets {
 		// O fundo animado precisa estar lá antes de o usuário ligar o toggle:
 		// no editor não há segunda chance de enfileirar.
 		wp_enqueue_script( 'wfan-overlay' );
+
+		// Pelo mesmo motivo, os keyframes das nativas: o ▶ Testar reproduz uma
+		// animação que o elemento ainda não tinha quando a página do preview
+		// foi montada.
+		self::enqueue_native_keyframes();
 
 		foreach ( [ 'gsap', 'anime' ] as $engine ) {
 			if ( WFAN_Settings::lib_allowed( $engine ) ) {

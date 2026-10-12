@@ -15,6 +15,11 @@
 	// WFAN_Controls::HOVER_PREVIEW_CLASS, que é quem escreve a regra.
 	var HOVER_ON = 'wfan-hv-on';
 
+	// Elemento entregue à animação de entrada do Elementor. O nome tem de
+	// bater com o WFAN_Controls::NATIVE_CLASS, que é o que prende a duração e
+	// a curva exatas a este elemento.
+	var NATIVE = 'wfan-native';
+
 	// Avisa o bootstrap do <head> que o JS chegou: sem isso, ele revela tudo
 	// depois do tempo de segurança.
 	window.wfanLoaded = true;
@@ -76,7 +81,9 @@
 			trigger: trigger.t || 'scroll-in',
 			viewport: typeof trigger.vp === 'number' ? trigger.vp : 20,
 			once: !! trigger.once,
+			start: trigger.start || 'enter',
 			end: trigger.end || 'out',
+			pct: typeof trigger.pct === 'number' ? trigger.pct : 100,
 			pin: !! trigger.pin,
 			duration: typeof raw.d === 'number' ? raw.d : 800,
 			delay: typeof raw.dl === 'number' ? raw.dl : 0,
@@ -88,6 +95,7 @@
 			to: typeof raw.to === 'number' ? raw.to : 100,
 			loop: !! raw.loop,
 			split: raw.sp || '',
+			native: raw.nat || '',
 			cssOnly: !! raw.co,
 			offMobile: !! raw.om,
 			stagger: stagger ? {
@@ -409,6 +417,17 @@
 			return;
 		}
 
+		// Animação do próprio Elementor: no front-end nem chega aqui (o
+		// elemento sai sem data-wfan e sem este arquivo). No editor chega,
+		// porque é o ▶ Testar quem monta o atributo — e aí quem toca é o
+		// playNative, já que o canvas não tem a animação nativa amarrada.
+		if ( spec.native ) {
+			reveal( el );
+			el.__wfan = { el: el, spec: spec, targets: [ el ], seen: false };
+			log( 'entregue à animação nativa do Elementor:', spec.native, el );
+			return;
+		}
+
 		if ( prefersReduced() ) {
 			reveal( el );
 			log( 'ignorado por preferência de menos movimento', el );
@@ -458,6 +477,50 @@
 		el.__wfanHold = window.setTimeout( function () {
 			el.classList.remove( HOVER_ON );
 		}, Math.max( 600, ( entry.spec.duration * 2 ) + 400 ) );
+	}
+
+	/**
+	 * Reproduz a animação nativa do Elementor no canvas do editor.
+	 *
+	 * Faz o mesmo que o `GlobalHandler` do Elementor faz no front-end — tira o
+	 * `elementor-invisible`, espera o delay e põe `animated <nome>` —, porque
+	 * no canvas o wrapper é reconstruído pelo Backbone e não tem a animação
+	 * nativa amarrada a ele (regra 19). O nome vem do servidor; o teste de
+	 * formato está aqui só para que um catálogo adulterado por filtro não vire
+	 * uma exceção do classList.
+	 */
+	function playNative( entry ) {
+		var el = entry.el;
+		var name = entry.spec.native;
+
+		if ( ! /^[A-Za-z][A-Za-z0-9_-]*$/.test( name ) ) {
+			return;
+		}
+
+		window.clearTimeout( el.__wfanNative );
+
+		el.classList.add( NATIVE );
+		el.classList.remove( 'animated' );
+		el.classList.remove( name );
+
+		// Trocar de animação sem tirar a classe anterior deixaria as duas
+		// regras valendo, e quem ganha é a que vier depois na folha do
+		// Elementor — não a que acabou de ser escolhida.
+		if ( el.__wfanNativeName && el.__wfanNativeName !== name ) {
+			el.classList.remove( el.__wfanNativeName );
+		}
+
+		el.__wfanNativeName = name;
+
+		// Sem ler uma propriedade de layout aqui, o navegador agrupa a saída e
+		// a entrada da classe no mesmo quadro e a animação não recomeça.
+		void el.offsetWidth;
+
+		el.__wfanNative = window.setTimeout( function () {
+			el.classList.remove( 'elementor-invisible' );
+			el.classList.add( 'animated' );
+			el.classList.add( name );
+		}, Math.max( 0, entry.spec.delay ) );
 	}
 
 	/**
@@ -513,9 +576,26 @@
 			return;
 		}
 
+		if ( entry.spec.native ) {
+			playNative( entry );
+			return;
+		}
+
 		reset( entry );
 		window.requestAnimationFrame( function () {
 			play( entry );
+
+			// Scroll travado: o `play` é só a amostra, e ele desamarra o
+			// gatilho para poder tocar. Sem religar depois, testar uma vez
+			// deixava o elemento morto no scroll até a próxima edição.
+			if ( 'scroll-scrub' === entry.spec.trigger ) {
+				window.clearTimeout( el.__wfanRebind );
+
+				el.__wfanRebind = window.setTimeout( function () {
+					reset( entry );
+					bindTrigger( entry );
+				}, entry.spec.duration + entry.spec.delay + 200 );
+			}
 		} );
 	};
 

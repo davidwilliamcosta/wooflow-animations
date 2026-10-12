@@ -103,7 +103,13 @@ class WFAN_Render {
 		$trigger = $this->resolve_trigger( $preset, $settings, $k );
 		$classes = [ 'wfan' ];
 
-		if ( $hide && $this->hides_element( $preset, $trigger ) ) {
+		// Preset nativo nunca recebe o pré-esconde: quem esconde é a classe
+		// `elementor-invisible` do próprio Elementor, e duas redes de esconder
+		// no mesmo elemento só dariam conteúdo invisível para sempre se uma
+		// delas falhasse.
+		if ( ! empty( $preset['native'] ) ) {
+			$classes[] = WFAN_Controls::NATIVE_CLASS;
+		} elseif ( $hide && $this->hides_element( $preset, $trigger ) ) {
 			$classes[] = 'wfan-pending';
 
 			if ( 0 === strpos( $preset_id, 'mask' ) || 'text-mask' === $preset_id ) {
@@ -116,6 +122,7 @@ class WFAN_Render {
 			'classes'  => $classes,
 			'engine'   => $engine,
 			'css_only' => ! empty( $preset['css_only'] ),
+			'native'   => (string) $preset['native'],
 		];
 	}
 
@@ -128,11 +135,23 @@ class WFAN_Render {
 			return;
 		}
 
+		// ANTES de qualquer get_settings_for_display(): o Elementor guarda o
+		// resultado em `parsed_active_settings` na primeira chamada, e o
+		// `add_render_attributes()` — que é quem lê `_animation` para pôr a
+		// classe `elementor-invisible` e o `data-settings` — lê desse cache.
+		// Escrever a animação nativa depois do cache quente não chega a lugar
+		// nenhum. Ver CLAUDE.md, regra 21.
+		$native = $this->apply_native( $element );
+
 		$settings = $element->get_settings_for_display();
 
 		// Antes do `return` do preset: o fundo animado não é animação e existe
-		// com ou sem uma escolhida no mesmo elemento.
+		// com ou sem uma escolhida no mesmo elemento — inclusive uma nativa.
 		WFAN_Overlay::attach( $element, $settings );
+
+		if ( $native ) {
+			return;
+		}
 
 		$spec = $this->spec( $settings, ! $this->is_preview() );
 
@@ -160,6 +179,62 @@ class WFAN_Render {
 		WFAN_Plugin::assets()->require_engine( $spec['engine'] );
 
 		$this->maybe_disable_native( $element );
+	}
+
+	/**
+	 * Entrega o elemento à animação de entrada do próprio Elementor.
+	 *
+	 * O preset do grupo "Nativas" não escreve `data-wfan`, não pede motor e não
+	 * põe um byte de JavaScript nosso na página: tudo o que ele faz é preencher
+	 * `_animation` (ou `animation`, no bloco) antes de o Elementor montar os
+	 * atributos do wrapper. Daí em diante quem esconde, observa a tela e anima
+	 * é o `GlobalHandler` do Elementor.
+	 *
+	 * Lê os ajustes crus de propósito: `get_settings_for_display()` guarda o
+	 * resultado em cache na primeira chamada, e o que for escrito depois dela
+	 * não chega ao `add_render_attributes()`.
+	 *
+	 * @param \Elementor\Element_Base $element Elemento em renderização.
+	 * @return bool Se este elemento foi entregue ao motor nativo.
+	 */
+	private function apply_native( $element ) {
+		if ( ! method_exists( $element, 'set_settings' ) ) {
+			return false;
+		}
+
+		$settings = $element->get_settings();
+
+		if ( ! is_array( $settings ) ) {
+			return false;
+		}
+
+		$key       = WFAN_Keys::ours( 'preset' );
+		$preset_id = isset( $settings[ $key ] ) ? (string) $settings[ $key ] : '';
+		$name      = '' === $preset_id ? '' : WFAN_Presets::native_name( $preset_id );
+
+		if ( '' === $name ) {
+			return false;
+		}
+
+		$native = WFAN_Keys::native_for( $element->get_type() );
+
+		$element->set_settings( $native['name'], $name );
+		$element->set_settings( $native['delay'], (int) $this->num( $settings, WFAN_Keys::ours( 'delay' ), 0 ) );
+
+		// "Desligar no celular" existe no nativo pela versão responsiva da
+		// chave: com 'none' no celular o handler do Elementor tira a classe
+		// `elementor-invisible` e não anima nada. O corte é o breakpoint do
+		// Elementor, não o `mobile_bp` dos nossos ajustes — é o preço de deixar
+		// a decisão com ele.
+		if ( $this->on( $settings, WFAN_Keys::ours( 'off_mobile' ) ) || WFAN_Settings::is_on( 'off_mobile' ) ) {
+			$element->set_settings( $native['mobile'], 'none' );
+		}
+
+		$element->add_render_attribute( '_wrapper', [ 'class' => [ 'wfan', WFAN_Controls::NATIVE_CLASS ] ] );
+
+		WFAN_Plugin::assets()->require_native( $name );
+
+		return true;
 	}
 
 	/**
@@ -252,16 +327,26 @@ class WFAN_Render {
 			'p'   => $preset_id,
 			'eng' => $engine,
 			'tr'  => [
-				't'    => $trigger,
-				'vp'   => (int) $this->num( $settings, $k( 'viewport' ), 20 ),
-				'once' => $this->on( $settings, $k( 'once' ) ) ? 1 : 0,
-				'end'  => isset( $settings[ $k( 'scrub_end' ) ] ) ? (string) $settings[ $k( 'scrub_end' ) ] : 'out',
-				'pin'  => $this->on( $settings, $k( 'pin' ) ) ? 1 : 0,
+				't'     => $trigger,
+				'vp'    => (int) $this->num( $settings, $k( 'viewport' ), 20 ),
+				'once'  => $this->on( $settings, $k( 'once' ) ) ? 1 : 0,
+				'start' => isset( $settings[ $k( 'scrub_start' ) ] ) ? (string) $settings[ $k( 'scrub_start' ) ] : 'enter',
+				'end'   => isset( $settings[ $k( 'scrub_end' ) ] ) ? (string) $settings[ $k( 'scrub_end' ) ] : 'out',
+				'pct'   => (int) $this->num( $settings, $k( 'scrub_pct' ), 100 ),
+				'pin'   => $this->on( $settings, $k( 'pin' ) ) ? 1 : 0,
 			],
 			'd'   => (int) $this->num( $settings, $k( 'duration' ), 800 ),
 			'dl'  => (int) $this->num( $settings, $k( 'delay' ), 0 ),
 			'e'   => isset( $settings[ $k( 'easing' ) ] ) ? (string) $settings[ $k( 'easing' ) ] : 'power2.out',
 		];
+
+		// Animação do próprio Elementor. No front-end este payload nem chega a
+		// ser escrito — o elemento sai com `_animation` preenchido e mais nada
+		// —, mas o ▶ Testar do editor precisa dele: lá o wrapper é do Backbone
+		// e não tem animação nativa nenhuma para tocar (regra 19).
+		if ( ! empty( $preset['native'] ) ) {
+			$payload['nat'] = (string) $preset['native'];
+		}
 
 		// Avisa o core.js de que este elemento já está resolvido em CSS: sem
 		// isso ele amarraria o gatilho e mandaria o motor tocar um preset que o

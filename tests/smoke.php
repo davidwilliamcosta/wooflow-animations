@@ -69,6 +69,7 @@ class WFAN_Fake_Element {
 
 	public function get_name() { return $this->name; }
 	public function get_type() { return $this->type; }
+	public function get_settings() { return $this->settings; }
 	public function get_settings_for_display() { return $this->settings; }
 
 	public function start_controls_section( $id, $args = [] ) {
@@ -249,7 +250,7 @@ ok( ! $bad_ids, 'nenhum preset inexistente citado em condição', implode( '; ',
 
 // Chave de dado usada nos controles tem de estar declarada em Keys::OURS,
 // senão copiar/colar e a biblioteca ignoram o controle em silêncio.
-$ui_only = [ 'section', 'actions', 'native_warning' ];
+$ui_only = [ 'section', 'actions', 'native_warning', 'native_note' ];
 $undeclared = [];
 
 foreach ( array_keys( $widget->controls ) as $id ) {
@@ -415,16 +416,21 @@ preg_match_all( '/raw\.([a-zA-Z]+)/', $core, $matches );
 $js_keys = array_unique( $matches[1] );
 
 $php_keys = [];
+$spec_of  = new WFAN_Render();
 
 foreach ( WFAN_Presets::all() as $id => $preset ) {
-	$element = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	$case = [
 		WFAN_Keys::ours( 'preset' )     => $id,
 		WFAN_Keys::ours( 'lottie_url' ) => 'https://exemplo.test/a.json',
 		WFAN_Keys::ours( 'stagger' )    => 'yes',
 		WFAN_Keys::ours( 'off_mobile' ) => 'yes',
-	] ) );
+	];
 
-	$payload = $element->payload();
+	// Pelo spec(), e não pelo atributo: o preset nativo não escreve data-wfan
+	// no front-end (quem anima é o Elementor), mas o contrato existe do mesmo
+	// jeito — é dele que o ▶ Testar vive no editor.
+	$spec    = $spec_of->spec( $case );
+	$payload = is_array( $spec ) ? $spec['payload'] : null;
 
 	ok( is_array( $payload ), "preset $id gera payload" );
 
@@ -998,10 +1004,22 @@ foreach ( array_keys( WFAN_Presets::all() ) as $preset_id ) {
 
 ok( ! $no_preview, 'todo preset tem regra de preview no editor.css', implode( ', ', $no_preview ) );
 
+/*
+ * As nativas são a exceção da regra abaixo: o preview delas usa os @keyframes
+ * do próprio Elementor, enfileirados no painel — copiá-los para cá seria uma
+ * segunda cópia envelhecendo sozinha. O que o teste cobra é o contrário: que o
+ * nome citado no CSS exista no catálogo nativo, e que alguém enfileire a folha
+ * que o define.
+ */
+$native_names = array_keys( WFAN_Presets::native_catalog() );
 $no_keyframes = [];
 
-if ( preg_match_all( '/animation-name:\s*([a-z0-9-]+)/i', $editor_css, $m ) ) {
+if ( preg_match_all( '/animation-name:\s*([a-zA-Z0-9-]+)/', $editor_css, $m ) ) {
 	foreach ( array_unique( $m[1] ) as $name ) {
+		if ( in_array( $name, $native_names, true ) ) {
+			continue;
+		}
+
 		if ( false === strpos( $editor_css, '@keyframes ' . $name ) ) {
 			$no_keyframes[] = $name;
 		}
@@ -1009,6 +1027,28 @@ if ( preg_match_all( '/animation-name:\s*([a-z0-9-]+)/i', $editor_css, $m ) ) {
 }
 
 ok( ! $no_keyframes, 'toda animação de preview tem @keyframes', implode( ', ', $no_keyframes ) );
+
+$assets_php = (string) file_get_contents( WFAN_DIR . 'includes/class-assets.php' );
+
+ok(
+	false !== strpos( $assets_php, 'animations.min.css' )
+	&& false !== strpos( $assets_php, 'self::NATIVE_STYLE . $name' ),
+	'o registry enfileira os @keyframes das nativas, com as duas saídas'
+);
+ok(
+	false !== strpos( (string) file_get_contents( WFAN_DIR . 'includes/class-editor.php' ), 'WFAN_Assets::enqueue_native_keyframes' ),
+	'e o painel pede ao registry, nunca enfileira por conta (regra 5)'
+);
+
+$pv_native = [];
+
+foreach ( $native_names as $name ) {
+	if ( false === strpos( $editor_css, 'animation-name: ' . $name . ';' ) ) {
+		$pv_native[] = $name;
+	}
+}
+
+ok( ! $pv_native, 'todo card nativo aponta para a animação do Elementor', implode( ', ', $pv_native ) );
 
 section( '14. Fundo animado por elemento' );
 
@@ -1224,6 +1264,192 @@ foreach ( [ 'reduced', 'offMobile', 'debug', 'editor' ] as $flag ) {
 		var_export( $ovl_cfg[ $flag ] ?? null, true )
 	);
 }
+
+section( '15. Animação de entrada do Elementor' );
+
+/*
+ * Regra 21: o preset do grupo "Nativas" não escreve data-wfan, não pede motor
+ * e não põe um byte de JavaScript nosso na página — ele preenche a chave de
+ * animação do Elementor antes de o wrapper ser montado, e sai de cena.
+ */
+$nat_id = WFAN_Presets::NATIVE_PREFIX . 'fadeInUp';
+
+ok( null !== WFAN_Presets::get( $nat_id ), 'o catálogo tem o grupo das nativas' );
+ok( 'fadeInUp' === WFAN_Presets::native_name( $nat_id ), 'o id carrega o nome da animação do Elementor' );
+ok( in_array( $nat_id, WFAN_Presets::ids_native(), true ), 'e ele é listado como nativo' );
+
+$nat_widget = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	WFAN_Keys::ours( 'preset' ) => $nat_id,
+	WFAN_Keys::ours( 'delay' )  => [ 'unit' => 'px', 'size' => 300 ],
+] ) );
+
+$nat_settings = $nat_widget->get_settings();
+
+ok( null === $nat_widget->payload(), 'preset nativo não escreve data-wfan no front-end' );
+ok(
+	'fadeInUp' === ( $nat_settings[ WFAN_Keys::NATIVE_WIDGET['name'] ] ?? '' ),
+	'widget: a animação vai para a chave nativa do Elementor'
+);
+ok(
+	300 === ( $nat_settings[ WFAN_Keys::NATIVE_WIDGET['delay'] ] ?? 0 ),
+	'a espera vai junto, em milissegundos'
+);
+ok(
+	in_array( WFAN_Controls::NATIVE_CLASS, $nat_widget->classes(), true ),
+	'a classe que ancora duração e curva está no wrapper'
+);
+ok(
+	! in_array( 'wfan-pending', $nat_widget->classes(), true ),
+	'sem pré-esconde: quem esconde é o elementor-invisible'
+);
+
+$nat_block = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'preset' ) => WFAN_Presets::NATIVE_PREFIX . 'zoomIn',
+] ) );
+
+ok(
+	'zoomIn' === ( $nat_block->get_settings()[ WFAN_Keys::NATIVE_BLOCK['name'] ] ?? '' ),
+	'bloco: a chave nativa é a sem underscore (regra 1)'
+);
+
+$nat_mobile = render_with( new WFAN_Fake_Element( 'common', 'widget', [
+	WFAN_Keys::ours( 'preset' )     => $nat_id,
+	WFAN_Keys::ours( 'off_mobile' ) => 'yes',
+] ) );
+
+ok(
+	'none' === ( $nat_mobile->get_settings()[ WFAN_Keys::NATIVE_WIDGET['mobile'] ] ?? '' ),
+	'"desligar no celular" vira a versão responsiva da chave nativa'
+);
+
+// O ponto da regra: nenhum asset nosso entra por causa de uma nativa.
+$nat_assets = new WFAN_Assets();
+$nat_assets->register();
+WFAN_Test_Hooks::$enqueued = [];
+$nat_assets->require_native( 'fadeInUp' );
+$nat_assets->enqueue_needed();
+
+ok( ! in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ), 'nativa não carrega o core.js' );
+ok( ! in_array( 'wfan-frontend', WFAN_Test_Hooks::$enqueued, true ), 'nem a folha do front-end' );
+ok( ! in_array( 'wfan-engine-css', WFAN_Test_Hooks::$enqueued, true ), 'nem motor nenhum' );
+
+// Duração e curva exatas: o painel nativo só oferece lento/normal/rápido, e a
+// nossa regra tem de ganhar da do Elementor sem !important — daí a classe
+// junto do {{WRAPPER}}.
+$dur_selectors = $widget->controls[ WFAN_Keys::ours( 'duration' ) ]['selectors'] ?? [];
+$ease_control  = $widget->controls[ WFAN_Keys::ours( 'easing' ) ] ?? [];
+$dur_selector  = (string) array_key_first( $dur_selectors );
+
+ok(
+	false !== strpos( $dur_selector, '{{WRAPPER}}.' . WFAN_Controls::NATIVE_CLASS . '.animated' ),
+	'a duração é escrita presa ao preset nativo, nunca ao elemento inteiro',
+	$dur_selector
+);
+ok(
+	isset( $ease_control['selectors_dictionary']['power2.out'] ),
+	'a curva tem dicionário: o nome GSAP não diz nada ao CSS'
+);
+
+// Classe escrita no PHP e procurada no JS. Se divergirem, o ▶ Testar de uma
+// nativa não reproduz nada e ninguém vê erro.
+ok(
+	false !== strpos( $core, "var NATIVE = '" . WFAN_Controls::NATIVE_CLASS . "'" ),
+	'o core.js usa o mesmo nome de classe do PHP'
+);
+ok( false !== strpos( $core, 'function playNative' ), 'o core.js sabe tocar uma nativa no editor' );
+
+// Preset nativo não aceita gatilho que o Elementor não tem.
+ok(
+	[ 'scroll-in' ] === ( WFAN_Presets::get( $nat_id )['triggers'] ?? [] ),
+	'nativa só aceita "ao entrar na tela"'
+);
+
+$hidden_for_native = [ 'viewport', 'once' ];
+
+foreach ( $hidden_for_native as $suffix ) {
+	$excluded = $widget->controls[ WFAN_Keys::ours( $suffix ) ]['condition'][ WFAN_Keys::ours( 'preset' ) . '!' ] ?? [];
+
+	ok(
+		in_array( $nat_id, (array) $excluded, true ),
+		"o controle $suffix some na nativa, que não o obedece"
+	);
+}
+
+section( '16. Scroll travado: início e fim' );
+
+$scrub = ( new WFAN_Render() )->spec( [
+	WFAN_Keys::ours( 'preset' )      => 'scrub-reveal',
+	WFAN_Keys::ours( 'trigger' )     => 'scroll-scrub',
+	WFAN_Keys::ours( 'scrub_start' ) => 'center',
+	WFAN_Keys::ours( 'scrub_end' )   => 'pct',
+	WFAN_Keys::ours( 'scrub_pct' )   => [ 'unit' => '%', 'size' => 150 ],
+] );
+
+ok( 'center' === ( $scrub['payload']['tr']['start'] ?? '' ), 'o ponto de início viaja no contrato' );
+ok( 'pct' === ( $scrub['payload']['tr']['end'] ?? '' ), 'o fim por porcentagem também' );
+ok( 150 === ( $scrub['payload']['tr']['pct'] ?? 0 ), 'e a porcentagem escolhida' );
+
+$gsap_js = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/engine-gsap.js' );
+
+ok( false !== strpos( $gsap_js, 'function startFor' ), 'o motor do scroll lê o ponto de início' );
+ok( false !== strpos( $gsap_js, "'+=' + Math.max( 10, spec.pct ) + '%'" ), 'e transforma a porcentagem em distância de rolagem' );
+ok( false !== strpos( $gsap_js, 'killTriggers' ), 'e desamarra o gatilho anterior antes de criar outro' );
+
+$scrub_options = $widget->controls[ WFAN_Keys::ours( 'scrub_end' ) ]['options'] ?? [];
+
+ok( isset( $scrub_options['pct'] ), 'a opção de porcentagem está no painel' );
+ok( isset( $widget->controls[ WFAN_Keys::ours( 'scrub_pct' ) ] ), 'com o campo que diz quanto' );
+
+section( '17. Painel ao vivo' );
+
+/*
+ * Opção escondida deixa estado no DOM, e o DOM do painel sobrevive à troca de
+ * elemento: era isso que fazia sumirem opções do "Gatilho" até recarregar o
+ * editor. A lista é reescrita inteira a cada passada.
+ */
+ok(
+	false === strpos( $panel_js, "prop( 'hidden'" ),
+	'a lista de gatilhos não esconde opção: é reescrita'
+);
+ok(
+	false !== strpos( $panel_js, "data-wfan-triggers" ),
+	'e a reescrita é idempotente, marcada no próprio select'
+);
+ok(
+	false !== strpos( $panel_js, 'function schedulePreview' ),
+	'mexer num controle nosso reproduz a animação sozinho'
+);
+ok(
+	false !== strpos( $panel_js, 'function scheduleOverlay' )
+	&& false !== strpos( (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/overlay.js' ), 'function syncId' ),
+	'ligar o fundo animado mostra o fundo na hora, sem ida ao servidor'
+);
+ok(
+	false !== strpos( $panel_js, 'specs[ key ]' ),
+	'o contrato já pedido não é pedido de novo'
+);
+
+/*
+ * Controle sem `render_type` faz o Elementor re-renderizar o widget inteiro
+ * por Ajax a cada mexida — era isso que deixava o painel lento e piscava em
+ * cima do preview. Nenhum controle nosso muda o HTML do elemento.
+ */
+$heavy = [];
+
+foreach ( $widget->controls as $id => $args ) {
+	$render_type = $args['render_type'] ?? '';
+	$expected    = isset( $args['selectors'] ) ? 'ui' : 'none';
+
+	if ( 'raw_html' === ( $args['type'] ?? '' ) ) {
+		continue;
+	}
+
+	if ( $render_type !== $expected ) {
+		$heavy[] = "$id (" . ( $render_type ? $render_type : 'sem render_type' ) . ", esperado $expected)";
+	}
+}
+
+ok( ! $heavy, 'nenhum controle nosso re-renderiza o elemento à toa', implode( '; ', $heavy ) );
 
 // ------------------------------------------------------------------ resultado
 
