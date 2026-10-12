@@ -1451,6 +1451,71 @@ foreach ( $widget->controls as $id => $args ) {
 
 ok( ! $heavy, 'nenhum controle nosso re-renderiza o elemento à toa', implode( '; ', $heavy ) );
 
+section( '18. Cache de elementos do Elementor' );
+
+/*
+ * Regra 24: o Elementor guarda o HTML do documento em meta do post e, junto,
+ * a lista de handles que entraram na fila ENQUANTO aquele HTML era montado.
+ * No cache hit ele devolve o HTML pronto — com o nosso data-wfan dentro — e
+ * reenfileira só aqueles handles, sem disparar before_render. Quem só
+ * enfileira no wp_footer nunca entra nessa lista: a página sai com os
+ * atributos e sem o core.js, e o conteúdo escondido só aparece pelos 3 s de
+ * segurança. Medido em produção.
+ */
+$cached = new WFAN_Assets();
+$cached->register();
+WFAN_Test_Hooks::$enqueued = [];
+
+// Sem wp_footer nenhum: é o que o Elementor observa durante o render.
+$cached->require_engine( 'css' );
+
+ok(
+	in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ),
+	'o motor entra na fila durante o render, não só no rodapé'
+);
+ok(
+	in_array( 'wfan-engine-css', WFAN_Test_Hooks::$enqueued, true ),
+	'e o motor pedido vem junto'
+);
+
+WFAN_Test_Hooks::$enqueued = [];
+$cached_ovl = new WFAN_Assets();
+$cached_ovl->register();
+WFAN_Test_Hooks::$enqueued = [];
+$cached_ovl->require_overlay();
+
+ok(
+	in_array( 'wfan-overlay', WFAN_Test_Hooks::$enqueued, true ),
+	'o fundo animado também entra na fila durante o render'
+);
+
+$cached_css = new WFAN_Assets();
+$cached_css->register();
+WFAN_Test_Hooks::$enqueued = [];
+$cached_css->require_style();
+
+ok(
+	in_array( 'wfan-frontend', WFAN_Test_Hooks::$enqueued, true ),
+	'e a folha do preset de estado também'
+);
+
+// Chamar duas vezes não pode duplicar nem quebrar: o flush roda por elemento.
+$before = count( WFAN_Test_Hooks::$enqueued );
+$cached_css->require_style();
+$cached_css->enqueue_needed();
+
+ok(
+	count( array_unique( WFAN_Test_Hooks::$enqueued ) ) === count( array_unique( array_slice( WFAN_Test_Hooks::$enqueued, 0, $before ) ) ),
+	'enfileirar de novo não acrescenta handle novo'
+);
+
+$assets_src = (string) file_get_contents( WFAN_DIR . 'includes/class-assets.php' );
+
+ok(
+	false !== strpos( $assets_src, "did_action( 'wp_enqueue_scripts' )" ),
+	'o flush espera o registry existir antes de enfileirar'
+);
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

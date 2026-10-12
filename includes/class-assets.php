@@ -218,6 +218,45 @@ class WFAN_Assets {
 		}
 
 		$this->needed[ $engine ] = true;
+
+		$this->flush();
+	}
+
+	/**
+	 * Enfileira na hora o que acabou de ser pedido.
+	 *
+	 * Chamado por todo `require_*`, no meio da renderização do elemento, e não
+	 * só no `wp_footer`. A diferença é a que faz a animação existir num site com
+	 * o **cache de elementos do Elementor** ligado — que é o padrão desde o 3.25.
+	 *
+	 * `Document::print_elements()` guarda o HTML renderizado do documento em meta
+	 * do post e, junto com ele, **a lista de handles que entraram na fila
+	 * enquanto aquele HTML era montado** (o diff de `$wp_scripts->queue` antes e
+	 * depois). No cache hit ele devolve o HTML pronto — já com o nosso
+	 * `data-wfan` dentro — e reenfileira só aqueles handles; o
+	 * `elementor/frontend/before_render` não dispara para elemento nenhum.
+	 * Enfileirando no `wp_footer`, o nosso handle entrava na fila depois do diff
+	 * e nunca era gravado: a página servia os atributos sem o core.js, e o
+	 * conteúdo escondido só aparecia pelo tempo de segurança de 3 s.
+	 *
+	 * Medido em produção, na página /barbas-manager/: 22 elementos com
+	 * `data-wfan`, zero scripts nossos. O primeiro render depois de salvar a
+	 * página funcionava, e os seguintes não — foi daí o "às vezes anima".
+	 *
+	 * Enfileirar aqui não antecipa nada: os scripts são registrados com
+	 * `$in_footer = true` e as folhas tardias saem pelo `print_late_styles()`.
+	 * O `wp_footer` continua como rede, para o que for pedido antes do registry.
+	 *
+	 * @return void
+	 */
+	private function flush() {
+		// Antes do `wp_enqueue_scripts` nada está registrado, e enfileirar
+		// handle inexistente é descartado em silêncio.
+		if ( ! did_action( 'wp_enqueue_scripts' ) ) {
+			return;
+		}
+
+		$this->enqueue_needed();
 	}
 
 	/**
@@ -232,6 +271,8 @@ class WFAN_Assets {
 	public function require_style() {
 		$this->used   = true;
 		$this->styles = true;
+
+		$this->flush();
 	}
 
 	/**
@@ -246,6 +287,8 @@ class WFAN_Assets {
 		$this->used    = true;
 		$this->styles  = true;
 		$this->overlay = true;
+
+		$this->flush();
 	}
 
 	/**
@@ -268,6 +311,8 @@ class WFAN_Assets {
 		if ( '' !== (string) $name ) {
 			$this->natives[ (string) $name ] = true;
 		}
+
+		$this->flush();
 	}
 
 	/**

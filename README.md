@@ -323,7 +323,7 @@ window.wfan.register( 'meu-motor', {
 php tests/smoke.php
 ```
 
-272 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+278 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
 contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
@@ -350,6 +350,17 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.4.1
+
+- **Correção: animação sumia em páginas com o cache de elementos do Elementor.**
+  O Elementor guarda o HTML do documento em cache junto com a lista de arquivos
+  que entraram na fila enquanto ele era montado, e devolve os dois no próximo
+  acesso. O plugin enfileirava os scripts tarde demais, já fora dessa lista: a
+  página vinha com as animações marcadas no HTML e sem o JavaScript que as faz
+  acontecer. O conteúdo escondido só aparecia pela rede de segurança de 3
+  segundos, e o defeito parecia intermitente — o primeiro acesso depois de
+  salvar a página funcionava, os seguintes não.
 
 ### 2.4.0
 

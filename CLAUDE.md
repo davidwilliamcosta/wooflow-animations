@@ -84,6 +84,8 @@ do Elementor 4.3.4.
     - **mexeu num controle nosso, o preview toca** (`panel.js`, `schedulePreview()`, 250 ms depois da última mexida), como na animação de entrada nativa. O contrato continua vindo do servidor (regra 19), mas fica guardado por assinatura dos ajustes: quando o usuário clica em ▶ Testar, a resposta daquela configuração já chegou junto com o preview automático. O botão continua lá para repetir, e é o único que fala por toast — preview automático que avisa a cada mexida enche a tela. O fundo animado não passa pelo servidor: `wfanOverlay.syncId()` monta o canvas na hora, porque todo parâmetro dele já está no CSS que o Elementor acabou de reescrever (regra 20);
     - **a lista de gatilhos é reconstruída inteira a cada passada**, nunca marcada com `hidden`. Opção escondida deixa estado no DOM, e o DOM do painel sobrevive à troca de elemento: era isso que fazia opções sumirem do "Gatilho" até recarregar a página do editor. A reescrita é idempotente (marcada no próprio `<select>`, em `data-wfan-triggers`) e o preset é lido do modelo do container, não do DOM. Ela roda no `change` do painel, no `section:activated` e nos quatro `panel/open_editor/*`.
 
+24. **Asset pedido durante o render é enfileirado NA HORA, não no `wp_footer`.** O Elementor guarda o HTML do documento em meta do post (`Document::print_elements()` → `set_document_cache()`, TTL em `elementor_element_cache_ttl`, **ligado por padrão**) e, junto com ele, **a lista de handles que entraram em `$wp_scripts->queue`/`$wp_styles->queue` enquanto aquele HTML era montado** — o diff tirado antes e depois do `do_print_elements()`. No cache hit ele devolve o HTML pronto, já com o nosso `data-wfan` dentro, reenfileira só aqueles handles e **não dispara `elementor/frontend/before_render` para elemento nenhum**. Enfileirando no `wp_footer` (que é depois do diff), o nosso handle nunca era gravado: a página saía com os atributos e sem o `core.js`, e o conteúdo escondido só aparecia pelo tempo de segurança de 3 s. Medido em produção, em `/barbas-manager/`: 22 elementos com `data-wfan`, zero scripts nossos — e o primeiro render depois de salvar a página funcionava, o que fazia o defeito parecer intermitente ("às vezes anima"). Por isso todo `require_*` do [class-assets.php](includes/class-assets.php) termina em `flush()`, que enfileira assim que o registry existe (`did_action( 'wp_enqueue_scripts' )`); o gancho de `wp_footer` fica só como rede. Enfileirar cedo não antecipa nada: os scripts são registrados com `$in_footer = true` e folha tardia sai pelo `print_late_styles()`. O smoke test reprova quem voltar a adiar. Vale para qualquer asset novo — e vale também para o widget dinâmico, que no cache hit é reexpandido pelo shortcode `[elementor-element]` e **esse** continua disparando o `before_render` (foi por isso que a home, cheia de loop, animava enquanto a página estática não).
+
 ---
 
 ## 3. Arquitetura
@@ -100,7 +102,7 @@ includes/
   class-control-picker.php  controle `wfan-picker` (template da grade)
   class-editor.php          assets do editor + config tipada (REGRA 17) + contrato do ▶ Testar (REGRA 19)
   class-render.php          REGRA 4, 18, 20 e 21: escreve data-wfan; resolve motor, gatilho e animação nativa
-  class-assets.php          REGRA 5, 8, 17, 18, 20 e 21: registry, carregamento sob demanda, pré-esconde, config tipada
+  class-assets.php          REGRA 5, 8, 17, 18, 20, 21 e 24: registry, carregamento sob demanda, pré-esconde, config tipada
   class-lenis.php           scroll suave global
   class-blur.php            blur progressivo global; efeito de borda, não preset
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
@@ -132,7 +134,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 272 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 278 verificações, sem WordPress e sem banco
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -141,7 +143,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19, 20, 21, 22 e 23. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22, 23 e 24. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da
