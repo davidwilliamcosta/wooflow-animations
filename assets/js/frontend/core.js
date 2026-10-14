@@ -309,9 +309,30 @@
 			ratio = 0.01;
 		}
 
+		entry.inside = false;
+
 		var observer = new IntersectionObserver( function ( entries ) {
 			entries.forEach( function ( item ) {
 				var isIn = item.isIntersecting && item.intersectionRatio >= ratio - 0.001;
+
+				// Só a MUDANÇA de estado conta — entrou agora, saiu agora.
+				//
+				// Sem isto, qualquer cruzamento do limiar reproduzia de novo, e
+				// a própria animação é um deles: um zoom de 0.85 ou um deslize
+				// mudam a caixa do elemento, a razão de visibilidade oscila em
+				// torno do limiar e a animação se realimenta — o efeito repetia
+				// sem parar, com a página até parada. Com scroll suave (Lenis)
+				// é pior ainda, porque o scroll chega em frações de pixel.
+				if ( isIn === entry.inside ) {
+					return;
+				}
+
+				entry.inside = isIn;
+
+				if ( isIn ) {
+					entry.seen = true;
+				}
+
 				var wants = 'scroll-out' === spec.trigger ? ! isIn : isIn;
 
 				if ( ! wants ) {
@@ -323,22 +344,41 @@
 					return;
 				}
 
+				// Enquanto a animação roda, o elemento se mexe: uma saída e um
+				// retorno dentro dessa janela são efeito dela, não do usuário.
+				if ( entry.busy ) {
+					return;
+				}
+
+				hold( entry );
 				play( entry );
 
 				if ( spec.once ) {
 					observer.unobserve( item.target );
-				}
-			} );
-
-			entries.forEach( function ( item ) {
-				if ( item.isIntersecting ) {
-					entry.seen = true;
+					entry.observer = null;
 				}
 			} );
 		}, { threshold: [ 0, ratio, 1 ] } );
 
 		observer.observe( entry.el );
 		entry.observer = observer;
+	}
+
+	/**
+	 * Segura novos disparos pelo tempo que esta reprodução leva: espera, mais
+	 * duração, mais a cascata, mais uma folga para o último quadro.
+	 */
+	function hold( entry ) {
+		var spec = entry.spec;
+		var pieces = entry.targets ? entry.targets.length : 1;
+		var cascade = spec.stagger && pieces > 1 ? spec.stagger.each * ( pieces - 1 ) : 0;
+
+		entry.busy = true;
+		window.clearTimeout( entry.busyTimer );
+
+		entry.busyTimer = window.setTimeout( function () {
+			entry.busy = false;
+		}, spec.delay + spec.duration + cascade + 120 );
 	}
 
 	function bindTrigger( entry ) {

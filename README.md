@@ -321,9 +321,10 @@ window.wfan.register( 'meu-motor', {
 
 ```bash
 php tests/smoke.php
+node tests/trigger.js
 ```
 
-278 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+282 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
 contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
@@ -331,6 +332,10 @@ entrega à animação nativa do Elementor sem levar asset nosso junto, o
 `render_type` de cada controle, as medidas do blur progressivo, e a tela de
 ajustes — padrão de UI, cobertura de classes e o recorte por aba que impede uma
 aba de zerar as outras ao salvar.
+
+O `tests/trigger.js` sobe o motor de verdade num DOM simulado e conta **quantas
+vezes** cada animação toca ao entrar, sair e voltar à tela — a classe de defeito
+que só aparece rolando a página.
 
 ---
 
@@ -350,6 +355,20 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.4.2
+
+- **Correção: animação repetindo sozinha.** Com **Animar só uma vez** desligado,
+  o efeito repetia a cada rolagem — e às vezes com a página parada. O gatilho de
+  tela reagia a cada cruzamento do limiar de visibilidade, e a própria animação
+  é um deles: um zoom ou um deslize mudam a caixa do elemento, a visibilidade
+  oscila em volta do limiar e o efeito se realimenta. Agora ele só reage a
+  **entrar** e **sair** da tela, e ignora o que acontece enquanto a animação
+  roda. "Animar só uma vez" desligado quer dizer *toca de novo quando o elemento
+  voltar à tela*, não *toca enquanto estiver visível*.
+- Teste novo (`node tests/trigger.js`) que conta quantas vezes a animação toca,
+  dirigindo o observador de tela num DOM simulado. O empacotamento não roda sem
+  ele.
 
 ### 2.4.1
 

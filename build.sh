@@ -23,6 +23,9 @@ fi
 echo "Rodando o smoke test…"
 php "$ROOT/tests/smoke.php" > /dev/null
 
+echo "Rodando o teste de gatilho…"
+node "$ROOT/tests/trigger.js" > /dev/null
+
 OUT="$ROOT/release"
 STAGE="$OUT/$SLUG"
 

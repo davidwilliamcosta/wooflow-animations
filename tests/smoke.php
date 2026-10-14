@@ -1516,6 +1516,31 @@ ok(
 	'o flush espera o registry existir antes de enfileirar'
 );
 
+section( '19. Gatilho de tela' );
+
+/*
+ * Regra 25: quem conta quantas vezes a animação toca é o tests/trigger.js, que
+ * dirige o IntersectionObserver num DOM de mentira. Aqui fica só o que a suíte
+ * de PHP consegue garantir: que o guarda continua no lugar e que o teste existe
+ * para ser rodado.
+ */
+ok(
+	false !== strpos( $core, 'if ( isIn === entry.inside )' ),
+	'o observador só reage à mudança de estado, não a cada cruzamento'
+);
+ok(
+	false !== strpos( $core, 'function hold( entry )' ) && false !== strpos( $core, 'entry.busy' ),
+	'e segura novos disparos enquanto a animação roda'
+);
+ok(
+	file_exists( WFAN_DIR . 'tests/trigger.js' ),
+	'o teste do gatilho existe'
+);
+ok(
+	false !== strpos( (string) file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/trigger.js' ),
+	'e o build não empacota sem rodá-lo'
+);
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

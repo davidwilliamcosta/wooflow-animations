@@ -86,6 +86,8 @@ do Elementor 4.3.4.
 
 24. **Asset pedido durante o render é enfileirado NA HORA, não no `wp_footer`.** O Elementor guarda o HTML do documento em meta do post (`Document::print_elements()` → `set_document_cache()`, TTL em `elementor_element_cache_ttl`, **ligado por padrão**) e, junto com ele, **a lista de handles que entraram em `$wp_scripts->queue`/`$wp_styles->queue` enquanto aquele HTML era montado** — o diff tirado antes e depois do `do_print_elements()`. No cache hit ele devolve o HTML pronto, já com o nosso `data-wfan` dentro, reenfileira só aqueles handles e **não dispara `elementor/frontend/before_render` para elemento nenhum**. Enfileirando no `wp_footer` (que é depois do diff), o nosso handle nunca era gravado: a página saía com os atributos e sem o `core.js`, e o conteúdo escondido só aparecia pelo tempo de segurança de 3 s. Medido em produção, em `/barbas-manager/`: 22 elementos com `data-wfan`, zero scripts nossos — e o primeiro render depois de salvar a página funcionava, o que fazia o defeito parecer intermitente ("às vezes anima"). Por isso todo `require_*` do [class-assets.php](includes/class-assets.php) termina em `flush()`, que enfileira assim que o registry existe (`did_action( 'wp_enqueue_scripts' )`); o gancho de `wp_footer` fica só como rede. Enfileirar cedo não antecipa nada: os scripts são registrados com `$in_footer = true` e folha tardia sai pelo `print_late_styles()`. O smoke test reprova quem voltar a adiar. Vale para qualquer asset novo — e vale também para o widget dinâmico, que no cache hit é reexpandido pelo shortcode `[elementor-element]` e **esse** continua disparando o `before_render` (foi por isso que a home, cheia de loop, animava enquanto a página estática não).
 
+25. **O gatilho de tela reage à MUDANÇA de estado, nunca ao cruzamento do limiar — porque a animação mexe o elemento que está sendo observado.** O `IntersectionObserver` do `observe()` ([core.js](assets/js/frontend/core.js)) é notificado a cada travessia dos limiares `[0, vp, 1]`, e um zoom de 0.85 ou um deslize de 40 px **mudam a caixa do elemento**: a razão de visibilidade oscila em volta do `vp`, cada oscilação reproduzia de novo e a animação se realimentava. Com "Animar só uma vez" desligado o efeito repetia sem parar, **com a página até parada**; com scroll suave (Lenis) é pior, porque o scroll chega em frações de pixel. Medido em produção, em `/barbas-strategy/`: 20 reproduções onde cabiam 2. Por isso a entrada guarda `inside` e só age na transição (fora→dentro, ou dentro→fora no `scroll-out`), e `hold()` segura novos disparos por `espera + duração + cascata + 120 ms` — uma saída e um retorno dentro dessa janela são efeito da própria animação, não do usuário. "Animar só uma vez" desligado quer dizer **toca de novo quando o elemento voltar à tela**, não "toca enquanto estiver visível". Quem conta as reproduções é [tests/trigger.js](tests/trigger.js), que dirige o observador num DOM de mentira — o smoke test só confere que o guarda continua lá, e o `build.sh` não empacota sem rodar os dois.
+
 ---
 
 ## 3. Arquitetura
@@ -112,7 +114,7 @@ templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.ph
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js (REGRA 23)
 assets/js/frontend/    core.js (orquestrador) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js · overlay.js (REGRA 20)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · admin.css (REGRA 16)
-tests/                 smoke.php + stubs.php
+tests/                 smoke.php + stubs.php · trigger.js (REGRA 25)
 ```
 
 ### Quem decide o quê
@@ -134,7 +136,8 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 278 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 282 verificações, sem WordPress e sem banco
+node tests/trigger.js        # REGRA 25: quantas vezes a animação toca
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -143,10 +146,14 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19, 20, 21, 22, 23 e 24. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24 e 25. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
-O que o smoke test **não** cobre e exige o `woo.local` no ar: a aparência da
+O `tests/trigger.js` sobe o `core.js` de verdade num DOM de mentira e dirige o
+`IntersectionObserver` à mão: é o único lugar onde se conta **quantas vezes** a
+animação toca, que é a classe de defeito da regra 25.
+
+O que nenhum dos dois cobre e exige o `woo.local` no ar: a aparência da
 grade no painel, o preview automático, o ▶ Testar, os atalhos de teclado, o Lenis
 junto do ScrollTrigger
 e qualquer coisa que dependa de layout real (a quebra de linhas do texto mede
