@@ -29,14 +29,27 @@ class WFAN_Settings {
 	const HUB_PARENTS = [ 'wooflow', 'wooflow-checkout' ];
 
 	/**
-	 * Pai usado quando nenhum plugin da família registrou o hub.
-	 *
-	 * @var string
+	 * Ícone e posição do menu-pai da família, usados só quando é este plugin
+	 * que o cria. Os mesmos do `wooflow-update-product-view`, para o menu
+	 * nascer igual não importa qual plugin da linha chegou primeiro.
 	 */
-	const FALLBACK_PARENT = 'elementor';
+	const PARENT_ICON     = 'dashicons-store';
+	const PARENT_POSITION = 56;
+
+	/**
+	 * Prioridade do `admin_menu`, igual à do resto dos satélites da linha.
+	 *
+	 * O hub (WooFlow Admin) registra o pai na 5, e os satélites que criam o
+	 * pai quando ele falta rodam na 20. Registrar na 10 — como era até aqui —
+	 * é chegar antes deles: a checagem não via pai nenhum e o plugin acabava
+	 * num menu só dele, do lado do menu WooFlow em vez de dentro dele.
+	 *
+	 * @var int
+	 */
+	const MENU_PRIORITY = 20;
 
 	public function __construct() {
-		add_action( 'admin_menu', [ $this, 'menu' ] );
+		add_action( 'admin_menu', [ $this, 'menu' ], self::MENU_PRIORITY );
 		add_action( 'admin_init', [ $this, 'register' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
 		add_action( 'in_admin_header', [ $this, 'suppress_external_notices' ], 999 );
@@ -66,6 +79,47 @@ class WFAN_Settings {
 			'blur_strength'   => '7',
 			'blur_z'          => '999',
 			'blur_off_mobile' => '0',
+			/*
+			 * Botão "voltar ao topo". Nenhum padrão numérico daqui pode ser
+			 * '0' nem '1': o smoke test reconhece toggle por esse valor nos
+			 * padrões, e um afastamento zerado de fábrica viraria toggle
+			 * fantasma sem aba. Valor 0 gravado pelo usuário passa normal.
+			 */
+			'btt_enable'      => '0',
+			'btt_pos'         => 'right',
+			'btt_shape'       => 'circle',
+			'btt_icon'        => 'arrow',
+			'btt_anim'        => 'fade',
+			'btt_x'           => '24',
+			'btt_y'           => '24',
+			'btt_size'        => '48',
+			'btt_bg'          => '#111827',
+			'btt_fg'          => '#ffffff',
+			'btt_bg_hover'    => '#7c3aed',
+			'btt_threshold'   => '400',
+			'btt_duration'    => '0.8',
+			'btt_z'           => '1000',
+			'btt_ring'        => '0',
+			'btt_off_mobile'  => '0',
+			// Barra fixa. Mesma regra dos padrões do botão: nenhum valor
+			// numérico de fábrica pode ser '0' nem '1'.
+			'hdr_enable'      => '0',
+			'hdr_fixed'       => '1',
+			'hdr_shadow'      => '1',
+			'hdr_distance'    => '280',
+			'hdr_smooth'      => '220',
+			'hdr_shadow_op'   => '6',
+			'hdr_z'           => '999',
+			// Popup circular. Mesma regra: nenhum padrão numérico '0' ou '1'.
+			'pop_enable'      => '0',
+			'pop_blur_on'     => '1',
+			'pop_off_mobile'  => '0',
+			'pop_open'        => '850',
+			'pop_close'       => '520',
+			'pop_blur'        => '10',
+			'pop_near'        => '30',
+			'pop_far'         => '68',
+			'pop_overlay'     => '#0e1016',
 			'off_mobile'      => '0',
 			'mobile_bp'       => '767',
 			'respect_reduced' => '1',
@@ -133,41 +187,64 @@ class WFAN_Settings {
 	 */
 	public function menu() {
 		$parent = self::parent_slug();
+		$nosso  = false;
+
+		// Sem ninguém da família no ar, o pai é criado aqui — é o que o
+		// `wooflow-update-product-view` faz, e é o que mantém a linha inteira
+		// reunida num item só, em qualquer combinação de plugins instalados.
+		if ( '' === $parent ) {
+			$parent = self::HUB_PARENTS[0];
+			$nosso  = true;
+
+			add_menu_page(
+				__( 'WooFlow', 'wooflow-animations' ),
+				__( 'WooFlow', 'wooflow-animations' ),
+				'manage_options',
+				$parent,
+				'__return_null',
+				self::PARENT_ICON,
+				self::PARENT_POSITION
+			);
+		}
 
 		/*
-		 * Sob o menu WooFlow o nome do produto já está no pai, então o
-		 * rótulo curto evita "WooFlow → WooFlow Animations". No Elementor
-		 * o rótulo precisa se identificar sozinho.
+		 * Sob o menu WooFlow o nome do produto já está no pai, então o rótulo
+		 * curto evita "WooFlow → WooFlow Animations".
 		 */
-		$label = self::FALLBACK_PARENT === $parent
-			? __( 'WooFlow Animations', 'wooflow-animations' )
-			: __( 'Animations', 'wooflow-animations' );
-
 		add_submenu_page(
 			$parent,
 			__( 'WooFlow Animations', 'wooflow-animations' ),
-			$label,
+			__( 'Animations', 'wooflow-animations' ),
 			'manage_options',
 			self::SLUG,
 			[ $this, 'render' ]
 		);
+
+		/*
+		 * `add_menu_page()` cria um primeiro submenu com o rótulo do pai, que
+		 * aqui apontaria para um `__return_null` — item que não leva a lugar
+		 * nenhum. Ele só sai quando o pai é nosso: com o hub ativo, esse
+		 * primeiro item é o Painel dele e tem de ficar.
+		 */
+		if ( $nosso ) {
+			remove_submenu_page( $parent, $parent );
+		}
 	}
+
 
 	/**
 	 * Resolve o menu-pai: o hub WooFlow quando a família está instalada,
-	 * o Elementor quando o plugin está sozinho.
+	 * string vazia quando o plugin está sozinho — e aí ele faz menu próprio.
 	 *
 	 * O hub (WooFlow Admin) registra o pai no `admin_menu` com prioridade 5
 	 * e este método roda na 10, então `$admin_page_hooks` já está populado
-	 * quando a checagem acontece. O Elementor registra o menu dele só na 20,
-	 * mas isso não atrapalha o fallback: `add_submenu_page()` acumula em
-	 * `$submenu['elementor']` e o pai aparece depois.
+	 * quando a checagem acontece.
 	 *
 	 * A capability continua `manage_options`: este plugin não depende do
 	 * WooCommerce, e exigir `manage_woocommerce` deixaria a tela inacessível
 	 * num site que tem Elementor e não tem Woo — ninguém teria a capability.
 	 *
-	 * @return string
+	 * @return string Slug do hub, ou '' se não houver hub.
 	 */
 	public static function parent_slug() {
 		if ( class_exists( 'WFA_Menu' ) && method_exists( 'WFA_Menu', 'resolve_parent_slug' ) ) {
@@ -192,7 +269,7 @@ class WFAN_Settings {
 			}
 		}
 
-		return self::FALLBACK_PARENT;
+		return '';
 	}
 
 	/**
@@ -324,6 +401,18 @@ class WFAN_Settings {
 				'label'   => __( 'Blur progressivo', 'wooflow-animations' ),
 				'toggles' => [ 'blur_enable', 'blur_off_mobile' ],
 			],
+			'topo'          => [
+				'label'   => __( 'Voltar ao topo', 'wooflow-animations' ),
+				'toggles' => [ 'btt_enable', 'btt_ring', 'btt_off_mobile' ],
+			],
+			'cabecalho'     => [
+				'label'   => __( 'Barra fixa', 'wooflow-animations' ),
+				'toggles' => [ 'hdr_enable', 'hdr_fixed', 'hdr_shadow' ],
+			],
+			'popup'         => [
+				'label'   => __( 'Popup circular', 'wooflow-animations' ),
+				'toggles' => [ 'pop_enable', 'pop_blur_on', 'pop_off_mobile' ],
+			],
 			'comportamento' => [
 				'label'   => __( 'Comportamento', 'wooflow-animations' ),
 				'toggles' => [ 'respect_reduced', 'off_mobile', 'disable_native', 'debug' ],
@@ -358,8 +447,59 @@ class WFAN_Settings {
 			'blur_height'    => [ 1, 100, 20, false ],
 			'blur_strength'  => [ 1, 40, 7, false ],
 			'blur_z'         => [ 0, 999999, 999, false ],
+			/*
+			 * O mínimo 0 de afastamento e limiar é de propósito; o PADRÃO é que
+			 * não pode ser 0 nem 1 — ver o comentário em defaults().
+			 */
+			'btt_x'          => [ 0, 200, 24, false ],
+			'btt_y'          => [ 0, 200, 24, false ],
+			'btt_size'       => [ 28, 96, 48, false ],
+			'btt_threshold'  => [ 0, 20000, 400, false ],
+			'btt_duration'   => [ 0.1, 3, 0.8, true ],
+			'btt_z'          => [ 0, 999999, 1000, false ],
+			'hdr_distance'   => [ 40, 2000, 280, false ],
+			'hdr_smooth'     => [ 0, 1000, 220, false ],
+			'hdr_shadow_op'  => [ 0, 100, 6, false ],
+			'hdr_z'          => [ 0, 999999, 999, false ],
+			'pop_open'     => [ 100, 3000, 850, false ],
+			'pop_close'    => [ 100, 3000, 520, false ],
+			'pop_blur'     => [ 0, 40, 10, false ],
+			'pop_near'     => [ 0, 100, 30, false ],
+			'pop_far'      => [ 0, 100, 68, false ],
 			'mobile_bp'      => [ 320, 1920, 767, false ],
 		];
+	}
+
+	/**
+	 * Campos de escolha e os valores que cada um aceita.
+	 *
+	 * O padrão NÃO é repetido aqui: ele sai de `defaults()`, que continua mapa
+	 * único. Foi para não ter duas cópias de 'bottom' envelhecendo em paralelo
+	 * que o `if` solto do blur_pos virou este mapa.
+	 *
+	 * Público porque o template monta os <select> a partir dos rótulos dos
+	 * módulos, e o smoke test confere que as duas listas não divergiram:
+	 * opção oferecida e recusada aqui é campo que volta sozinho ao salvar.
+	 *
+	 * @return array<string,string[]>
+	 */
+	public static function selects() {
+		return [
+			'blur_pos'  => [ 'bottom', 'top', 'both' ],
+			'btt_pos'   => [ 'right', 'left', 'center' ],
+			'btt_shape' => [ 'circle', 'rounded', 'square' ],
+			'btt_icon'  => [ 'arrow', 'chevron', 'double' ],
+			'btt_anim'  => [ 'fade', 'slide-up', 'zoom' ],
+		];
+	}
+
+	/**
+	 * Campos de cor. O padrão de cada um também sai de `defaults()`.
+	 *
+	 * @return string[]
+	 */
+	public static function colors() {
+		return [ 'btt_bg', 'btt_fg', 'btt_bg_hover', 'pop_overlay' ];
 	}
 
 	/**
@@ -401,9 +541,35 @@ class WFAN_Settings {
 			$clean[ $key ] = (string) max( $min, min( $max, $value ) );
 		}
 
-		if ( isset( $input['blur_pos'] ) ) {
-			$blur_pos          = sanitize_key( (string) $input['blur_pos'] );
-			$clean['blur_pos'] = in_array( $blur_pos, [ 'bottom', 'top', 'both' ], true ) ? $blur_pos : 'bottom';
+		$fallback = self::defaults();
+
+		foreach ( self::selects() as $key => $allowed ) {
+			if ( ! isset( $input[ $key ] ) ) {
+				continue;
+			}
+
+			// sanitize_key() mantém o hífen de 'slide-up' e derruba o resto.
+			$value = sanitize_key( (string) $input[ $key ] );
+
+			$clean[ $key ] = in_array( $value, $allowed, true ) ? $value : $fallback[ $key ];
+		}
+
+		foreach ( self::colors() as $key ) {
+			if ( ! isset( $input[ $key ] ) ) {
+				continue;
+			}
+
+			/*
+			 * Nunca por sanitize_key(), que minúsculiza '#FFF'.
+			 * sanitize_hex_color() devolve null em valor inválido e '' em campo
+			 * vazio — as duas formas são falsy, e as duas voltam ao padrão. Sem
+			 * esse resgate, uma cor vazia iria para a custom property como
+			 * `--wfan-btt-bg:;`, que invalida a declaração e deixa o botão
+			 * transparente, com o ícone solto no ar.
+			 */
+			$hex = sanitize_hex_color( trim( (string) $input[ $key ] ) );
+
+			$clean[ $key ] = $hex ? $hex : $fallback[ $key ];
 		}
 
 		unset( $clean['_tab'] );

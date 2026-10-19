@@ -240,6 +240,24 @@ class WFAN_Presets {
 			'text-words'  => [ 'label' => __( 'Revelar por palavra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'words' ],
 			'text-chars'  => [ 'label' => __( 'Revelar por letra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'distance', 'stagger_each' ], 'split' => 'chars' ],
 			'text-mask'   => [ 'label' => __( 'Cortina por linha', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'stagger_each' ], 'split' => 'lines' ],
+			'text-blur-words' => [ 'label' => __( 'Desfoque por palavra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'blur', 'distance', 'stagger_each' ], 'split' => 'words' ],
+			'text-blur-chars' => [ 'label' => __( 'Desfoque por letra', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'css', 'params' => [ 'blur', 'distance', 'stagger_each' ], 'split' => 'chars' ],
+
+			/*
+			 * Revelação travada no scroll, pedaço por pedaço: o texto nasce
+			 * visível e apagado (`dim`) e vai acendendo conforme a rolagem.
+			 * Grupo `texto` e não `scroll` de propósito — é um efeito de
+			 * texto, e `hides_element()` só pré-esconde quem é de `entrada`
+			 * ou `texto` COM gatilho de entrada, então o travado no scroll
+			 * fica no grupo certo sem ganhar pré-esconde, que aqui seria um
+			 * defeito: o conteúdo tem de estar na tela para apagar.
+			 *
+			 * O param `line` troca o par "começar/terminar quando" por uma
+			 * linha fixa na tela, que é o que este efeito precisa — ver
+			 * `WFAN_Controls` e `startFor()` no engine-gsap.js.
+			 */
+			'text-scrub-words' => [ 'label' => __( 'Revelar por palavra no scroll', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'gsap', 'params' => [ 'dim', 'line' ], 'triggers' => [ 'scroll-scrub' ], 'split' => 'words' ],
+			'text-scrub-chars' => [ 'label' => __( 'Revelar por letra no scroll', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'gsap', 'params' => [ 'dim', 'line' ], 'triggers' => [ 'scroll-scrub' ], 'split' => 'chars' ],
 
 			// Scroll — aqui entra o GSAP, e só aqui.
 			'parallax-y'    => [ 'label' => __( 'Parallax vertical', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
@@ -249,6 +267,17 @@ class WFAN_Presets {
 			'scrub-rotate'  => [ 'label' => __( 'Giro travado no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'rotate', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'scrub-reveal'  => [ 'label' => __( 'Cortina travada no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'pin'           => [ 'label' => __( 'Fixar na tela', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+
+			/*
+			 * A seção vira cartão: encolhe e arredonda os cantos conforme sai
+			 * da tela (ou o contrário, ao entrar), como a animação de linha do
+			 * Uncode com estado "End". O param `card` traz percurso próprio —
+			 * começa quando o topo encosta no topo da tela e dura N% da tela —
+			 * no lugar do par "começar/terminar quando", que não tem esse
+			 * ponto de partida como padrão. Ver `cardTrigger()` no
+			 * engine-gsap.js.
+			 */
+			'scrub-card'    => [ 'label' => __( 'Virar cartão no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'card' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'progress-bar'  => [ 'label' => __( 'Barra de progresso', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'counter'       => [ 'label' => __( 'Contador numérico', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ] ],
 

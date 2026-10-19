@@ -105,6 +105,20 @@
 				frames = [ { transform: 'translateY(110%)' }, { transform: 'translateY(0)' } ];
 				break;
 
+			/*
+			 * `blur(0px)` e não `blur(0)` no quadro final: a interpolação de
+			 * filtros exige a mesma lista de funções nas duas pontas, e um
+			 * zero sem unidade faz o Chrome tratar o quadro como `none` e
+			 * cortar o desfoque de uma vez, sem transição.
+			 */
+			case 'text-blur-words':
+			case 'text-blur-chars':
+				frames = [
+					{ opacity: 0, filter: 'blur(' + px( spec.blur ) + ')', transform: 'translateY(' + px( d ) + ')' },
+					{ opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }
+				];
+				break;
+
 			case 'pulse':
 				frames = [ { transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' } ];
 				loop = true;
@@ -179,6 +193,7 @@
 			}
 
 			line.appendChild( inner );
+			line.classList.add( 'wfan-line--mask' );
 			line.style.overflow = 'hidden';
 			line.style.display = 'block';
 			line.__wfanMaskInner = inner;

@@ -1,0 +1,124 @@
+/**
+ * Popup nascendo de um círculo no ponto em que foi aberto.
+ *
+ * Os parâmetros configuráveis saem inline, do WFAN_Popup::inline_css(); a
+ * origem e o raio do círculo são escritos pelo popup.js a cada abertura,
+ * porque mudam com o lugar do clique. Ver CLAUDE.md, regra 28.
+ */
+
+/*
+ * A sobreposição é nossa: o fundo do próprio modal sai da frente para não
+ * aparecer um retângulo escuro por fora do círculo.
+ */
+.wfan-pop {
+	background: transparent !important;
+}
+
+/*
+ * Endurecimento para o celular: com o CSS do Elementor chegando atrasado —
+ * comum com cache ou otimização de entrega —, o modal cai no fim da página
+ * em vez de cobrir a tela, e o efeito abre um círculo onde ninguém vê.
+ */
+.wfan-pop {
+	position: fixed !important;
+	inset: 0;
+}
+
+/* A sobreposição que escurece e desfoca o site atrás. */
+.wfan-pop::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background: radial-gradient(
+		circle at var( --wfan-pop-vx, 100% ) var( --wfan-pop-vy, 0% ),
+		var( --wfan-pop-near, rgba( 14, 16, 22, 0.3 ) ) 0%,
+		var( --wfan-pop-far, rgba( 14, 16, 22, 0.68 ) ) 70%
+	);
+	-webkit-backdrop-filter: blur( 0px ) saturate( 100% );
+	backdrop-filter: blur( 0px ) saturate( 100% );
+	opacity: 0;
+	transition:
+		opacity var( --wfan-pop-close, 520ms ) ease,
+		-webkit-backdrop-filter var( --wfan-pop-close, 520ms ) ease,
+		backdrop-filter var( --wfan-pop-close, 520ms ) ease;
+}
+
+.wfan-pop.wfan-pop-open::before {
+	opacity: 1;
+	-webkit-backdrop-filter: blur( var( --wfan-pop-blur, 10px ) ) saturate( 115% );
+	backdrop-filter: blur( var( --wfan-pop-blur, 10px ) ) saturate( 115% );
+	transition-duration: calc( var( --wfan-pop-open, 850ms ) * 0.8 );
+}
+
+/* A caixa do popup: é ela que o círculo revela. */
+.wfan-pop .dialog-widget-content {
+	clip-path: circle( 0 at var( --wfan-pop-x, 50% ) var( --wfan-pop-y, 0% ) );
+	transition: clip-path var( --wfan-pop-close, 520ms ) var( --wfan-pop-ease, cubic-bezier( 0.76, 0, 0.24, 1 ) );
+	will-change: clip-path;
+}
+
+.wfan-pop.wfan-pop-open .dialog-widget-content {
+	clip-path: circle( var( --wfan-pop-r, 150vmax ) at var( --wfan-pop-x, 50% ) var( --wfan-pop-y, 0% ) );
+	transition-duration: var( --wfan-pop-open, 850ms );
+}
+
+/*
+ * O Elementor põe o foco no "X" ao abrir, e o contorno dele aparece sem que
+ * ninguém tenha usado o teclado. Quem navega por teclado continua vendo o
+ * foco: o `:focus-visible` é justamente essa distinção.
+ */
+.wfan-pop a:focus:not( :focus-visible ),
+.wfan-pop button:focus:not( :focus-visible ),
+.wfan-pop .dialog-close-button:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.wfan-pop .dialog-close-button {
+	background: none;
+	border: 0;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* Itens escalonados: classe opcional, posta pelo usuário. */
+.wfan-pop .wfan-popup-item {
+	opacity: 0;
+	transform: translateY( 12px );
+	transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.wfan-pop.wfan-pop-open .wfan-popup-item {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity 500ms ease,
+		transform 600ms cubic-bezier( 0.2, 0.8, 0.2, 1 );
+	transition-delay: calc( var( --wfan-pop-open, 850ms ) * 0.35 + var( --wfan-pop-i, 0 ) * 55ms );
+}
+
+/*
+ * Movimento reduzido: o círculo some e sobra um fade. O conteúdo continua
+ * aparecendo — animação que não acontece nunca pode esconder conteúdo.
+ */
+@media ( prefers-reduced-motion: reduce ) {
+	.wfan-pop .dialog-widget-content,
+	.wfan-pop.wfan-pop-open .dialog-widget-content {
+		clip-path: none;
+		transition: opacity 200ms ease;
+	}
+
+	.wfan-pop .dialog-widget-content {
+		opacity: 0;
+	}
+
+	.wfan-pop.wfan-pop-open .dialog-widget-content {
+		opacity: 1;
+	}
+
+	.wfan-pop .wfan-popup-item {
+		transform: none;
+		transition-delay: 0s !important;
+	}
+}

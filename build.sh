@@ -26,6 +26,18 @@ php "$ROOT/tests/smoke.php" > /dev/null
 echo "Rodando o teste de gatilho…"
 node "$ROOT/tests/trigger.js" > /dev/null
 
+echo "Rodando o teste do percurso travado no scroll…"
+node "$ROOT/tests/scrub.js" > /dev/null
+
+echo "Rodando o teste do botão voltar ao topo…"
+node "$ROOT/tests/backtotop.js" > /dev/null
+
+echo "Rodando o teste da barra fixa…"
+node "$ROOT/tests/header.js" > /dev/null
+
+echo "Rodando o teste do popup circular…"
+node "$ROOT/tests/popup.js" > /dev/null
+
 OUT="$ROOT/release"
 STAGE="$OUT/$SLUG"
 

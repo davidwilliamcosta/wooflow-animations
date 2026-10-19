@@ -376,8 +376,36 @@ class WFAN_Render {
 			$payload['blur'] = (int) $this->num( $settings, $k( 'blur' ), 10 );
 		}
 
+		if ( in_array( 'dim', $params, true ) ) {
+			$payload['dim'] = (float) $this->num( $settings, $k( 'dim' ), 0.2 );
+		}
+
+		// Linha fixa na tela em que cada pedaço acende. Só quem a declara é que
+		// a recebe, e quem a recebe ignora o par "começar/terminar quando": o
+		// percurso passa a ser o do próprio elemento cruzando essa linha.
+		if ( in_array( 'line', $params, true ) ) {
+			$payload['line']  = (int) $this->num( $settings, $k( 'scrub_line' ), 80 );
+			$payload['speed'] = (int) $this->num( $settings, $k( 'scrub_speed' ), 65 );
+		}
+
 		if ( in_array( 'rotate', $params, true ) ) {
 			$payload['rot'] = (int) $this->num( $settings, $k( 'rotate' ), 12 );
+		}
+
+		// "Virar cartão no scroll". A origem passa por lista fechada porque
+		// vai crua para o `transform-origin`, e o estado também: qualquer
+		// outro valor vira o padrão do efeito de referência.
+		if ( in_array( 'card', $params, true ) ) {
+			$state  = isset( $settings[ $k( 'card_state' ) ] ) ? (string) $settings[ $k( 'card_state' ) ] : 'out';
+			$origin = isset( $settings[ $k( 'card_origin' ) ] ) ? (string) $settings[ $k( 'card_origin' ) ] : '';
+
+			$payload['card'] = [
+				'st'  => 'in' === $state ? 'in' : 'out',
+				'sc'  => round( min( 100, max( 50, $this->num( $settings, $k( 'card_scale' ), 90 ) ) ) / 100, 3 ),
+				'r'   => (int) max( 0, $this->num( $settings, $k( 'card_radius' ), 54 ) ),
+				'o'   => in_array( $origin, [ 'bottom center', 'center center', 'top center' ], true ) ? $origin : 'bottom center',
+				'len' => (int) max( 20, $this->num( $settings, $k( 'card_length' ), 150 ) ),
+			];
 		}
 
 		if ( in_array( 'counter_to', $params, true ) ) {

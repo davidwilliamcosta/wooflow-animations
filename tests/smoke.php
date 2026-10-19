@@ -826,6 +826,56 @@ ok( ! $loose, 'toda cor sai de um seletor {{WRAPPER}}:hover', implode( ', ', arr
 ok( ! $no_test, 'toda cor também responde à classe do ▶ Testar', implode( ', ', array_unique( $no_test ) ) );
 
 /*
+ * Estar preso ao `:hover` não basta: a nossa regra tem de GANHAR da que o
+ * Elementor escreve para o mesmo elemento, e empate aqui é decidido pela ordem
+ * no arquivo — que muda de contexto. No front-end o Elementor desvia todo
+ * controle com `selectors` para um balde à parte e o anexa no fim, então as
+ * nossas regras saem por último e qualquer empate passa despercebido; no
+ * editor e na requisição que salva a página elas saem primeiro, e o empate
+ * vira defeito. Foi assim que o fundo deixou de inverter em todo quadro, com o
+ * título invertendo: branco sobre branco.
+ *
+ * Então o teste não olha a ordem, olha o peso: cada ramo tem de pesar mais que
+ * a regra mais pesada que o Elementor escreve nestes alvos.
+ */
+$weigh = static function ( $selector ) {
+	$selector = str_replace( '{{WRAPPER}}', '.elementor-9 .elementor-element.elementor-element-abc', $selector );
+
+	// `:not(X)` não conta por si: vale exatamente o que está dentro dele.
+	$selector = preg_replace( '/:not\(([^)]*)\)/', '$1', $selector );
+
+	return [
+		preg_match_all( '/#[\w-]+/', $selector ),
+		preg_match_all( '/\.[\w-]+|\[[^\]]*\]|:[\w-]+(?:\([^)]*\))?/', $selector ),
+		preg_match_all( '/(?<![\w.#:[-])[a-z][\w-]*/i', preg_replace( '/\.[\w-]+|\[[^\]]*\]|:[\w-]+(?:\([^)]*\))?|#[\w-]+/', ' ', $selector ) ),
+	];
+};
+
+// A mais pesada que o Elementor 4.3.4 escreve por elemento nestes alvos: a cor
+// do ícone, em `…-{id}.elementor-view-default .elementor-icon`.
+$rival = $weigh( '{{WRAPPER}}.elementor-view-default .elementor-icon' );
+
+// E, no estado normal, a transição do próprio elemento: `{{WRAPPER}}` puro.
+$rival_plain = $weigh( '{{WRAPPER}}' );
+
+$light = [];
+
+foreach ( [ 'hover_bg', 'hover_title', 'hover_accent', 'hover_text', 'hover_icon', 'hover_dur' ] as $slot ) {
+	$control = $widget->controls[ $k( $slot ) ] ?? null;
+	$against = 'hover_dur' === $slot ? $rival_plain : $rival;
+
+	foreach ( array_keys( $control['selectors'] ?? [] ) as $selector ) {
+		foreach ( explode( ',', $selector ) as $branch ) {
+			if ( $weigh( trim( $branch ) ) <= $against ) {
+				$light[] = $slot . ': ' . trim( $branch );
+			}
+		}
+	}
+}
+
+ok( ! $light, 'toda regra da inversão pesa mais que a do Elementor, sem depender da ordem', implode( ' | ', $light ) );
+
+/*
  * Ícone de fonte obedece à cor herdada, mas SVG com `fill` no próprio arquivo
  * ignora `color`, e um `fill` no `<svg>` não alcança um `<path fill="…">` —
  * presentation attribute ganha da herança. Sem as duas coisas, o ícone fica
@@ -1540,6 +1590,803 @@ ok(
 	false !== strpos( (string) file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/trigger.js' ),
 	'e o build não empacota sem rodá-lo'
 );
+
+/*
+ * Revelação travada no scroll: o percurso dela não é o par genérico
+ * "começar/terminar quando", e sim uma linha fixa na tela que o texto
+ * atravessa — `top <linha>` até `bottom <linha>`, as duas pontas na mesma
+ * altura. Com o par genérico o texto terminava de acender enquanto o bloco
+ * ainda subia, antes de dar para ler. Quem confere a conta é o
+ * tests/scrub.js, que lê o que o motor entrega ao ScrollTrigger; aqui fica o
+ * que o PHP garante: que o controle existe, que o par genérico sai do painel
+ * (controle que não é obedecido é configuração que não faz nada) e que o
+ * teste existe para ser rodado.
+ */
+$line_presets = WFAN_Presets::ids_with_param( 'line' );
+
+ok( in_array( 'text-scrub-words', $line_presets, true ), 'a revelação por palavra tem linha de acendimento' );
+ok( in_array( 'text-scrub-chars', $line_presets, true ), 'a revelação por letra também' );
+
+$line_control = $widget->controls[ $k( 'scrub_line' ) ] ?? null;
+
+ok( null !== $line_control, 'o controle da linha existe no painel' );
+ok(
+	isset( $widget->controls[ $k( 'scrub_speed' ) ] )
+		&& wfan_visible( $widget->controls[ $k( 'scrub_speed' ) ], [ $k( 'preset' ) => 'text-scrub-words' ] ),
+	'a velocidade da revelação existe e aparece no preset que a obedece'
+);
+ok(
+	$line_control && wfan_visible( $line_control, [ $k( 'preset' ) => 'text-scrub-words' ] ),
+	'e aparece no preset que a obedece'
+);
+
+$generic_leak = [];
+
+foreach ( [ 'scrub_start', 'scrub_end' ] as $slot ) {
+	foreach ( $line_presets as $id ) {
+		if ( wfan_visible( $widget->controls[ $k( $slot ) ], [ $k( 'preset' ) => $id, $k( 'trigger' ) => 'scroll-scrub' ] ) ) {
+			$generic_leak[] = $slot . ' em ' . $id;
+		}
+	}
+}
+
+ok( ! $generic_leak, 'e o par genérico de início e fim sai do painel, porque o motor o ignora', implode( ', ', $generic_leak ) );
+
+ok(
+	false !== strpos( $gsap_js, "'top ' + lineAnchor( spec )" ) && false !== strpos( $gsap_js, 'return lineSpan( spec )' ),
+	'o início sai da linha e o fim é a distância escalada pela velocidade'
+);
+ok(
+	false !== strpos( $gsap_js, 'gsap.set( targets, from )' ),
+	'o estado de partida de todos os pedaços é fixado, senão o fim do texto aparece antes da hora'
+);
+ok(
+	file_exists( WFAN_DIR . 'tests/scrub.js' ),
+	'o teste do percurso travado no scroll existe'
+);
+ok(
+	false !== strpos( (string) file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/scrub.js' ),
+	'e o build não empacota sem rodá-lo'
+);
+
+section( '20. Onde a tela de ajustes aparece' );
+
+/*
+ * Regra 16: a tela é SEMPRE um submenu do menu WooFlow — com o hub da família
+ * no ar ou sem ele. Quando ninguém da linha criou o pai, é este plugin que o
+ * cria, como faz o wooflow-update-product-view. Duas coisas que já quebraram:
+ *
+ *  - pendurar no menu do Elementor (até a 2.4.2) parou de funcionar no 4.x,
+ *    que esconde o item de topo dele inteiro e ainda tira de lá todo submenu
+ *    de terceiro: "sem o WooFlow Admin, o Animations não aparece no menu";
+ *  - registrar na prioridade 10 é chegar antes dos satélites da linha, que
+ *    criam o pai na 20: a checagem não via pai nenhum e o plugin ia parar num
+ *    menu só dele, do lado do WooFlow em vez de dentro dele.
+ */
+$menu_settings = new WFAN_Settings();
+
+ok(
+	in_array( WFAN_Settings::MENU_PRIORITY, WFAN_Test_Hooks::$priorities['admin_menu'] ?? [], true ),
+	'o menu é registrado na prioridade da linha WooFlow',
+	'prioridades vistas: ' . implode( ', ', WFAN_Test_Hooks::$priorities['admin_menu'] ?? [] )
+);
+ok( 20 === WFAN_Settings::MENU_PRIORITY, 'que é a 20, a mesma do Monitor' );
+
+// 1. Com o hub no ar: só o submenu, e o primeiro item do pai fica intacto.
+global $admin_page_hooks;
+$admin_page_hooks = [ 'wooflow' => 'toplevel_page_wooflow' ];
+WFAN_Test_Hooks::$menus = [];
+$menu_settings->menu();
+
+$com_hub = WFAN_Test_Hooks::$menus;
+
+ok( 'wooflow' === WFAN_Settings::parent_slug(), 'com o hub, o pai é o menu da família' );
+ok( 1 === count( $com_hub ), 'e só o submenu é registrado', count( $com_hub ) . ' registros' );
+ok( 'submenu' === ( $com_hub[0]['tipo'] ?? '' ), 'como submenu' );
+ok( 'wooflow' === ( $com_hub[0]['parent'] ?? '' ), 'pendurado no hub' );
+ok( WFAN_Settings::SLUG === ( $com_hub[0]['slug'] ?? '' ), 'com o slug da tela' );
+ok( 'Animations' === ( $com_hub[0]['label'] ?? '' ), 'com o rótulo curto, porque o nome já está no pai' );
+
+// 2. Sem ninguém da família: o pai é criado aqui, e a tela entra dentro dele.
+$admin_page_hooks = [];
+WFAN_Test_Hooks::$menus = [];
+$menu_settings->menu();
+
+$sozinho = WFAN_Test_Hooks::$menus;
+$tipos   = array_column( $sozinho, 'tipo' );
+
+ok( '' === WFAN_Settings::parent_slug(), 'sem a família, não há pai para achar' );
+ok( [ 'topo', 'submenu', 'remove' ] === $tipos, 'o pai é criado, a tela entra nele e o item-fantasma sai', implode( ', ', $tipos ) );
+ok( 'wooflow' === ( $sozinho[0]['slug'] ?? '' ), 'o pai criado é o menu da família, não um menu nosso' );
+ok( 'WooFlow' === ( $sozinho[0]['label'] ?? '' ), 'com o rótulo da família', (string) ( $sozinho[0]['label'] ?? '' ) );
+ok( WFAN_Settings::PARENT_ICON === ( $sozinho[0]['icon'] ?? '' ), 'com o mesmo ícone que o Monitor usa' );
+ok( WFAN_Settings::PARENT_POSITION === ( $sozinho[0]['pos'] ?? null ), 'na mesma posição que o Monitor usa' );
+ok( 'wooflow' === ( $sozinho[1]['parent'] ?? '' ), 'a tela fica dentro do menu da família' );
+ok( WFAN_Settings::SLUG === ( $sozinho[1]['slug'] ?? '' ), 'com o mesmo slug de sempre, para a URL não mudar' );
+ok(
+	'wooflow' === ( $sozinho[2]['parent'] ?? '' ) && 'wooflow' === ( $sozinho[2]['slug'] ?? '' ),
+	'e o primeiro item do pai, que não leva a lugar nenhum, é removido'
+);
+
+// A capability é a mesma em tudo (regra 16): o plugin não depende do Woo.
+foreach ( array_merge( $com_hub, $sozinho ) as $registro ) {
+	if ( 'remove' === $registro['tipo'] ) {
+		continue;
+	}
+
+	ok(
+		'manage_options' === ( $registro['cap'] ?? '' ),
+		'capability manage_options em "' . $registro['slug'] . '"',
+		(string) ( $registro['cap'] ?? '' )
+	);
+}
+
+// Guarda da regressão: o menu do Elementor não é mais pai de nada nosso.
+$elementor_parent = array_filter(
+	array_merge( $com_hub, $sozinho ),
+	static function ( $registro ) {
+		return 'elementor' === ( $registro['parent'] ?? '' );
+	}
+);
+
+ok( ! $elementor_parent, 'nada é pendurado no menu do Elementor' );
+ok(
+	false === strpos( $settings_src, "'elementor'" ),
+	'e o slug dele nem é citado como pai no código'
+);
+
+/*
+ * Trocar de pai troca o hook da tela — `wooflow_page_…` vira
+ * `toplevel_page_…`. Quem casa por hook fixo perde o CSS e a supressão de
+ * notices justamente no caminho novo, e a tela aparece crua.
+ */
+foreach ( [ 'wooflow_page_' . WFAN_Settings::SLUG, 'toplevel_page_' . WFAN_Settings::SLUG ] as $hook ) {
+	WFAN_Test_Hooks::$enqueued = [];
+	$menu_settings->enqueue( $hook );
+
+	ok(
+		in_array( 'wfan-admin', WFAN_Test_Hooks::$enqueued, true ),
+		"o CSS do painel carrega no hook \"$hook\""
+	);
+}
+
+WFAN_Test_Hooks::$enqueued = [];
+$menu_settings->enqueue( 'edit.php' );
+
+ok( ! WFAN_Test_Hooks::$enqueued, 'e não carrega em tela que não é nossa' );
+
+section( '21. Botão voltar ao topo' );
+
+/*
+ * Mesmo desenho do blur (seção 9): efeito global, módulo próprio, nada de
+ * preset — com uma diferença que vale a seção inteira. A faixa de blur é
+ * decoração `aria-hidden`; este é um controle. Então aqui também se confere o
+ * que faz dele um controle: <button> de verdade, focável, com nome acessível e
+ * sem aria-hidden.
+ */
+
+// Parte dos padrões: as seções 9 e 10 deixaram a option mexida.
+update_option( WFAN_Settings::OPTION, WFAN_Settings::defaults() );
+WFAN_Settings::flush();
+
+// ------------------------------------------------------------------- sanitize
+
+$btt_clean = $settings->sanitize(
+	[
+		'_tab'          => 'topo',
+		'btt_size'      => '999',
+		'btt_y'         => '-10',
+		'btt_duration'  => '9',
+		'btt_threshold' => '',
+		'btt_pos'       => 'diagonal',
+		'btt_shape'     => 'triangulo',
+		'btt_icon'      => 'foguete',
+		'btt_anim'      => 'girar',
+		'btt_bg'        => 'azul',
+		'btt_fg'        => '#FFF',
+		'btt_bg_hover'  => '#fff; background:url(javascript:0)',
+	]
+);
+
+ok( 96 === (int) $btt_clean['btt_size'], 'o tamanho é limitado ao máximo', $btt_clean['btt_size'] );
+ok( 0 === (int) $btt_clean['btt_y'], 'afastamento negativo cai no mínimo', $btt_clean['btt_y'] );
+ok( 3.0 === (float) $btt_clean['btt_duration'], 'a duração da subida é limitada', $btt_clean['btt_duration'] );
+ok( '400' === $btt_clean['btt_threshold'], 'campo apagado volta ao padrão, não desaba para o mínimo', $btt_clean['btt_threshold'] );
+ok( 'right' === $btt_clean['btt_pos'], 'posição fora da lista cai no padrão', $btt_clean['btt_pos'] );
+ok( 'circle' === $btt_clean['btt_shape'], 'forma fora da lista cai no padrão', $btt_clean['btt_shape'] );
+ok( 'arrow' === $btt_clean['btt_icon'], 'ícone fora da lista cai no padrão', $btt_clean['btt_icon'] );
+ok( 'fade' === $btt_clean['btt_anim'], 'entrada fora da lista cai no padrão', $btt_clean['btt_anim'] );
+ok( '#FFF' === $btt_clean['btt_fg'], 'cor de três dígitos passa como está, sem minúsculas', $btt_clean['btt_fg'] );
+
+/*
+ * Cor inválida volta ao PADRÃO, nunca a vazio: `--wfan-btt-bg:;` invalida a
+ * declaração e o botão sairia transparente, com o ícone solto no ar.
+ */
+ok( '#111827' === $btt_clean['btt_bg'], 'cor inválida volta ao padrão, não a vazio', $btt_clean['btt_bg'] );
+ok( '#7c3aed' === $btt_clean['btt_bg_hover'], 'cor com CSS pendurado volta ao padrão', $btt_clean['btt_bg_hover'] );
+ok( '0' === $btt_clean['btt_enable'], 'checkbox ausente desliga o botão (regra 12)' );
+ok( 'bottom' === $btt_clean['blur_pos'], 'o recorte por aba não mexe na escolha de outra aba', $btt_clean['blur_pos'] );
+
+// -------------------------------------------------------------------- padrões
+
+/*
+ * A seção 10 reconhece toggle por valor '0'/'1' nos padrões. Um afastamento ou
+ * um limiar com padrão 0 — que é a primeira coisa que se escreve — viraria
+ * toggle fantasma sem aba, e a falha apareceria lá, longe daqui.
+ */
+$btt_defaults = array_filter(
+	WFAN_Settings::defaults(),
+	static function ( $key ) {
+		return 0 === strpos( (string) $key, 'btt_' );
+	},
+	ARRAY_FILTER_USE_KEY
+);
+
+$btt_toggles    = WFAN_Settings::tabs()['topo']['toggles'] ?? [];
+$btt_fake_flags = [];
+
+foreach ( $btt_defaults as $btt_key => $btt_value ) {
+	if ( in_array( (string) $btt_value, [ '0', '1' ], true ) && ! in_array( $btt_key, $btt_toggles, true ) ) {
+		$btt_fake_flags[] = $btt_key;
+	}
+}
+
+ok( ! $btt_fake_flags, 'nenhum campo escalar do botão parece toggle nos padrões', implode( ', ', $btt_fake_flags ) );
+ok( isset( WFAN_Settings::tabs()['topo'] ), 'a aba existe no mapa único das abas' );
+ok( file_exists( WFAN_DIR . 'templates/admin/tabs/tab-topo.php' ), 'e tem o seu template' );
+
+// Padrão fora da lista aceita faria o primeiro save legítimo "corrigir" o
+// valor para outra coisa, sem o usuário ter tocado no campo.
+$btt_bad_default = [];
+
+foreach ( WFAN_Settings::selects() as $btt_key => $btt_allowed ) {
+	if ( ! in_array( (string) WFAN_Settings::defaults()[ $btt_key ], $btt_allowed, true ) ) {
+		$btt_bad_default[] = $btt_key;
+	}
+}
+
+ok( ! $btt_bad_default, 'o padrão de cada campo de escolha está entre os valores válidos', implode( ', ', $btt_bad_default ) );
+
+$btt_bad_color = [];
+
+foreach ( WFAN_Settings::colors() as $btt_key ) {
+	if ( ! sanitize_hex_color( (string) WFAN_Settings::defaults()[ $btt_key ] ) ) {
+		$btt_bad_color[] = $btt_key;
+	}
+}
+
+ok( ! $btt_bad_color, 'e o padrão de cada cor é um hex válido', implode( ', ', $btt_bad_color ) );
+
+// A lista que o painel oferece e a que o sanitize aceita são a mesma coisa em
+// dois lugares: opção oferecida e recusada é campo que volta sozinho.
+$btt_maps = [
+	'btt_pos'   => WFAN_BackToTop::positions(),
+	'btt_shape' => WFAN_BackToTop::shapes(),
+	'btt_icon'  => WFAN_BackToTop::icons(),
+	'btt_anim'  => WFAN_BackToTop::entrances(),
+];
+
+$btt_drift = [];
+
+foreach ( $btt_maps as $btt_key => $btt_map ) {
+	if ( array_keys( $btt_map ) !== WFAN_Settings::selects()[ $btt_key ] ) {
+		$btt_drift[] = $btt_key;
+	}
+}
+
+ok( ! $btt_drift, 'a lista do painel bate com a lista aceita pelo sanitize', implode( ', ', $btt_drift ) );
+ok(
+	array_keys( WFAN_BackToTop::RADIUS ) === WFAN_Settings::selects()['btt_shape'],
+	'toda forma oferecida tem raio de borda'
+);
+
+// Regra 14, uma camada abaixo: ícone oferecido sem SVG é opção que apaga o botão.
+$btt_no_svg = [];
+
+foreach ( array_keys( WFAN_BackToTop::icons() ) as $btt_icon ) {
+	if ( false === strpos( WFAN_BackToTop::icon_svg( $btt_icon ), '<svg' ) ) {
+		$btt_no_svg[] = $btt_icon;
+	}
+}
+
+ok( ! $btt_no_svg, 'todo ícone oferecido no painel tem SVG', implode( ', ', $btt_no_svg ) );
+
+// --------------------------------------------------------------------- assets
+
+ok( ! WFAN_BackToTop::active(), 'desligado de fábrica' );
+
+$btt_on = static function ( array $over = [] ) {
+	update_option( WFAN_Settings::OPTION, array_merge( WFAN_Settings::defaults(), [ 'btt_enable' => '1' ], $over ) );
+	WFAN_Settings::flush();
+};
+
+$btt_on( [ 'btt_size' => '56', 'btt_bg' => '#0a0a0a', 'btt_ring' => '1' ] );
+
+ok( WFAN_BackToTop::active(), 'liga pelo ajuste' );
+
+$bttAssets = new WFAN_Assets();
+$bttAssets->register();
+
+WFAN_Test_Hooks::$enqueued  = [];
+WFAN_Test_Hooks::$inline    = [];
+WFAN_Test_Hooks::$inline_js = [];
+
+$btt = new WFAN_BackToTop();
+$btt->enqueue();
+
+ok( isset( WFAN_Test_Hooks::$styles['wfan-backtotop'] ), 'o CSS do botão é registrado no WFAN_Assets (regra 5)' );
+ok( isset( WFAN_Test_Hooks::$scripts['wfan-backtotop'] ), 'e o JS também' );
+ok( [] === ( WFAN_Test_Hooks::$scripts['wfan-backtotop']['deps'] ?? null ), 'o botão não depende de biblioteca nenhuma' );
+ok( in_array( 'wfan-backtotop', WFAN_Test_Hooks::$enqueued, true ), 'entra quando o botão está ligado' );
+
+/*
+ * O botão são ~2 KB. Arrastar o core ou um motor atrás dele seria de 6 KB a
+ * 120 KB em toda página do site, por um scrollY.
+ */
+foreach ( [ 'wfan-core', 'wfan-frontend', 'wfan-engine-css', 'wfan-gsap', 'wfan-anime', 'wfan-lenis', 'wfan-overlay' ] as $btt_stray ) {
+	ok( ! in_array( $btt_stray, WFAN_Test_Hooks::$enqueued, true ), "$btt_stray NÃO entra por causa do botão" );
+}
+
+$btt_quiet = new WFAN_BackToTop();
+$btt_on( [ 'btt_enable' => '0' ] );
+WFAN_Test_Hooks::$enqueued = [];
+$btt_quiet->enqueue();
+
+ok( ! WFAN_Test_Hooks::$enqueued, 'desligado, não enfileira nada' );
+
+// ----------------------------------------------------------------- CSS inline
+
+$btt_on( [ 'btt_size' => '56', 'btt_bg' => '#0a0a0a', 'btt_ring' => '1' ] );
+
+$btt_inline = WFAN_BackToTop::inline_css();
+
+ok( false !== strpos( $btt_inline, '--wfan-btt-size:56px' ), 'o tamanho escolhido vai para a variável', $btt_inline );
+ok( false !== strpos( $btt_inline, '--wfan-btt-bg:#0a0a0a' ), 'a cor de fundo vai já sanitizada', $btt_inline );
+ok( false !== strpos( $btt_inline, '--wfan-btt-r:50%' ), 'a forma circular vira raio de 50%', $btt_inline );
+ok( false === strpos( $btt_inline, '--wfan-btt-p' ), 'a fração do scroll NÃO sai do servidor: ela muda 60 vezes por segundo' );
+
+$btt_on( [ 'btt_off_mobile' => '1', 'mobile_bp' => '600' ] );
+
+ok(
+	false !== strpos( WFAN_BackToTop::inline_css(), '@media (max-width:600px){.wfan-btt{display:none}}' ),
+	'desligar em telas pequenas usa a largura limite dos Ajustes',
+	WFAN_BackToTop::inline_css()
+);
+
+// --------------------------------------------------------------------- markup
+
+$btt_on( [ 'btt_ring' => '1', 'btt_pos' => 'left', 'btt_anim' => 'zoom', 'btt_icon' => 'double' ] );
+
+ob_start();
+( new WFAN_BackToTop() )->render();
+$btt_markup = (string) ob_get_clean();
+
+preg_match( '/<button[^>]*>/', $btt_markup, $btt_m );
+$btt_tag = $btt_m[0] ?? '';
+
+ok( '' !== $btt_tag, 'o botão é um <button>, não uma <div> com onclick', $btt_markup );
+ok( 1 === substr_count( $btt_markup, '<button' ), 'um botão por página' );
+ok( false !== strpos( $btt_tag, 'type="button"' ), 'com type="button": no rodapé pode haver <form> de tema aberto' );
+ok( (bool) preg_match( '/aria-label="[^"]+"/', $btt_tag ), 'com nome acessível, que é a única coisa que o leitor de tela tem para ler' );
+ok( false === strpos( $btt_tag, 'aria-hidden' ), 'e SEM aria-hidden: ao contrário da faixa de blur, este é um controle' );
+ok( false === strpos( $btt_tag, 'tabindex' ), 'sem tabindex: <button> já é focável na ordem natural' );
+ok( false === strpos( $btt_markup, 'is-visible' ), 'nasce sem a classe de visível: quem decide é o scroll' );
+ok( false === strpos( $btt_markup, 'style=' ), 'nenhum style="" no markup: as medidas são variáveis' );
+ok( false !== strpos( $btt_markup, '<svg' ), 'o ícone sai inline, sem requisição e sem fonte de ícones' );
+ok( false !== strpos( $btt_markup, 'focusable="false"' ), 'o SVG sai com focusable="false": senão vira um segundo ponto de parada' );
+ok( false !== strpos( $btt_markup, 'wfan-btt__ring' ), 'o anel de progresso sai quando ligado' );
+ok( false !== strpos( $btt_markup, 'wfan-btt--left' ), 'a posição escolhida vira modificador de classe' );
+ok( false !== strpos( $btt_markup, 'wfan-btt--zoom' ), 'e a entrada escolhida também' );
+
+// A máscara do anel é redonda: numa forma quadrada ele sairia torto. Então não sai.
+$btt_on( [ 'btt_ring' => '1', 'btt_shape' => 'square' ] );
+
+ob_start();
+( new WFAN_BackToTop() )->render();
+$btt_square = (string) ob_get_clean();
+
+ok( false === strpos( $btt_square, 'wfan-btt__ring' ), 'o anel não sai em forma quadrada' );
+ok( false === strpos( $btt_square, 'wfan-btt--ring' ), 'nem o modificador dele' );
+ok( false !== strpos( WFAN_BackToTop::inline_css(), '--wfan-btt-r:0' ), 'a forma quadrada zera o raio' );
+
+$btt_off = new WFAN_BackToTop();
+$btt_on( [ 'btt_enable' => '0' ] );
+
+ob_start();
+$btt_off->render();
+
+ok( '' === (string) ob_get_clean(), 'desligado, não imprime markup nenhum' );
+
+// ------------------------------------------------------- variável x CSS x JS
+
+$btt_css = (string) file_get_contents( WFAN_DIR . 'assets/css/backtotop.css' );
+$btt_min = (string) preg_replace( '/\s+/', '', $btt_css );
+$btt_js  = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/backtotop.js' );
+
+$btt_on( [ 'btt_ring' => '1' ] );
+$btt_vars_css = WFAN_BackToTop::inline_css();
+
+/*
+ * Mesmo contrato da regra 15, nos dois sentidos: variável escrita e não lida é
+ * ajuste que não faz nada, e variável lida e escrita por ninguém é regra presa
+ * ao valor de reserva para sempre.
+ *
+ * O nome é fechado com `,` ou `)` de propósito: no CSS minificado
+ * `var(--wfan-btt-bg` é prefixo de `var(--wfan-btt-bgh`, e um strpos cru
+ * deixaria passar uma variável órfã só porque a vizinha é lida.
+ */
+$btt_unread = [];
+
+if ( preg_match_all( '/(--wfan-btt-[a-z0-9-]+)\s*:/i', $btt_vars_css, $btt_m ) ) {
+	foreach ( array_unique( $btt_m[1] ) as $btt_var ) {
+		if ( false === strpos( $btt_min, 'var(' . $btt_var . ',' ) && false === strpos( $btt_min, 'var(' . $btt_var . ')' ) ) {
+			$btt_unread[] = $btt_var;
+		}
+	}
+}
+
+ok( ! $btt_unread, 'toda variável escrita inline é lida pelo backtotop.css', implode( ', ', $btt_unread ) );
+
+$btt_orphan = [];
+
+if ( preg_match_all( '/var\(\s*(--wfan-btt-[a-z0-9-]+)/i', $btt_css, $btt_m ) ) {
+	foreach ( array_unique( $btt_m[1] ) as $btt_var ) {
+		$btt_written = false !== strpos( $btt_vars_css, $btt_var . ':' )
+			|| (bool) preg_match( '/' . preg_quote( $btt_var, '/' ) . ':/', $btt_min )
+			|| false !== strpos( $btt_js, $btt_var );
+
+		if ( ! $btt_written ) {
+			$btt_orphan[] = $btt_var;
+		}
+	}
+}
+
+ok( ! $btt_orphan, 'toda variável lida pelo CSS é escrita pelo PHP, pelo próprio CSS ou pelo JS', implode( ', ', $btt_orphan ) );
+
+// O anel é o único valor que o JS escreve, e ele existe nas duas pontas.
+ok(
+	false !== strpos( $btt_js, '--wfan-btt-p' ) && false !== strpos( $btt_min, 'var(--wfan-btt-p' ),
+	'o anel: o JS escreve a fração do scroll e o CSS a lê'
+);
+
+/*
+ * Classe sem regra é botão que não aparece. A varredura passa por TODAS as
+ * combinações de posição e entrada, senão um modificador novo entra sem estilo
+ * e ninguém vê.
+ */
+$btt_variants = $btt_markup . $btt_square;
+
+foreach ( array_keys( WFAN_BackToTop::positions() ) as $btt_pos ) {
+	foreach ( array_keys( WFAN_BackToTop::entrances() ) as $btt_anim ) {
+		$btt_on( [ 'btt_pos' => $btt_pos, 'btt_anim' => $btt_anim, 'btt_ring' => '1' ] );
+
+		ob_start();
+		( new WFAN_BackToTop() )->render();
+		$btt_variants .= (string) ob_get_clean();
+	}
+}
+
+$btt_missing = [];
+
+if ( preg_match_all( '/class="([^"]+)"/', $btt_variants, $btt_m ) ) {
+	foreach ( $btt_m[1] as $btt_attr ) {
+		foreach ( preg_split( '/\s+/', trim( $btt_attr ) ) as $btt_cls ) {
+			if ( '' !== (string) $btt_cls && false === strpos( $btt_css, '.' . $btt_cls ) ) {
+				$btt_missing[] = $btt_cls;
+			}
+		}
+	}
+}
+
+ok( ! $btt_missing, 'toda classe do botão tem regra no backtotop.css', implode( ', ', array_unique( $btt_missing ) ) );
+
+/*
+ * O botão nasce escondido pelo arquivo, não por style inline nem por JS: a
+ * folha está no <head> e o markup sai no rodapé, então o estado escondido vale
+ * desde a primeira pintura. Um botão que aparece e desaparece no carregamento é
+ * o defeito clássico deste componente.
+ */
+ok( (bool) preg_match( '/\.wfan-btt\{[^}]*opacity:0;/', $btt_min ), 'o estado de partida escondido está no CSS' );
+ok( (bool) preg_match( '/\.wfan-btt\{[^}]*visibility:hidden/', $btt_min ), 'e com visibility, para o botão invisível não ser um ponto de parada' );
+ok(
+	false !== strpos( $btt_js, 'is-visible' ) && false !== strpos( $btt_min, '.wfan-btt.is-visible' ),
+	'a classe que revela o botão existe no JS e no CSS, com o mesmo nome'
+);
+
+// A subida tem de passar pelo Lenis quando ele existe: ele é dono do scroll e
+// desfaria um window.scrollTo nosso no raf seguinte.
+/*
+ * O <button> é impresso no `wp_footer` com prioridade 100, e os scripts de
+ * rodapé do WordPress saem na 20: este arquivo roda ANTES de o botão existir no
+ * DOM. Um querySelector no corpo do script devolvia null, o clique nunca era
+ * amarrado e o botão nascia morto em todo site — com o HTML, o CSS e a
+ * configuração perfeitos na página. Quem conta o resto é o tests/backtotop.js,
+ * que dirige o scroll e o clique num DOM de mentira; aqui fica só o guarda.
+ */
+ok(
+	false !== strpos( $btt_js, 'DOMContentLoaded' ) && false !== strpos( $btt_js, 'readyState' ),
+	'o script espera o DOM: o botão é impresso depois dele'
+);
+ok(
+	file_exists( WFAN_DIR . 'tests/backtotop.js' ),
+	'o teste do botão existe'
+);
+ok(
+	false !== strpos( (string) file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/backtotop.js' ),
+	'e o build não empacota sem rodá-lo'
+);
+ok( false !== strpos( $btt_js, 'wfanLenisInstance' ), 'a subida usa a instância do Lenis quando ela existe' );
+ok( false !== strpos( $btt_js, '{ passive: true }' ), 'o ouvinte de scroll é passivo' );
+ok( false !== strpos( $btt_js, 'requestAnimationFrame' ), 'e vem com freio de requestAnimationFrame' );
+ok( false !== strpos( $btt_min, '@media(prefers-reduced-motion:reduce)' ), 'o CSS tem a rede de reduzir movimento' );
+
+// ---------------------------------------------------------- configuração tipada
+
+/*
+ * Regra 17 de novo. `ring` e `reduced` são testados por veracidade no
+ * backtotop.js, e "0" é verdadeiro no JavaScript: o anel desligado chegaria
+ * ligado, com um setProperty por frame em toda página do site.
+ */
+$btt_cfg_raw = WFAN_Test_Hooks::$inline_js['wfan-backtotop'] ?? '';
+$btt_cfg     = json_decode( (string) preg_replace( '/^var wfanBackToTop = |;$/', '', trim( $btt_cfg_raw ) ), true );
+
+ok( '' !== $btt_cfg_raw, 'a configuração do botão vai como script inline' );
+ok( is_array( $btt_cfg ), 'e é JSON válido', $btt_cfg_raw );
+
+foreach ( [ 'ring', 'reduced', 'debug' ] as $btt_flag ) {
+	ok(
+		is_bool( $btt_cfg[ $btt_flag ] ?? null ),
+		"wfanBackToTop.$btt_flag chega como booleano, nunca \"0\"",
+		var_export( $btt_cfg[ $btt_flag ] ?? null, true )
+	);
+}
+
+ok( is_int( $btt_cfg['threshold'] ?? null ), 'o limiar chega como número', var_export( $btt_cfg['threshold'] ?? null, true ) );
+
+/*
+ * Em milissegundos e inteira, e não em segundos: 0,8 não é representável em
+ * binário, e um float sairia do json_encode como 0.80000000000000004 no
+ * código-fonte de toda página do site.
+ */
+ok( 800 === ( $btt_cfg['duration'] ?? null ), 'a duração da subida chega inteira, em milissegundos', var_export( $btt_cfg['duration'] ?? null, true ) );
+
+section( '22. Presets de texto' );
+
+/*
+ * Os quatro presets que vieram dos efeitos colados à mão no Custom Code. O
+ * que esta seção pega e as genéricas não: que o preset travado no scroll NÃO
+ * ganhou pré-esconde (ele precisa estar na tela para aparecer apagado), e que
+ * a quebra por letra põe cada palavra num invólucro — sem ele o navegador
+ * quebra a linha no meio da palavra.
+ */
+
+update_option( WFAN_Settings::OPTION, WFAN_Settings::defaults() );
+WFAN_Settings::flush();
+
+$txt_render = new WFAN_Render();
+
+$txt_splits = [
+	'text-blur-words'  => [ 'words', 'css' ],
+	'text-blur-chars'  => [ 'chars', 'css' ],
+	'text-scrub-words' => [ 'words', 'gsap' ],
+	'text-scrub-chars' => [ 'chars', 'gsap' ],
+];
+
+foreach ( $txt_splits as $txt_id => $txt_spec ) {
+	$txt_preset = WFAN_Presets::get( $txt_id );
+
+	ok( is_array( $txt_preset ), "o preset $txt_id existe no catálogo" );
+	ok( $txt_preset && $txt_spec[0] === $txt_preset['split'], "e quebra o texto por {$txt_spec[0]}" );
+	ok( $txt_preset && $txt_spec[1] === $txt_preset['engine'], "e pede o motor {$txt_spec[1]}" );
+	ok( $txt_preset && 'texto' === $txt_preset['group'], "e mora no grupo Texto" );
+}
+
+// O travado no scroll não pode nascer escondido: o efeito É o texto apagado
+// na tela, acendendo conforme a rolagem. Pré-esconder deixaria um vazio.
+foreach ( [ 'text-scrub-words', 'text-scrub-chars' ] as $txt_id ) {
+	$txt_result = $txt_render->spec( [ WFAN_Keys::ours( 'preset' ) => $txt_id ] );
+
+	ok(
+		$txt_result && ! in_array( 'wfan-pending', $txt_result['classes'], true ),
+		"$txt_id não pré-esconde o elemento",
+		implode( ' ', $txt_result ? $txt_result['classes'] : [] )
+	);
+	ok(
+		$txt_result && 'scroll-scrub' === ( $txt_result['payload']['tr']['t'] ?? '' ),
+		"$txt_id trava o gatilho no scroll"
+	);
+	ok(
+		$txt_result && isset( $txt_result['payload']['dim'] ),
+		"$txt_id manda a opacidade de partida no payload"
+	);
+}
+
+// A opacidade de partida é a do painel, não um número preso no motor.
+$txt_dim = $txt_render->spec(
+	[
+		WFAN_Keys::ours( 'preset' ) => 'text-scrub-words',
+		WFAN_Keys::ours( 'dim' )    => [ 'unit' => '', 'size' => 0.45 ],
+	]
+);
+
+ok( 0.45 === ( $txt_dim['payload']['dim'] ?? null ), 'a opacidade de partida vem do controle', var_export( $txt_dim['payload']['dim'] ?? null, true ) );
+
+// E só aparece em quem a usa: controle que o motor ignora é configuração que
+// não faz nada.
+$txt_sem_dim = $txt_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'fade-up' ] );
+
+ok( ! isset( $txt_sem_dim['payload']['dim'] ), 'e não vai no payload de quem não a usa' );
+
+// ------------------------------------------------------------- quebra de texto
+
+$txt_core = file_get_contents( WFAN_DIR . 'assets/js/frontend/core.js' );
+$txt_css  = file_get_contents( WFAN_DIR . 'assets/css/frontend.css' );
+
+ok( false !== strpos( $txt_core, "'wfan-word'" ), 'o core.js põe cada palavra num invólucro próprio' );
+ok(
+	(bool) preg_match( '/\.wfan-word\s*\{[^}]*white-space:\s*nowrap/s', $txt_css ),
+	'e o invólucro é nowrap: sem isso, a quebra por letra parte a palavra no meio'
+);
+
+/*
+ * O agrupamento por linha mede TODAS as palavras antes de mover qualquer uma.
+ * O invólucro de linha é display:block: fechar a primeira linha reflui o
+ * resto, e medir enquanto move dava agrupamento errado da segunda em diante.
+ */
+ok(
+	(bool) preg_match( '/function groupLines\([^)]*\)\s*\{\s*var tops = words\.map/s', $txt_core ),
+	'as linhas são medidas em duas passadas, nunca enquanto as palavras se mexem'
+);
+
+ok( false !== strpos( $txt_core, 'function regroupLines' ), 'e há como reagrupar as linhas depois' );
+ok( false !== strpos( $txt_core, 'el.__wfanWords' ), 'reagrupando a partir das palavras guardadas, sem repicar o texto' );
+ok( false !== strpos( $txt_core, "document.fonts.ready" ), 'a webfont, que chega depois da primeira medida, dispara o reagrupamento' );
+ok(
+	(bool) preg_match( "/addEventListener\(\s*'resize'/", $txt_core ),
+	'e o resize também'
+);
+
+// A folga da cortina: o overflow inline do motor come o rabo do g, do j e do p.
+$txt_engine = file_get_contents( WFAN_DIR . 'assets/js/frontend/engine-css.js' );
+
+ok( false !== strpos( $txt_engine, 'wfan-line--mask' ), 'a linha sob cortina é marcada com a própria classe' );
+ok(
+	(bool) preg_match( '/\.wfan-line\.wfan-line--mask\s*\{[^}]*padding[^}]*margin/s', $txt_css ),
+	'e a folga do recorte existe, com a margem negativa que devolve a medida'
+);
+
+section( '23. Barra fixa' );
+
+/*
+ * O que separa este módulo dos outros efeitos globais está todo aqui: a cor
+ * NÃO é um ajuste nosso. Ela é lida do próprio elemento, e a tela de ajustes
+ * não pode ter um campo de cor que diga o contrário.
+ */
+
+$hdr_colors = array_filter(
+	WFAN_Settings::colors(),
+	function ( $key ) {
+		return 0 === strpos( (string) $key, 'hdr_' );
+	}
+);
+
+ok( ! $hdr_colors, 'a barra fixa não tem campo de cor: ela lê a do elemento', implode( ', ', $hdr_colors ) );
+
+$hdr_js = file_get_contents( WFAN_DIR . 'assets/js/frontend/header.js' );
+$hdr_css = file_get_contents( WFAN_DIR . 'assets/css/header.css' );
+
+ok( false !== strpos( $hdr_js, 'getComputedStyle' ), 'e o script lê a cor computada do elemento' );
+ok( false !== strpos( $hdr_js, WFAN_Header::OFF_CLASS ), 'com a classe de leitura, pelo nome que o PHP declara' );
+
+/*
+ * A classe de leitura só pode TIRAR a regra do caminho. Se ela pintasse
+ * qualquer fundo — mesmo `initial` —, a medição leria de volta o que nós
+ * acabamos de escrever, e a barra nunca ganharia cor.
+ */
+ok(
+	(bool) preg_match( '/:not\(\s*\.' . preg_quote( WFAN_Header::OFF_CLASS, '/' ) . '\s*\)/', $hdr_css ),
+	'o CSS sai do caminho por :not(), em vez de pintar por cima'
+);
+ok(
+	! preg_match( '/\.' . preg_quote( WFAN_Header::OFF_CLASS, '/' ) . '\s*\{[^}]*background/s', $hdr_css ),
+	'e a classe de leitura não pinta fundo nenhum'
+);
+
+// Cor não reconhecida desiste; barra sem efeito é melhor que barra invisível.
+ok( false !== strpos( $hdr_js, "indexOf( 'rgb' )" ), 'cor que não é rgb() faz o script desistir' );
+
+ok( false !== strpos( $hdr_js, 'Math.exp' ), 'o amortecimento é exponencial, independente da taxa de quadros' );
+ok( false !== strpos( $hdr_js, 'running = false' ), 'e o laço de quadros se apaga ao chegar no alvo' );
+ok( (bool) preg_match( "/addEventListener\(\s*'scroll',[^)]*passive: true/s", $hdr_js ), 'o ouvinte de scroll é passivo' );
+ok( false !== strpos( $hdr_js, 'DOMContentLoaded' ), 'o script espera o DOM: a barra é markup da página' );
+
+ok( file_exists( WFAN_DIR . 'tests/header.js' ), 'o teste da barra existe' );
+ok(
+	false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/header.js' ),
+	'e o build não empacota sem rodá-lo'
+);
+
+// Regra 17: tipado, nunca wp_localize_script.
+$hdr_settings = WFAN_Settings::defaults();
+$hdr_settings['hdr_enable'] = '1';
+update_option( WFAN_Settings::OPTION, $hdr_settings );
+WFAN_Settings::flush();
+
+WFAN_Test_Hooks::$inline_js['wfan-header'] = '';
+( new WFAN_Header() )->enqueue();
+
+$hdr_cfg_raw = WFAN_Test_Hooks::$inline_js['wfan-header'] ?? '';
+$hdr_cfg     = json_decode( (string) preg_replace( '/^var wfanHeader = |;$/', '', trim( $hdr_cfg_raw ) ), true );
+
+ok( '' !== $hdr_cfg_raw, 'a configuração da barra vai como script inline' );
+ok( is_array( $hdr_cfg ), 'e é JSON válido', $hdr_cfg_raw );
+
+foreach ( [ 'shadow', 'reduced', 'debug' ] as $hdr_flag ) {
+	ok(
+		is_bool( $hdr_cfg[ $hdr_flag ] ?? null ),
+		"wfanHeader.$hdr_flag chega como booleano, nunca \"0\"",
+		var_export( $hdr_cfg[ $hdr_flag ] ?? null, true )
+	);
+}
+
+ok( is_int( $hdr_cfg['distance'] ?? null ), 'a distância chega como número', var_export( $hdr_cfg['distance'] ?? null, true ) );
+ok( is_int( $hdr_cfg['smooth'] ?? null ), 'o amortecimento chega como número', var_export( $hdr_cfg['smooth'] ?? null, true ) );
+
+section( '24. Popup circular' );
+
+update_option( WFAN_Settings::OPTION, WFAN_Settings::defaults() );
+WFAN_Settings::flush();
+
+$pop_js  = file_get_contents( WFAN_DIR . 'assets/js/frontend/popup.js' );
+$pop_css = file_get_contents( WFAN_DIR . 'assets/css/popup.css' );
+
+ok( false !== strpos( $pop_js, 'elementor/popup/show' ), 'o efeito se pendura no evento de abertura do Pro' );
+ok( false !== strpos( $pop_js, 'elementor/popup/hide' ), 'e no de fechamento' );
+
+/*
+ * A origem do círculo é o último clique, capturado na FASE DE CAPTURA: na
+ * borbulha o ponto chegaria depois de o Elementor já ter aberto o popup.
+ */
+ok( (bool) preg_match( "/addEventListener\(\s*'click',.*?\},\s*true\s*\)/s", $pop_js ), 'o ponto do clique é lido na fase de captura' );
+ok( false !== strpos( $pop_js, 'lastPoint' ), 'e é ele que vira a origem do círculo' );
+
+// Dois requestAnimationFrame: na primeira abertura o Elementor ainda está
+// posicionando o popup quando o evento chega.
+ok(
+	(bool) preg_match( '/requestAnimationFrame\(\s*function\s*\(\)\s*\{\s*window\.requestAnimationFrame/s', $pop_js ),
+	'a medida espera dois quadros, para a primeira abertura não sair torta'
+);
+
+ok( false !== strpos( $pop_js, 'MutationObserver' ), 'o fechamento é percebido pela classe que o Elementor põe' );
+ok( false !== strpos( $pop_js, WFAN_Popup::OPEN_CLASS ), 'a classe de aberto é a que o PHP declara' );
+ok( false !== strpos( $pop_css, WFAN_Popup::OPEN_CLASS ), 'e o CSS usa o mesmo nome' );
+ok( false !== strpos( $pop_css, 'prefers-reduced-motion' ), 'com movimento reduzido o círculo sai e sobra um fade' );
+ok( false !== strpos( $pop_js, 'clientX' ), 'a coordenada vem do evento, não de um ajuste' );
+
+// Todo parâmetro viaja em custom property, como no fundo animado (regra 20).
+foreach ( [ '--wfan-pop-open', '--wfan-pop-close', '--wfan-pop-near', '--wfan-pop-far', '--wfan-pop-blur' ] as $pop_var ) {
+	ok( false !== strpos( $pop_css, $pop_var ), "o CSS lê $pop_var" );
+	ok( false !== strpos( WFAN_Popup::inline_css(), $pop_var ), "e o PHP escreve $pop_var" );
+}
+
+foreach ( [ '--wfan-pop-x', '--wfan-pop-y', '--wfan-pop-r', '--wfan-pop-vx', '--wfan-pop-vy', '--wfan-pop-i' ] as $pop_var ) {
+	ok( false !== strpos( $pop_css, $pop_var ), "o CSS lê $pop_var" );
+	ok( false !== strpos( $pop_js, $pop_var ), "e o JS escreve $pop_var" );
+}
+
+// A cor sai em rgba, montada do hex dos ajustes com a opacidade de cada ponta.
+ok( (bool) preg_match( '/--wfan-pop-near:rgba\(14,16,22,0?\.3\)/', WFAN_Popup::inline_css() ), 'o hex dos ajustes vira rgba com a opacidade de perto', WFAN_Popup::inline_css() );
+ok( (bool) preg_match( '/--wfan-pop-far:rgba\(14,16,22,0?\.68\)/', WFAN_Popup::inline_css() ), 'e com a de longe' );
+
+ok( file_exists( WFAN_DIR . 'tests/popup.js' ), 'o teste do popup existe' );
+ok(
+	false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/popup.js' ),
+	'e o build não empacota sem rodá-lo'
+);
+
+// Sem o Elementor Pro não há evento nenhum: nada é carregado.
+ok( ! WFAN_Popup::available(), 'sem o Elementor Pro o módulo se declara indisponível' );
+ok( ! WFAN_Popup::active(), 'e não se liga nem com o ajuste ligado' );
 
 // ------------------------------------------------------------------ resultado
 

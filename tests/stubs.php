@@ -23,16 +23,19 @@ class WFAN_Test_Hooks {
 	public static $options = [];
 	public static $inline = [];
 	public static $inline_js = [];
+	public static $menus = [];
+	public static $priorities = [];
 
 	public static function reset() {
 		self::$actions = self::$filters = self::$scripts = self::$styles = [];
 		self::$enqueued = self::$localized = self::$options = self::$inline = [];
-		self::$inline_js = [];
+		self::$inline_js = self::$menus = self::$priorities = [];
 	}
 }
 
 function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
 	WFAN_Test_Hooks::$actions[ $hook ][] = $callback;
+	WFAN_Test_Hooks::$priorities[ $hook ][] = $priority;
 	return true;
 }
 
@@ -72,6 +75,23 @@ function esc_url( $url ) { return $url; }
 function esc_url_raw( $url ) { return $url; }
 function sanitize_text_field( $text ) { return trim( strip_tags( (string) $text ) ); }
 function sanitize_key( $key ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) ); }
+/**
+ * Mesmo contrato do WordPress, e os dois casos de borda importam: campo vazio
+ * devolve '', valor inválido devolve null. O sanitize() dos ajustes trata as
+ * duas formas como falsy e volta ao padrão.
+ */
+function sanitize_hex_color( $color ) {
+	if ( '' === $color ) {
+		return '';
+	}
+
+	if ( preg_match( '|^#([A-Fa-f0-9]{3}){1,2}$|', (string) $color ) ) {
+		return (string) $color;
+	}
+
+	return null;
+}
+
 function sanitize_html_class( $class, $fallback = '' ) { $clean = preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $class ); return '' === $clean ? $fallback : $clean; }
 function wp_unslash( $value ) { return $value; }
 function wp_json_encode( $data, $flags = 0 ) { return json_encode( $data, $flags ); }
@@ -103,7 +123,41 @@ function update_option( $name, $value, $autoload = null ) {
 }
 
 function register_setting( $group, $name, $args = [] ) { return true; }
-function add_submenu_page( ...$args ) { return 'hook'; }
+
+/**
+ * Guarda o que foi registrado no menu: é a única forma de o teste enxergar
+ * onde a tela de ajustes foi parar.
+ */
+function add_submenu_page( $parent, $page_title, $menu_title, $cap, $slug, $cb = null, $pos = null ) {
+	WFAN_Test_Hooks::$menus[] = [
+		'tipo'   => 'submenu',
+		'parent' => $parent,
+		'label'  => $menu_title,
+		'cap'    => $cap,
+		'slug'   => $slug,
+	];
+
+	return 'hook';
+}
+
+function remove_submenu_page( $parent, $slug ) {
+	WFAN_Test_Hooks::$menus[] = [ 'tipo' => 'remove', 'parent' => $parent, 'slug' => $slug ];
+
+	return false;
+}
+
+function add_menu_page( $page_title, $menu_title, $cap, $slug, $cb = null, $icon = '', $pos = null ) {
+	WFAN_Test_Hooks::$menus[] = [
+		'tipo'  => 'topo',
+		'label' => $menu_title,
+		'cap'   => $cap,
+		'slug'  => $slug,
+		'icon'  => $icon,
+		'pos'   => $pos,
+	];
+
+	return 'hook';
+}
 function settings_fields( $group ) {}
 function submit_button( $text = null ) {}
 function checked( $checked, $current = true, $echo = true ) {

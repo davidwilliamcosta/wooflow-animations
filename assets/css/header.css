@@ -1,0 +1,42 @@
+/**
+ * Barra fixa com fundo e sombra progressivos.
+ *
+ * O posicionamento e as medidas saem inline, do WFAN_Header::inline_css(),
+ * porque são configuráveis. Aqui fica só o que não muda.
+ *
+ * A cor NÃO está aqui nem lá: ela é lida do próprio elemento pelo header.js,
+ * que escreve `--wfan-hdr-bg` a cada quadro. Ver CLAUDE.md, regra 27.
+ */
+
+/*
+ * A transição do Elementor brigaria com o amortecimento do script: os dois
+ * suavizariam a mesma mudança de cor, um por cima do outro, e a barra ficaria
+ * melada ao rolar depressa.
+ */
+.wfan-header {
+	transition: none !important;
+}
+
+/*
+ * O fundo só passa a ser nosso depois que o script leu a cor original e
+ * confirmou que a entendeu. Sem o `is-ready`, uma cor não reconhecida (um
+ * degradê, por exemplo) deixaria a barra transparente para sempre.
+ */
+.wfan-header.is-ready:not( .wfan-header--off ) {
+	background-color: var( --wfan-hdr-bg, transparent ) !important;
+	box-shadow: 0 2px 8px rgba( 0, 0, 0, calc( var( --wfan-hdr-sh, 0.06 ) * var( --wfan-hdr-p, 0 ) ) );
+}
+
+/*
+ * `wfan-header--off` não pinta nada: ela só TIRA a regra de cima do caminho,
+ * pelo instante em que o script mede a cor que o usuário escolheu no
+ * Elementor. Escrever um fundo aqui — mesmo `initial` — faria a medição ler
+ * de volta o que nós acabamos de pôr, que é transparente, e o efeito nunca
+ * sairia do lugar.
+ */
+
+@media ( prefers-reduced-motion: reduce ) {
+	.wfan-header {
+		transition: none !important;
+	}
+}

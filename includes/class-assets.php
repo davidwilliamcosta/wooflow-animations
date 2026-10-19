@@ -129,6 +129,21 @@ class WFAN_Assets {
 		// quem enfileira é o WFAN_Blur, se estiver ligado nos Ajustes.
 		wp_register_style( 'wfan-blur', self::url( 'assets/css/blur.css' ), [], self::ver( 'assets/css/blur.css' ) );
 
+		/*
+		 * Botão "voltar ao topo": pelo mesmo caminho e pelo mesmo motivo, e
+		 * quem enfileira é o WFAN_BackToTop. Sem dependência nenhuma de
+		 * propósito — depender do `wfan-core` custaria 6 KB em toda página do
+		 * site para ler um scrollY, e o botão não é animação de elemento.
+		 */
+		wp_register_style( 'wfan-backtotop', self::url( 'assets/css/backtotop.css' ), [], self::ver( 'assets/css/backtotop.css' ) );
+		wp_register_script( 'wfan-backtotop', self::url( 'assets/js/frontend/backtotop.js' ), [], self::ver( 'assets/js/frontend/backtotop.js' ), true );
+		wp_register_style( 'wfan-header', self::url( 'assets/css/header.css' ), [], self::ver( 'assets/css/header.css' ) );
+		wp_register_script( 'wfan-header', self::url( 'assets/js/frontend/header.js' ), [], self::ver( 'assets/js/frontend/header.js' ), true );
+		wp_register_style( 'wfan-popup', self::url( 'assets/css/popup.css' ), [], self::ver( 'assets/css/popup.css' ) );
+		// jQuery como dependência não é escolha: os eventos de popup do
+		// Elementor Pro são disparados com jQuery.trigger(). Ver regra 28.
+		wp_register_script( 'wfan-popup', self::url( 'assets/js/frontend/popup.js' ), [ 'jquery' ], self::ver( 'assets/js/frontend/popup.js' ), true );
+
 		wp_register_script( 'wfan-core', self::url( 'assets/js/frontend/core.js' ), [], self::ver( 'assets/js/frontend/core.js' ), true );
 		self::localize( 'wfan-core', 'wfanConfig', $this->config() );
 

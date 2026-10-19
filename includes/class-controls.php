@@ -69,11 +69,45 @@ class WFAN_Controls {
 	 * controles de cor — e não um CSS estático do plugin — porque o que decide
 	 * aqui é especificidade: a cor de cada widget sai em
 	 * `.elementor-{post} .elementor-element.elementor-element-{id} …` (0,3,0) e
-	 * só um seletor montado sobre `{{WRAPPER}}:hover` (0,4,0 para cima) ganha
-	 * dela sem `!important`.
+	 * só um seletor montado sobre `{{WRAPPER}}:hover` ganha dela sem
+	 * `!important`. Quanto acima de 0,3,0 é preciso estar, e por quê, está em
+	 * SPECIFICITY_BUMP.
 	 *
 	 * @var array<string,string[]>
 	 */
+	/**
+	 * Degraus de especificidade colados em todo seletor da inversão.
+	 *
+	 * `:nth-child(n)` casa com qualquer elemento, em qualquer posição: não muda
+	 * nada do que o seletor pega, só o peso dele. Está aqui porque empate de
+	 * especificidade é decidido pela ORDEM no arquivo — e a ordem das nossas
+	 * regras MUDA conforme o contexto, o que fazia o defeito parecer que não
+	 * existia:
+	 *
+	 *  - no front-end, `Controls_Manager::add_control_to_stack()` desvia todo
+	 *    controle com `selectors` para um balde à parte
+	 *    (`Performance::should_optimize_controls()`), e `get_controls()` o
+	 *    anexa no FIM da lista (`$controls += $stack['style_controls']`). As
+	 *    nossas regras saem por último e ganham qualquer empate;
+	 *  - no editor e na requisição que SALVA a página — que é quem gera o
+	 *    arquivo CSS que a página publicada carrega — não há desvio nenhum, e
+	 *    os controles saem na ordem da pilha. A nossa seção está no topo da
+	 *    primeira aba (regra 2), então as nossas regras saem PRIMEIRO.
+	 *
+	 * Medido no Elementor 4.3.4, num container com cor de fundo: a nossa
+	 * `{{WRAPPER}}:hover{background-color}` (0,4,0) saía antes da cor de fundo
+	 * do próprio container,
+	 * `{{WRAPPER}}:not(.elementor-motion-effects-element-type-background)`
+	 * (0,4,0 também) — e perdia o empate. O fundo não invertia em quadro
+	 * nenhum, enquanto o título (0,5,0) invertia: texto branco sobre fundo que
+	 * continuava branco.
+	 *
+	 * Dois degraus, e não um, porque um só empataria de novo com o que o
+	 * Elementor escreve por widget com uma classe a mais — a cor do ícone sai
+	 * em `{{WRAPPER}}.elementor-view-default .elementor-icon` (0,5,0).
+	 */
+	const SPECIFICITY_BUMP = ':nth-child(n):nth-child(n)';
+
 	/**
 	 * Classe que liga a inversão sem mouse nenhum.
 	 *
@@ -206,6 +240,10 @@ class WFAN_Controls {
 	 * especificidade, sem depender de um seletor que navegador antigo descarta
 	 * — e seletor inválido derruba a regra inteira, não só o ramo dele.
 	 *
+	 * Todo ramo — inclusive o do estado normal, que é onde a transição mora —
+	 * nasce com os degraus de SPECIFICITY_BUMP, porque nenhuma destas regras
+	 * pode depender de sair antes ou depois das do Elementor no arquivo.
+	 *
 	 * @param string[] $targets Alvos relativos ao elemento ('' = o próprio).
 	 * @param bool     $hover   Prende o seletor ao estado invertido.
 	 * @return string
@@ -218,6 +256,8 @@ class WFAN_Controls {
 		$out = [];
 
 		foreach ( $roots as $root ) {
+			$root .= self::SPECIFICITY_BUMP;
+
 			foreach ( $targets as $target ) {
 				$out[] = '' === $target ? $root : $root . ' ' . $target;
 			}
@@ -626,6 +666,26 @@ class WFAN_Controls {
 			]
 		);
 
+		/*
+		 * Opacidade de partida da revelação travada no scroll. É um número
+		 * puro de 0 a 1, e não um slider com unidade: `%` viraria 20 no
+		 * payload e o GSAP animaria a opacidade de 20 até 1, ou seja, de
+		 * opaco até opaco.
+		 */
+		$this->add(
+			$element,
+			$k( 'dim' ),
+			[
+				'label'       => __( 'Opacidade de partida', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '' ],
+				'range'       => [ '' => [ 'min' => 0, 'max' => 1, 'step' => 0.05 ] ],
+				'default'     => [ 'unit' => '', 'size' => 0.2 ],
+				'description' => __( 'Quanto do texto já se vê antes de a rolagem revelar.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'dim' ) ],
+			]
+		);
+
 		$this->add(
 			$element,
 			$k( 'rotate' ),
@@ -699,6 +759,133 @@ class WFAN_Controls {
 					$k( 'preset' )    => WFAN_Presets::ids_with_param( 'scrub_end' ),
 					$k( 'scrub_end' ) => 'pct',
 				],
+			]
+		);
+
+		/*
+		 * A revelação pedaço por pedaço não usa o par "começar/terminar
+		 * quando": ela precisa que a frente de luz fique PARADA na tela
+		 * enquanto o texto passa por ela, e isso só sai de um par de âncoras
+		 * na mesma altura (`top <linha>` … `bottom <linha>`). Com o par
+		 * genérico o percurso era outro — com o padrão de fábrica, "o
+		 * elemento entrar na tela" até "o topo chegar ao topo", o texto
+		 * terminava de acender quando o bloco ainda subia, antes de dar para
+		 * ler. Daí um controle só, e a medida que importa: a altura da linha.
+		 */
+		$this->add(
+			$element,
+			$k( 'scrub_line' ),
+			[
+				'label'       => __( 'Onde a palavra acende', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '%' ],
+				'range'       => [ '%' => [ 'min' => 10, 'max' => 100, 'step' => 5 ] ],
+				'default'     => [ 'unit' => '%', 'size' => 80 ],
+				'description' => __( 'Altura da linha em que cada pedaço acende, medida do topo da tela. Em 80% o texto acende um pouco antes de chegar ao meio, subindo — quanto menor, mais cedo tudo já está aceso.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'line' ) ],
+			]
+		);
+
+		/*
+		 * Velocidade da revelação: quanta rolagem o texto leva para acender
+		 * por inteiro. 65 é o ponto em que o percurso vale a altura do
+		 * elemento (a medida de antes deste controle); mais que isso acende
+		 * com menos rolagem, menos que isso estica. É a escala do campo
+		 * equivalente do Uncode, que a referência usa com 65 de fábrica.
+		 */
+		$this->add(
+			$element,
+			$k( 'scrub_speed' ),
+			[
+				'label'       => __( 'Velocidade da revelação', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '' ],
+				'range'       => [ '' => [ 'min' => 10, 'max' => 100, 'step' => 5 ] ],
+				'default'     => [ 'unit' => '', 'size' => 65 ],
+				'description' => __( 'Quanto maior, menos rolagem o texto precisa para acender por inteiro. Em 65 ele termina de acender quando a última linha chega à altura escolhida acima.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'line' ) ],
+			]
+		);
+
+		/*
+		 * "Virar cartão no scroll". Percurso próprio, e não o par
+		 * "começar/terminar quando": o efeito de referência começa quando o
+		 * topo do bloco encosta no topo da tela (ao sair) ou quando ele
+		 * aparece no pé da tela (ao entrar), e dura uma fração fixa da
+		 * altura da tela — não uma âncora do próprio elemento, que numa
+		 * seção alta esticaria o efeito por várias telas.
+		 */
+		$card = [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'card' ) ];
+
+		$this->add(
+			$element,
+			$k( 'card_state' ),
+			[
+				'label'     => __( 'Quando acontece', 'wooflow-animations' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => 'out',
+				'options'   => [
+					'out' => __( 'Ao sair: encolhe e arredonda', 'wooflow-animations' ),
+					'in'  => __( 'Ao entrar: chega como cartão e se abre', 'wooflow-animations' ),
+				],
+				'condition' => $card,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'card_scale' ),
+			[
+				'label'      => __( 'Escala do cartão', 'wooflow-animations' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => [ '%' ],
+				'range'      => [ '%' => [ 'min' => 50, 'max' => 100, 'step' => 1 ] ],
+				'default'    => [ 'unit' => '%', 'size' => 90 ],
+				'condition'  => $card,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'card_radius' ),
+			[
+				'label'       => __( 'Arredondamento dos cantos (px)', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ 'px' ],
+				'range'       => [ 'px' => [ 'min' => 0, 'max' => 200, 'step' => 1 ] ],
+				'default'     => [ 'unit' => 'px', 'size' => 54 ],
+				'description' => __( 'Num container, o fundo, a sobreposição e o vídeo de fundo arredondam juntos.', 'wooflow-animations' ),
+				'condition'   => $card,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'card_origin' ),
+			[
+				'label'     => __( 'Encolher em direção a', 'wooflow-animations' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => 'bottom center',
+				'options'   => [
+					'bottom center' => __( 'base (o topo desce)', 'wooflow-animations' ),
+					'center center' => __( 'centro', 'wooflow-animations' ),
+					'top center'    => __( 'topo (a base sobe)', 'wooflow-animations' ),
+				],
+				'condition' => $card,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'card_length' ),
+			[
+				'label'       => __( 'Percurso (% da tela)', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '%' ],
+				'range'       => [ '%' => [ 'min' => 20, 'max' => 400, 'step' => 10 ] ],
+				'default'     => [ 'unit' => '%', 'size' => 150 ],
+				'description' => __( 'Quanta rolagem o efeito leva para se completar. 100% é uma tela inteira.', 'wooflow-animations' ),
+				'condition'   => $card,
 			]
 		);
 

@@ -165,6 +165,12 @@
 	60%, 100% { opacity: 1; }
 }
 
+/* A revelação travada no scroll parte de apagada, nunca de invisível. */
+@keyframes wfan-pv-dim {
+	0% { opacity: 0.2; }
+	60%, 100% { opacity: 1; }
+}
+
 @keyframes wfan-pv-zoom-in {
 	0% { opacity: 0; transform: scale(0.4); }
 	60%, 100% { opacity: 1; transform: scale(1); }
@@ -203,6 +209,12 @@
 @keyframes wfan-pv-mask-left {
 	0% { clip-path: inset(0 100% 0 0); }
 	60%, 100% { clip-path: inset(0 0 0 0); }
+}
+
+/* O cartão: encolhe em direção à base e arredonda, como a seção saindo. */
+@keyframes wfan-pv-card {
+	0% { transform: scale(1); transform-origin: 50% 100%; border-radius: 0; }
+	60%, 100% { transform: scale(0.7); transform-origin: 50% 100%; border-radius: 5px; }
 }
 
 @keyframes wfan-pv-pulse {
@@ -257,7 +269,12 @@
 
 .wfan-card:hover .wfan-pv-zoom-out { animation-name: wfan-pv-zoom-out; }
 
-.wfan-card:hover .wfan-pv-blur-in { animation-name: wfan-pv-blur; }
+.wfan-card:hover .wfan-pv-blur-in,
+.wfan-card:hover .wfan-pv-text-blur-words,
+.wfan-card:hover .wfan-pv-text-blur-chars { animation-name: wfan-pv-blur; }
+
+.wfan-card:hover .wfan-pv-text-scrub-words,
+.wfan-card:hover .wfan-pv-text-scrub-chars { animation-name: wfan-pv-dim; }
 
 .wfan-card:hover .wfan-pv-rotate-in,
 .wfan-card:hover .wfan-pv-scrub-rotate,
@@ -269,6 +286,8 @@
 
 .wfan-card:hover .wfan-pv-mask-up,
 .wfan-card:hover .wfan-pv-scrub-reveal { animation-name: wfan-pv-mask-up; }
+
+.wfan-card:hover .wfan-pv-scrub-card { animation-name: wfan-pv-card; }
 
 .wfan-card:hover .wfan-pv-mask-left,
 .wfan-card:hover .wfan-pv-progress-bar { animation-name: wfan-pv-mask-left; }

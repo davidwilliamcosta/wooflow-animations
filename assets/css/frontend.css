@@ -8,8 +8,29 @@
 	will-change: transform, opacity;
 }
 
+/*
+ * Invólucro de palavra. Existe em toda quebra, mas só é indispensável na
+ * quebra por letra: sem o nowrap, cada letra é uma caixa inline-block
+ * independente e o navegador quebra a linha no meio da palavra.
+ */
+.wfan-word {
+	display: inline-block;
+	white-space: nowrap;
+}
+
 .wfan-line {
 	display: block;
+}
+
+/*
+ * A folga da cortina. O overflow que corta o texto que sobe é escrito inline
+ * pelo motor, na própria linha; sem esta compensação ele também come o rabo
+ * do g, do j e do p, e o itálico encosta na borda. O padding abre espaço e a
+ * margem negativa devolve a medida, para a linha não empurrar as vizinhas.
+ */
+.wfan-line.wfan-line--mask {
+	padding: 0 0.08em 0.14em;
+	margin: 0 -0.08em -0.14em;
 }
 
 .wfan-mask-inner {

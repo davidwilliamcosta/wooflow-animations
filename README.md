@@ -11,7 +11,7 @@ ações **Copiar animação** / **Colar animação** que deram origem ao plugin.
 
 O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
-Este plugin preenche essa lacuna: **75 presets** escolhidos numa grade visual que
+Este plugin preenche essa lacuna: **80 presets** escolhidos numa grade visual que
 anima no hover, com gatilho, duração, curva e cascata configuráveis em cada
 elemento — mais um **fundo animado** por elemento, que não é animação de entrada
 e convive com uma.
@@ -169,8 +169,9 @@ um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 |---|---|---|
 | **Entrada** (17) | fade, fade/slide nas 4 direções, zoom in/out, desfoque, girar, virar H/V, cortina vertical/horizontal | próprio |
 | **Nativas** (36) | as animações de entrada do Elementor: fade, zoom, quicar, deslizar, girar, velocidade da luz, rolar e os dez chamarizes (pulsar, tremer, tada…) | Elementor |
-| **Texto** (4) | revelar por linha, por palavra, por letra, cortina por linha | próprio |
-| **Scroll** (9) | parallax H/V, fade/escala/giro/cortina travados no scroll, fixar na tela, barra de progresso, contador | GSAP |
+| **Texto** (6) | revelar por linha, por palavra, por letra, cortina por linha, desfoque por palavra, desfoque por letra | próprio |
+| **Texto no scroll** (2) | revelar por palavra e por letra travado no scroll, acendendo a partir de uma opacidade de partida | GSAP |
+| **Scroll** (10) | parallax H/V, fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso, contador | GSAP |
 | **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
 | **SVG** (1) | desenhar traço | Anime.js |
 | **Lottie** (2) | tocar, travado no scroll | lottie-web |
@@ -255,14 +256,98 @@ do editor a faixa não aparece, para não desfocar o que se está editando.
 
 ---
 
+## Voltar ao topo
+
+Um botão fixo que aparece depois de uma certa rolagem e volta ao topo da página.
+Ao contrário da faixa de blur, que é decoração, este é um **controle de
+verdade**: um `<button>` focável na ordem natural, com nome lido por leitor de
+tela, que responde a Enter e Espaço — e que, ao subir, manda o foco para o começo
+do conteúdo, para a ida ao topo valer também no teclado.
+
+Configuráveis a posição (canto direito, canto esquerdo ou centralizado), o
+afastamento das bordas, o tamanho, a forma, o ícone (três SVGs inline, sem
+requisição e sem fonte de ícones), as cores do fundo, do ícone e do fundo no
+hover, a rolagem a partir da qual ele aparece, a duração da subida, a animação de
+entrada, o anel de progresso do scroll e o desligamento em telas pequenas.
+
+A subida respeita quem está na página: com o **scroll suave** ligado ela passa
+pela instância do Lenis, que é dona do scroll — sem isso a página subiria e
+voltaria sozinha no quadro seguinte. Sem Lenis, é um tween próprio de vinte
+linhas, interrompido no primeiro giro de roda ou toque, porque rolar no meio da
+subida é o usuário dizendo que mudou de ideia. Com "reduzir movimento" no
+sistema, a ida ao topo é um salto.
+
+São ~1 KB de CSS e ~2 KB de JavaScript, que só entram nas páginas de um site onde
+o botão está ligado: ele não passa pelo `core.js` nem carrega biblioteca nenhuma.
+A camada começa em 1000, uma acima do blur progressivo, para o botão ficar nítido
+sobre a faixa. Dentro do editor ele não aparece, para não cobrir a alça de um
+elemento.
+
+> As medidas e as cores saem em variáveis CSS impressas na página, como no blur:
+> num site com cache de página inteira, trocar uma cor pede purge do cache.
+
+---
+
+## Barra fixa
+
+O cabeçalho começa transparente e vai ganhando fundo e sombra conforme a página
+desce, com amortecimento — em vez do salto seco de ligar e desligar uma classe.
+
+Para escolher a barra, ponha a classe `wfan-header` no container do cabeçalho,
+em *Avançado > Classes CSS*. **A cor é a que você já definiu no Elementor**, em
+*Estilo > Fundo*, do tipo Clássico e sólida: o efeito só varia a transparência
+dela. Não há campo de cor nos ajustes de propósito — o script lê a cor do próprio
+elemento, e com um degradê no fundo ele não mexe em nada, em vez de deixar a
+barra invisível.
+
+Configuráveis a rolagem até o fundo cheio, o amortecimento, a força da sombra, a
+camada e o posicionamento. Com o posicionamento ligado, desligue o Sticky do
+Elementor nessa barra: os dois juntos disputam a mesma posição. Com "reduzir
+movimento" no sistema, a cor acompanha a rolagem sem amortecimento.
+
+São ~1 KB de CSS e ~2 KB de JavaScript, e o laço de quadros se apaga ao chegar no
+alvo — nada de `requestAnimationFrame` girando para sempre em toda página.
+
+---
+
+## Popup circular
+
+O popup deixa de aparecer de uma vez e passa a nascer de um círculo que cresce a
+partir do ponto em que foi aberto — o ícone do mega menu, em geral. O site atrás
+escurece e desfoca junto, com o degradê partindo do mesmo ponto.
+
+**Precisa do Elementor Pro**: o efeito se pendura nos eventos de popup, que são
+de lá. Sem o Pro, nada é carregado.
+
+A origem do círculo não se configura: é o ponto do clique que abriu o popup.
+Configuráveis as durações de abertura e fechamento, a cor da sobreposição, a
+opacidade perto do ícone e nas bordas, o desfoque do site atrás e a saída do
+desfoque em telas pequenas — onde ele é a parte cara, porque recalcula a página
+inteira a cada quadro. Para os itens do menu entrarem escalonados depois do
+círculo, ponha a classe `wfan-popup-item` neles.
+
+Com "reduzir movimento" no sistema o círculo sai e sobra um fade; o conteúdo
+aparece do mesmo jeito.
+
+---
+
 ## Ajustes
 
-**Elementor → WooFlow Animations**, em quatro abas. Cada aba salva sozinha, sem
-mexer nas outras.
+Em **WooFlow → Animations**, no menu lateral. O menu **WooFlow** é o mesmo de
+toda a linha: se nenhum outro plugin da família estiver instalado, este cria o
+item; se já houver, ele só entra embaixo, ao lado dos outros. São sete abas, e
+cada uma salva sozinha, sem mexer nas outras.
 
 - **Bibliotecas** — permitir ou bloquear GSAP, Anime.js e Lottie.
 - **Scroll suave** — Lenis e seus parâmetros.
 - **Blur progressivo** — borda, altura, intensidade, camada e saída em telas pequenas.
+- **Voltar ao topo** — posição, afastamento, tamanho, forma, ícone, cores, limiar
+  de aparecimento, duração da subida, animação de entrada, anel de progresso e
+  saída em telas pequenas.
+- **Barra fixa** — rolagem até o fundo cheio, amortecimento, força da sombra,
+  camada e posicionamento.
+- **Popup circular** — durações de abertura e fechamento, cor e opacidades da
+  sobreposição, desfoque do site atrás e saída do desfoque em telas pequenas.
 - **Comportamento** — respeitar "reduzir movimento" (ligado de fábrica), desligar
   todas as animações abaixo de uma largura, desligar a animação de entrada do
   Elementor onde houver animação WooFlow, e registrar no console cada animação
@@ -280,6 +365,12 @@ mexer nas outras.
 | `wfan_payload` | último ajuste no contrato enviado ao navegador |
 | `wfan_lenis_active` | desligar o scroll suave em contextos específicos |
 | `wfan_blur_active` | desligar o blur progressivo em contextos específicos |
+| `wfan_backtotop_active` | desligar o botão "voltar ao topo" em contextos específicos |
+| `wfan_backtotop_label` | trocar o rótulo acessível do botão "voltar ao topo" |
+| `wfan_header_active` | desligar a barra fixa em contextos específicos |
+| `wfan_header_selector` | apontar a barra fixa para outro seletor |
+| `wfan_popup_active` | desligar o popup circular em contextos específicos |
+| `wfan_popup_ids` | restringir o popup circular a certos ids de popup |
 | `wfan_lottie_handle` | apontar para outra cópia do lottie-web |
 | `wfan_controls_tab` | mover a seção para outra aba do painel |
 
@@ -322,20 +413,26 @@ window.wfan.register( 'meu-motor', {
 ```bash
 php tests/smoke.php
 node tests/trigger.js
+node tests/backtotop.js
+node tests/header.js
+node tests/popup.js
 ```
 
-282 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+491 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
 contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
 entrega à animação nativa do Elementor sem levar asset nosso junto, o
-`render_type` de cada controle, as medidas do blur progressivo, e a tela de
+`render_type` de cada controle, as medidas do blur progressivo, as medidas e o
+markup acessível do botão de voltar ao topo, e a tela de
 ajustes — padrão de UI, cobertura de classes e o recorte por aba que impede uma
 aba de zerar as outras ao salvar.
 
 O `tests/trigger.js` sobe o motor de verdade num DOM simulado e conta **quantas
 vezes** cada animação toca ao entrar, sair e voltar à tela — a classe de defeito
-que só aparece rolando a página.
+que só aparece rolando a página. O `tests/backtotop.js` faz o mesmo com o botão
+de voltar ao topo: quando o script acha o botão no rodapé, o limiar de aparição,
+o anel e por onde a subida vai (Lenis ou tween próprio).
 
 ---
 
@@ -355,6 +452,64 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.6.0
+
+- **Quatro presets de texto novos**, no grupo *Texto*: desfoque por palavra e por
+  letra (opacidade, deslocamento e desfoque entrando juntos, em cascata), e
+  revelação por palavra e por letra **travada no scroll**, em que o texto nasce
+  apagado numa opacidade de partida configurável e vai acendendo pedaço por
+  pedaço conforme a página desce.
+- **Quebra de texto consertada em três pontos.** As linhas passaram a ser
+  medidas em duas passadas, antes de qualquer palavra mudar de lugar — medir
+  enquanto move errava o agrupamento da segunda linha em diante, porque fechar
+  uma linha reflui o resto. Cada palavra ganhou invólucro `nowrap`, então a
+  quebra por letra não parte mais a palavra no meio. E as linhas são reagrupadas
+  quando a largura muda ou quando a webfont chega, que é depois da primeira
+  medida na maioria dos carregamentos. A cortina por linha também ganhou folga
+  no recorte: ela cortava o rabo do g, do j e do p.
+- **Barra fixa**, na aba nova *Barra fixa*: o cabeçalho ganha fundo e sombra
+  progressivos conforme a página desce, com amortecimento. A cor é a que você já
+  definiu no Elementor — não há campo de cor nos ajustes —, e com um degradê no
+  fundo o efeito não mexe em nada em vez de deixar a barra invisível.
+- **Popup circular**, na aba nova *Popup circular*: o popup nasce de um círculo
+  que cresce do ponto em que foi aberto, com o site atrás escurecendo e
+  desfocando junto. Precisa do Elementor Pro, e a origem não se configura — é o
+  ponto do clique.
+- **Virar cartão no scroll**, preset novo no grupo *Scroll*: a seção encolhe em
+  direção à base e arredonda os cantos enquanto sai da tela — ou chega como
+  cartão e se abre, ao entrar —, como a animação de linha do Uncode. Escala,
+  raio, ponto fixo e percurso (em % da tela) são configuráveis. Num container,
+  o fundo, a sobreposição e o vídeo de fundo arredondam juntos, sem
+  `overflow:hidden`; um container que já tinha cantos arredondados parte do
+  raio dele.
+- Testes: 491 verificações no smoke test, mais o `tests/header.js` novo, que
+  confere de onde sai a cor da barra e que o laço de amortecimento para, e o
+  `tests/popup.js`, que confere de onde sai a origem do círculo e quando a caixa
+  do popup é medida.
+
+### 2.5.0
+
+- **Botão "voltar ao topo"**, na aba nova *Voltar ao topo* dos ajustes: posição,
+  afastamento, tamanho, forma, ícone, cores, limiar de aparecimento, duração da
+  subida, animação de entrada, anel de progresso do scroll e saída em telas
+  pequenas. É um `<button>` de verdade — focável, com nome acessível e com o foco
+  indo para o começo do conteúdo depois da subida —, e não uma `<div>` com
+  clique. Com o scroll suave ligado a subida passa pelo Lenis; sem ele, por um
+  tween próprio que para assim que o usuário rola.
+- Os campos de escolha e de cor dos ajustes passam a sair de dois mapas únicos
+  (`WFAN_Settings::selects()` e `::colors()`), em vez de um `if` por campo: a
+  lista que o painel oferece e a que o formulário aceita são conferidas uma
+  contra a outra pelo smoke test.
+
+### 2.4.3
+
+- **Correção: a tela de ajustes não aparecia no menu** em sites sem o WooFlow
+  Admin. Ela era registrada dentro do menu do Elementor, e o Elementor 4 esconde
+  esse menu inteiro e remove de lá os itens de outros plugins. Agora, sem o hub
+  sempre **WooFlow → Animations**: quando nenhum outro plugin da linha está
+  instalado, este cria o menu *WooFlow* — do mesmo jeito, com o mesmo ícone e na
+  mesma posição que os outros da família. A URL da tela não muda.
 
 ### 2.4.2
 

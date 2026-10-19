@@ -316,6 +316,19 @@
 
 .wooflow-admin input[type="number"].wooflow-input--sm { width: 90px; }
 
+/* Campo de cor nativo: sem wp-color-picker, para a tela de
+   ajustes continuar sem JavaScript nenhum. O padding mínimo
+   é o que faz a amostra preencher o campo nos dois motores. */
+.wooflow-admin input[type="color"].wooflow-input--color {
+	width: 56px;
+	height: 34px;
+	padding: 2px;
+	cursor: pointer;
+	border: var(--wf-border);
+	border-radius: var(--wf-radius);
+	background: var(--wf-white);
+}
+
 .wooflow-admin input[type="checkbox"]:focus-visible {
 	outline: 2px solid var(--wf-primary);
 	outline-offset: 1px;

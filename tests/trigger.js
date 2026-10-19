@@ -89,6 +89,9 @@ function montar( tr ) {
 			}
 		},
 		requestAnimationFrame: ( fn ) => fn( 0 ),
+		// O core.js escuta o resize para reagrupar as linhas do texto; aqui
+		// não há layout nenhum, então basta existir.
+		addEventListener: () => {},
 		matchMedia: () => ( { matches: false } ),
 		innerWidth: 1440,
 		innerHeight: 900,

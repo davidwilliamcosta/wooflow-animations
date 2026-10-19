@@ -64,6 +64,9 @@ class WFAN_Plugin {
 			'class-render',
 			'class-lenis',
 			'class-blur',
+			'class-backtotop',
+			'class-header',
+			'class-popup',
 			'class-lottie',
 		];
 
@@ -85,6 +88,7 @@ class WFAN_Plugin {
 		new WFAN_Render();
 		new WFAN_Lenis();
 		new WFAN_Blur();
+		new WFAN_BackToTop();
 		new WFAN_Lottie();
 
 		add_action( 'elementor/controls/register', [ $this, 'register_controls' ] );

@@ -20,6 +20,10 @@
 	// a curva exatas a este elemento.
 	var NATIVE = 'wfan-native';
 
+	// Elementos cujo texto foi agrupado por linha, e que por isso precisam
+	// ser reagrupados quando a largura muda.
+	var lineWatch = [];
+
 	// Avisa o bootstrap do <head> que o JS chegou: sem isso, ele revela tudo
 	// depois do tempo de segurança.
 	window.wfanLoaded = true;
@@ -73,6 +77,7 @@
 		var trigger = raw.tr || {};
 		var stagger = raw.st || null;
 		var lottie = raw.lt || null;
+		var card = raw.card || null;
 
 		return {
 			version: raw.v || 1,
@@ -91,6 +96,9 @@
 			dist: typeof raw.dist === 'number' ? raw.dist : 40,
 			scale: typeof raw.scale === 'number' ? raw.scale : 0.85,
 			blur: typeof raw.blur === 'number' ? raw.blur : 10,
+			dim: typeof raw.dim === 'number' ? raw.dim : 0.2,
+			line: typeof raw.line === 'number' ? raw.line : 0,
+			speed: typeof raw.speed === 'number' && raw.speed > 0 ? raw.speed : 65,
 			rot: typeof raw.rot === 'number' ? raw.rot : 12,
 			to: typeof raw.to === 'number' ? raw.to : 100,
 			loop: !! raw.loop,
@@ -108,6 +116,13 @@
 				url: lottie.url || '',
 				loop: !! lottie.loop,
 				speed: lottie.speed || 1
+			} : null,
+			card: card ? {
+				state: 'in' === card.st ? 'in' : 'out',
+				scale: typeof card.sc === 'number' ? card.sc : 0.9,
+				radius: typeof card.r === 'number' ? card.r : 54,
+				origin: card.o || 'bottom center',
+				length: typeof card.len === 'number' ? card.len : 150
 			} : null
 		};
 	}
@@ -133,15 +148,12 @@
 		}
 
 		var pieces = [];
+		var words = [];
 
 		nodes.forEach( function ( textNode ) {
-			var parts = 'chars' === mode
-				? textNode.nodeValue.split( '' )
-				: textNode.nodeValue.split( /(\s+)/ );
-
 			var fragment = document.createDocumentFragment();
 
-			parts.forEach( function ( part ) {
+			textNode.nodeValue.split( /(\s+)/ ).forEach( function ( part ) {
 				if ( '' === part ) {
 					return;
 				}
@@ -151,12 +163,36 @@
 					return;
 				}
 
-				var span = document.createElement( 'span' );
+				/*
+				 * O texto é sempre picado em palavras primeiro, mesmo quando
+				 * o alvo é a letra. O invólucro de palavra faz duas coisas
+				 * que nada mais faz: é o que o agrupamento por linha mede, e
+				 * é o `white-space:nowrap` que segura as letras de uma
+				 * palavra na mesma linha — sem ele, um texto picado em letras
+				 * quebra onde o navegador quiser, no meio da palavra.
+				 */
+				var word = document.createElement( 'span' );
 
-				span.className = 'wfan-part';
-				span.textContent = part;
-				fragment.appendChild( span );
-				pieces.push( span );
+				fragment.appendChild( word );
+				words.push( word );
+
+				if ( 'chars' !== mode ) {
+					word.className = 'wfan-word wfan-part';
+					word.textContent = part;
+					pieces.push( word );
+					return;
+				}
+
+				word.className = 'wfan-word';
+
+				part.split( '' ).forEach( function ( character ) {
+					var span = document.createElement( 'span' );
+
+					span.className = 'wfan-part';
+					span.textContent = character;
+					word.appendChild( span );
+					pieces.push( span );
+				} );
 			} );
 
 			textNode.parentNode.replaceChild( fragment, textNode );
@@ -172,8 +208,14 @@
 			} );
 		}
 
+		// As palavras ficam guardadas mesmo quando não são o alvo: é a
+		// partir delas que o agrupamento por linha é refeito depois, sem
+		// repicar o texto.
+		el.__wfanWords = words;
+
 		if ( 'lines' === mode ) {
-			pieces = groupLines( pieces );
+			pieces = groupLines( words );
+			watchLines( el );
 		}
 
 		el.__wfanSplit = pieces;
@@ -182,28 +224,117 @@
 	}
 
 	/**
-	 * Agrupa as palavras por linha visual, medindo o offsetTop de cada uma.
+	 * Agrupa as palavras por linha visual.
+	 *
+	 * Todas as medidas saem ANTES de qualquer palavra mudar de lugar. O
+	 * invólucro de linha é `display:block`, então fechar a primeira linha
+	 * reflui tudo o que vem depois: medindo enquanto move, o agrupamento
+	 * saía errado a partir da segunda linha.
 	 */
 	function groupLines( words ) {
+		var tops = words.map( function ( word ) {
+			return word.offsetTop;
+		} );
 		var lines = [];
 		var current = null;
 		var lastTop = null;
 
-		words.forEach( function ( word ) {
-			var top = word.offsetTop;
-
-			if ( null === lastTop || Math.abs( top - lastTop ) > 2 ) {
+		words.forEach( function ( word, index ) {
+			if ( null === lastTop || Math.abs( tops[ index ] - lastTop ) > 2 ) {
 				current = document.createElement( 'span' );
 				current.className = 'wfan-line';
 				word.parentNode.insertBefore( current, word );
 				lines.push( current );
-				lastTop = top;
+				lastTop = tops[ index ];
 			}
 
 			current.appendChild( word );
 		} );
 
 		return lines;
+	}
+
+	/**
+	 * Desfaz os invólucros de linha — e o da cortina, que vive dentro
+	 * deles —, devolvendo as palavras ao fluxo natural, que é o único
+	 * estado em que medir uma linha faz sentido.
+	 */
+	function unwrapLines( el ) {
+		[ 'wfan-mask-inner', 'wfan-line' ].forEach( function ( className ) {
+			[].slice.call( el.querySelectorAll( '.' + className ) ).forEach( function ( wrap ) {
+				var parent = wrap.parentNode;
+
+				if ( ! parent ) {
+					return;
+				}
+
+				while ( wrap.firstChild ) {
+					parent.insertBefore( wrap.firstChild, wrap );
+				}
+
+				parent.removeChild( wrap );
+			} );
+		} );
+	}
+
+	/**
+	 * Refaz o agrupamento por linha. As palavras são as mesmas: só trocam de
+	 * invólucro. Repicar o texto aqui aninharia span dentro de span.
+	 */
+	function regroupLines( el ) {
+		var words = el.__wfanWords;
+
+		if ( ! words || ! words.length || ! document.contains( words[ 0 ] ) ) {
+			return false;
+		}
+
+		unwrapLines( el );
+
+		el.__wfanSplit = groupLines( words );
+
+		// A entrada guarda os alvos resolvidos uma vez só, no setup: sem
+		// isto a próxima reprodução animaria linhas que já saíram do
+		// documento, e nada se moveria na tela.
+		if ( el.__wfan ) {
+			el.__wfan.targets = el.__wfanSplit;
+		}
+
+		return true;
+	}
+
+	function watchLines( el ) {
+		if ( -1 === lineWatch.indexOf( el ) ) {
+			el.__wfanWidth = el.clientWidth;
+			lineWatch.push( el );
+		}
+	}
+
+	/**
+	 * Linha agrupada na largura de ontem continua agrupada errada depois de
+	 * girar o celular, de redimensionar a janela ou de a webfont chegar — e a
+	 * webfont chega depois da primeira medida com frequência, porque o texto
+	 * é pintado antes com a fonte de reserva.
+	 *
+	 * @param {boolean} force Reagrupa mesmo com a largura igual (webfont).
+	 */
+	function refreshLines( force ) {
+		lineWatch = lineWatch.filter( function ( el ) {
+			return document.contains( el );
+		} );
+
+		lineWatch.forEach( function ( el ) {
+			var width = el.clientWidth;
+
+			if ( ! force && el.__wfanWidth === width ) {
+				return;
+			}
+
+			el.__wfanWidth = width;
+
+			if ( regroupLines( el ) ) {
+				log( 'linhas reagrupadas', el );
+			}
+		} );
 	}
 
 	function order( list, from ) {
@@ -644,6 +775,9 @@
 		cssEase: cssEase,
 		order: order,
 		splitText: splitText,
+		groupLines: groupLines,
+		regroupLines: regroupLines,
+		refreshLines: refreshLines,
 		targetsFor: targetsFor,
 		reveal: reveal,
 		log: log
@@ -651,6 +785,21 @@
 
 	function boot() {
 		scan( document );
+
+		var lineTimer = 0;
+
+		window.addEventListener( 'resize', function () {
+			window.clearTimeout( lineTimer );
+			lineTimer = window.setTimeout( refreshLines, 150 );
+		}, { passive: true } );
+
+		// A webfont costuma chegar depois da primeira medida: o texto é
+		// pintado antes com a fonte de reserva, que tem outra largura.
+		if ( document.fonts && document.fonts.ready && document.fonts.ready.then ) {
+			document.fonts.ready.then( function () {
+				refreshLines( true );
+			} );
+		}
 
 		// No editor o widget é re-renderizado por Ajax: sem este gancho a
 		// animação para de existir depois da primeira edição.

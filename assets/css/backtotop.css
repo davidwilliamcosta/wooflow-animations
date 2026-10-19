@@ -1,0 +1,154 @@
+/**
+ * Botão "voltar ao topo".
+ *
+ * Carregado só quando o botão está ligado nos Ajustes (CLAUDE.md, regra 5).
+ * As medidas e as cores chegam em variáveis, escritas inline por
+ * WFAN_BackToTop::inline_css().
+ */
+
+.wfan-btt {
+	position: fixed;
+	z-index: var( --wfan-btt-z, 1000 );
+	inline-size: var( --wfan-btt-size, 48px );
+	block-size: var( --wfan-btt-size, 48px );
+	display: grid;
+	place-items: center;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: var( --wfan-btt-r, 50% );
+	background-color: var( --wfan-btt-bg, #111827 );
+	color: var( --wfan-btt-fg, #ffffff );
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+
+	/*
+	 * Estado de partida: escondido, sem clique e fora da ordem de foco. Está
+	 * no arquivo — e não em style inline nem no JS — porque a folha sai no
+	 * <head> e o markup no rodapé: o botão nunca pisca no carregamento, nem
+	 * numa página que já nasce rolada. `visibility`, e não só `opacity`,
+	 * porque um botão invisível e focável é um ponto de parada fantasma.
+	 */
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+
+	/*
+	 * Os canais vêm das classes modificadoras, em vez de cada uma declarar o
+	 * seu próprio `transform`: é assim que a posição centralizada
+	 * (translateX de -50%) convive com "subir" e "crescer", em vez de um
+	 * transform atropelar o outro.
+	 */
+	transform: translate( var( --wfan-btt-tx, 0 ), var( --wfan-btt-ty, 0 ) ) scale( var( --wfan-btt-s, 1 ) );
+	transition: opacity .22s ease, transform .22s ease, visibility .22s, background-color .18s ease;
+}
+
+/* A única coisa que o backtotop.js liga. */
+.wfan-btt.is-visible {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+	--wfan-btt-ty: 0;
+	--wfan-btt-s: 1;
+}
+
+/* A posição decide QUAL propriedade recebe o afastamento, e isso um valor
+   não expressa — por isso é classe, e não variável. */
+.wfan-btt--right {
+	right: var( --wfan-btt-x, 24px );
+	bottom: var( --wfan-btt-y, 24px );
+}
+
+.wfan-btt--left {
+	left: var( --wfan-btt-x, 24px );
+	bottom: var( --wfan-btt-y, 24px );
+}
+
+.wfan-btt--center {
+	left: 50%;
+	bottom: var( --wfan-btt-y, 24px );
+	--wfan-btt-tx: -50%;
+}
+
+/* Cada entrada é um par de canais no estado escondido. */
+.wfan-btt--fade {
+	--wfan-btt-ty: 0;
+	--wfan-btt-s: 1;
+}
+
+.wfan-btt--slide-up {
+	--wfan-btt-ty: 12px;
+}
+
+.wfan-btt--zoom {
+	--wfan-btt-s: .8;
+}
+
+.wfan-btt:hover,
+.wfan-btt:focus-visible {
+	background-color: var( --wfan-btt-bgh, #7c3aed );
+}
+
+.wfan-btt:focus-visible {
+	outline: 2px solid var( --wfan-btt-fg, #ffffff );
+	outline-offset: 2px;
+}
+
+/*
+ * Regra 18, quarta consequência: um `stroke` no <svg> não alcança um
+ * `<path stroke="…">`, porque presentation attribute ganha da herança.
+ */
+.wfan-btt__icon,
+.wfan-btt__icon * {
+	stroke: currentColor;
+}
+
+.wfan-btt__icon {
+	inline-size: 50%;
+	block-size: 50%;
+}
+
+/* Espessura do anel derivada do tamanho: um campo a menos nos Ajustes. */
+.wfan-btt--ring {
+	--wfan-btt-rw: max( 2px, calc( var( --wfan-btt-size, 48px ) * .055 ) );
+}
+
+/*
+ * O progresso é um conic-gradient, e não um <circle> com stroke-dasharray,
+ * porque assim o JS escreve UM número sem unidade e não precisa saber
+ * geometria nenhuma: um dasharray exigiria o raio em unidades de usuário, isto
+ * é, ler o tamanho de volta do CSS — a armadilha que a regra 20 documenta.
+ * A máscara é o que transforma a fatia de pizza em anel.
+ */
+.wfan-btt__ring {
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	pointer-events: none;
+	opacity: .55;
+	background: conic-gradient( var( --wfan-btt-fg, #ffffff ) calc( var( --wfan-btt-p, 0 ) * 1turn ), transparent 0 );
+	-webkit-mask-image: radial-gradient( farthest-side, transparent calc( 100% - var( --wfan-btt-rw, 3px ) ), #000 calc( 100% - var( --wfan-btt-rw, 3px ) ) );
+	mask-image: radial-gradient( farthest-side, transparent calc( 100% - var( --wfan-btt-rw, 3px ) ), #000 calc( 100% - var( --wfan-btt-rw, 3px ) ) );
+}
+
+/*
+ * Sem transição nenhuma, como o frontend.css já faz com `.wfan`: o botão
+ * aparece, só não se move. O salto da subida é decidido no JS, onde o ajuste
+ * "respeitar reduzir movimento" é consultado.
+ */
+@media ( prefers-reduced-motion: reduce ) {
+
+	.wfan-btt {
+		transition: opacity .01ms linear;
+		--wfan-btt-ty: 0;
+		--wfan-btt-s: 1;
+	}
+}
+
+@media print {
+
+	.wfan-btt {
+		display: none;
+	}
+}
