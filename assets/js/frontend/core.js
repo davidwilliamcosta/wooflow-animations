@@ -94,6 +94,7 @@
 			delay: typeof raw.dl === 'number' ? raw.dl : 0,
 			easing: raw.e || 'power2.out',
 			dist: typeof raw.dist === 'number' ? raw.dist : 40,
+			reverse: !! raw.rev,
 			scale: typeof raw.scale === 'number' ? raw.scale : 0.85,
 			blur: typeof raw.blur === 'number' ? raw.blur : 10,
 			dim: typeof raw.dim === 'number' ? raw.dim : 0.2,

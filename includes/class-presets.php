@@ -260,8 +260,8 @@ class WFAN_Presets {
 			'text-scrub-chars' => [ 'label' => __( 'Revelar por letra no scroll', 'wooflow-animations' ), 'group' => 'texto', 'engine' => 'gsap', 'params' => [ 'dim', 'line' ], 'triggers' => [ 'scroll-scrub' ], 'split' => 'chars' ],
 
 			// Scroll — aqui entra o GSAP, e só aqui.
-			'parallax-y'    => [ 'label' => __( 'Parallax vertical', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'parallax-x'    => [ 'label' => __( 'Parallax horizontal', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'parallax-y'    => [ 'label' => __( 'Parallax vertical', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'reverse', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
+			'parallax-x'    => [ 'label' => __( 'Parallax horizontal', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'distance', 'reverse', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'scrub-fade'    => [ 'label' => __( 'Fade travado no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'scrub-scale'   => [ 'label' => __( 'Escala travada no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scale_from', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'scrub-rotate'  => [ 'label' => __( 'Giro travado no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'rotate', 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],

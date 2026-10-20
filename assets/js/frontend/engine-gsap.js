@@ -440,15 +440,18 @@
 			 */
 			var spread = 0;
 
+			// Invertido, o parallax anda contra a rolagem: mesma faixa, sinais trocados.
+			var sign = spec.reverse ? -1 : 1;
+
 			switch ( spec.preset ) {
 				case 'parallax-y':
-					from = { y: -spec.dist };
-					to = { y: spec.dist };
+					from = { y: -spec.dist * sign };
+					to = { y: spec.dist * sign };
 					break;
 
 				case 'parallax-x':
-					from = { x: -spec.dist };
-					to = { x: spec.dist };
+					from = { x: -spec.dist * sign };
+					to = { x: spec.dist * sign };
 					break;
 
 				case 'scrub-fade':

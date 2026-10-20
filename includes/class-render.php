@@ -368,6 +368,10 @@ class WFAN_Render {
 			$payload['dist'] = (int) $this->num( $settings, $k( 'distance' ), 40 );
 		}
 
+		if ( in_array( 'reverse', $params, true ) ) {
+			$payload['rev'] = $this->on( $settings, $k( 'reverse' ) ) ? 1 : 0;
+		}
+
 		if ( in_array( 'scale_from', $params, true ) ) {
 			$payload['scale'] = (float) $this->num( $settings, $k( 'scale_from' ), 0.85 );
 		}

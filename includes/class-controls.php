@@ -639,6 +639,23 @@ class WFAN_Controls {
 			]
 		);
 
+		/*
+		 * Sentido do parallax. De fábrica o elemento anda junto com a rolagem
+		 * (desce no vertical, vai para a direita no horizontal); invertido, ele
+		 * anda contra ela — é o que dá a sensação de camada mais próxima.
+		 */
+		$this->add(
+			$element,
+			$k( 'reverse' ),
+			[
+				'label'        => __( 'Inverter direção', 'wooflow-animations' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'description'  => __( 'Ligado, o elemento anda contra a rolagem: sobe no vertical, vai para a esquerda no horizontal.', 'wooflow-animations' ),
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'reverse' ) ],
+			]
+		);
+
 		$this->add(
 			$element,
 			$k( 'scale_from' ),

@@ -319,6 +319,14 @@ $sp = $scrub->payload();
 ok( 'gsap' === ( $sp['eng'] ?? '' ), 'parallax exige gsap' );
 ok( 'scroll-scrub' === ( $sp['tr']['t'] ?? '' ), 'gatilho inválido cai no aceito pelo preset' );
 ok( ! in_array( 'wfan-pending', $scrub->classes(), true ), 'preset de scroll não usa pré-esconde' );
+ok( 0 === ( $sp['rev'] ?? null ), 'parallax sai no sentido de fábrica' );
+
+$reversed = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'preset' )  => 'parallax-y',
+	WFAN_Keys::ours( 'reverse' ) => 'yes',
+] ) );
+
+ok( 1 === ( $reversed->payload()['rev'] ?? null ), 'parallax invertido chega ao motor' );
 
 // Elemento atômico do Elementor 4 fica de fora (regra 7).
 $atomic = render_with( new WFAN_Fake_Atomic( 'e-heading', 'widget', [

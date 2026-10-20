@@ -68,6 +68,7 @@ class WFAN_Keys {
 		'delay',
 		'easing',
 		'distance',
+		'reverse',
 		'scale_from',
 		'blur',
 		'rotate',

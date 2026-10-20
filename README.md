@@ -171,7 +171,7 @@ um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 | **Nativas** (36) | as animações de entrada do Elementor: fade, zoom, quicar, deslizar, girar, velocidade da luz, rolar e os dez chamarizes (pulsar, tremer, tada…) | Elementor |
 | **Texto** (6) | revelar por linha, por palavra, por letra, cortina por linha, desfoque por palavra, desfoque por letra | próprio |
 | **Texto no scroll** (2) | revelar por palavra e por letra travado no scroll, acendendo a partir de uma opacidade de partida | GSAP |
-| **Scroll** (10) | parallax H/V, fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso, contador | GSAP |
+| **Scroll** (10) | parallax H/V (com sentido invertível), fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso, contador | GSAP |
 | **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
 | **SVG** (1) | desenhar traço | Anime.js |
 | **Lottie** (2) | tocar, travado no scroll | lottie-web |
@@ -452,6 +452,14 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.7.0
+
+- **Parallax com sentido invertível.** O *Parallax vertical* e o *Parallax
+  horizontal* ganharam a chave *Inverter direção*: ligada, o elemento anda contra
+  a rolagem — sobe no vertical, vai para a esquerda no horizontal —, o que dá a
+  sensação de uma camada mais próxima. A distância continua a mesma; só o sentido
+  muda. Desligada, nada muda em relação à 2.6.0.
 
 ### 2.6.0
 

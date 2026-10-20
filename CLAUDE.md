@@ -183,7 +183,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 491 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 493 verificações, sem WordPress e sem banco
 node tests/trigger.js        # REGRA 25: quantas vezes a animação toca
 node tests/backtotop.js      # quando o script acha o botão, e por onde a subida vai
 node tests/header.js         # REGRA 27: de onde sai a cor da barra, e se o laço para
