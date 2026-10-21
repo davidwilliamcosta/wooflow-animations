@@ -68,6 +68,7 @@ class WFAN_Fake_Element {
 	}
 
 	public function get_name() { return $this->name; }
+	public function get_unique_name() { return $this->name; }
 	public function get_type() { return $this->type; }
 	public function get_settings() { return $this->settings; }
 	public function get_settings_for_display() { return $this->settings; }
@@ -75,6 +76,7 @@ class WFAN_Fake_Element {
 	public function start_controls_section( $id, $args = [] ) {
 		$this->current_section = $id;
 		$this->sections[ $id ] = $args;
+		$this->to_stack( $id, $args );
 	}
 
 	public function end_controls_section() {
@@ -83,10 +85,17 @@ class WFAN_Fake_Element {
 
 	public function add_control( $id, $args = [] ) {
 		$this->controls[ $id ] = $args;
+		$this->to_stack( $id, $args );
 	}
 
 	public function add_responsive_control( $id, $args = [] ) {
 		$this->controls[ $id ] = $args;
+		$this->to_stack( $id, $args );
+	}
+
+	// Seção também é controle no stack do Elementor, com o mesmo id.
+	private function to_stack( $id, $args ) {
+		\Elementor\Plugin::$instance->controls_manager->stacks[ $this->name ][ $id ] = $args;
 	}
 
 	public function add_render_attribute( $key, $attrs = [] ) {
@@ -204,6 +213,25 @@ $first_count = count( $twice->controls );
 do_action( 'elementor/element/common/section_effects/after_section_end', $twice, [] );
 
 ok( $first_count === count( $twice->controls ), 'stack repetido não registra controles em dobro' );
+
+// O Elementor apaga e remonta o stack de um tipo na MESMA requisição quando a
+// geração do CSS pede um responsive_control_duplication_mode mais alto que o
+// do render (Controls_Manager::should_clean_stack()). A remontagem tem de
+// receber a seção de novo — senão o post-<id>.css nasce sem regra nossa
+// nenhuma e a inversão no hover some do site publicado. Ver regra 2.
+unset( \Elementor\Plugin::$instance->controls_manager->stacks['container'] );
+$rebuilt = new WFAN_Fake_Element( 'container', 'container' );
+do_action( 'elementor/element/container/section_layout_container/before_section_start', $rebuilt, [] );
+
+ok(
+	count( $rebuilt->controls ) === count( $block->controls ) && isset( $rebuilt->controls[ $k( 'hover_dur' ) ] ),
+	'stack remontado na mesma requisição recebe a seção de novo',
+	count( $rebuilt->controls ) . ' de ' . count( $block->controls ) . ' controles'
+);
+ok(
+	false === strpos( file_get_contents( WFAN_DIR . 'includes/class-controls.php' ), 'self::$done' ),
+	'guard lê o stack, não uma lista de nomes já atendidos'
+);
 
 // Toda condição precisa apontar para um controle que existe — condição órfã é
 // um controle que nunca aparece no painel, e isso não dá erro nenhum.

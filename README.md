@@ -453,6 +453,18 @@ WordPress.
 
 ## Changelog
 
+### 2.7.1
+
+- **A inversão de cor no hover voltava a sumir no site publicado.** Funcionava no
+  editor, mas o CSS da página regenerado numa visita — o que acontece depois de
+  limpar o cache do WP Rocket, do servidor ou do próprio Elementor — saía sem
+  nenhuma regra do plugin: nem as cores do hover, nem a duração e a curva das
+  animações nativas. O Elementor remonta os controles de um tipo de elemento no
+  meio da requisição, e a remontagem não recebia mais a seção WooFlow. Depois de
+  atualizar, rode **Elementor > Ferramentas > Regenerar arquivos e dados** e
+  limpe o cache do site, porque o arquivo antigo, sem as regras, continua salvo
+  até ser refeito.
+
 ### 2.7.0
 
 - **Parallax com sentido invertível.** O *Parallax vertical* e o *Parallax

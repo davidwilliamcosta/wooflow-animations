@@ -45,24 +45,6 @@ class WFAN_Controls {
 	];
 
 	/**
-	 * Stacks já atendidos nesta requisição, por nome.
-	 *
-	 * Com o experimento `e_optimized_markup` ligado, o stack `common-optimized`
-	 * dispara também os ganchos de `common`
-	 * (`Controls_Stack::should_manually_trigger_common_action()`), então o mesmo
-	 * stack chegaria aqui duas vezes e os ids de controle seriam registrados em
-	 * dobro.
-	 *
-	 * A chave é o nome do stack, não `spl_object_id()`: o PHP recicla id de
-	 * objeto liberado, e um id reaproveitado faria a injeção ser pulada — some a
-	 * seção inteira do painel, sem erro nenhum. Cada stack monta os controles uma
-	 * vez por requisição (`Controls_Manager::$stacks`), então o nome basta.
-	 *
-	 * @var array<string,bool>
-	 */
-	private static $done = [];
-
-	/**
 	 * Alvos da inversão de cor no hover, relativos ao elemento.
 	 *
 	 * Quem escreve essas regras é o próprio Elementor, pelos `selectors` dos
@@ -214,6 +196,43 @@ class WFAN_Controls {
 	}
 
 	/**
+	 * O stack que está sendo montado agora já tem a nossa seção?
+	 *
+	 * Com o experimento `e_optimized_markup` ligado, o stack `common-optimized`
+	 * dispara também os ganchos de `common`
+	 * (`Controls_Stack::should_manually_trigger_common_action()`), então o mesmo
+	 * stack chegaria aqui duas vezes e os ids de controle seriam registrados em
+	 * dobro.
+	 *
+	 * A resposta vem do próprio stack, e não de uma lista nossa de "já feitos".
+	 * O Elementor APAGA e remonta o stack de um tipo dentro da mesma requisição
+	 * quando ele foi montado num `responsive_control_duplication_mode` mais
+	 * baixo que o pedido agora (`Controls_Manager::should_clean_stack()`) — e a
+	 * geração do CSS da página pede `on`, enquanto o render do front-end monta em
+	 * `off`. Um container renderizado antes (cabeçalho, item de loop) deixava a
+	 * lista marcada, a remontagem saía sem a nossa seção e o `post-<id>.css`
+	 * nascia sem nenhuma regra nossa: a inversão no hover e a duração das
+	 * animações nativas sumiam do site publicado, intermitente conforme a
+	 * ordem da requisição que regenerou o arquivo.
+	 *
+	 * `get_control_from_stack()` lê o stack sem limpar nem remontar — ao contrário
+	 * de `get_controls()`, que chamado aqui dentro entraria em recursão.
+	 *
+	 * Ver CLAUDE.md, regra 2.
+	 *
+	 * @param \Elementor\Controls_Stack $element Elemento.
+	 * @return bool
+	 */
+	private function is_injected( $element ) {
+		$found = \Elementor\Plugin::$instance->controls_manager->get_control_from_stack(
+			$element->get_unique_name(),
+			WFAN_Keys::ours( 'section' )
+		);
+
+		return is_array( $found );
+	}
+
+	/**
 	 * Ids de preset cujo motor é o informado. Os resolvidos só em CSS ficam de
 	 * fora: trocar o motor deles não muda nada, e a opção só confundiria.
 	 *
@@ -339,13 +358,9 @@ class WFAN_Controls {
 			return;
 		}
 
-		$stack = $element->get_name();
-
-		if ( isset( self::$done[ $stack ] ) ) {
+		if ( $this->is_injected( $element ) ) {
 			return;
 		}
-
-		self::$done[ $stack ] = true;
 
 		/**
 		 * Aba em que a seção WooFlow Animations aparece.

@@ -244,9 +244,22 @@ namespace Elementor {
 
 		public $controls = [];
 
+		/**
+		 * Controles de cada stack, por nome único — o que o
+		 * `get_control_from_stack()` de verdade lê. O WFAN_Fake_Element escreve
+		 * aqui, e apagar uma chave simula a remontagem do stack.
+		 *
+		 * @var array<string,array>
+		 */
+		public $stacks = [];
+
 		public function register( $control ) {
 			$this->controls[ $control->get_type() ] = $control;
 			return true;
+		}
+
+		public function get_control_from_stack( $stack_id, $control_id ) {
+			return $this->stacks[ $stack_id ][ $control_id ] ?? false;
 		}
 	}
 
