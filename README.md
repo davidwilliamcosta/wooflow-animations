@@ -489,6 +489,13 @@ WordPress.
 
 ## Changelog
 
+### 2.8.2
+
+- **Inverter cores no hover não funcionava no widget Informações da Postagem**
+  (nem na Lista de ícones). As cores de texto e de ícone só alcançavam as
+  classes de Título, Editor de texto e Ícone; esses dois widgets escrevem a cor
+  em outras. Agora o texto, os links e o ícone deles também invertem.
+
 ### 2.8.1
 
 - **O marquee no Carrossel de imagens (e em qualquer carrossel Swiper) não

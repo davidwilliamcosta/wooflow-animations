@@ -2565,6 +2565,14 @@ ok( false !== strpos( $mq_assets, "wp_enqueue_script( 'wfan-engine-marquee' )" )
 ok( file_exists( WFAN_DIR . 'tests/marquee.js' ), 'o teste do marquee existe' );
 ok( false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/marquee.js' ), 'e o build não empacota sem rodá-lo' );
 
+// A inversão no hover alcança a lista de ícones e as Informações da Postagem:
+// o texto e o ícone deles não são `.elementor-heading-title` nem `.elementor-icon`.
+$hv_targets = WFAN_Controls::HOVER_TARGETS;
+
+ok( in_array( '.elementor-icon-list-text', $hv_targets['text'], true ), 'o hover inverte o texto da lista de ícones / Informações da Postagem' );
+ok( in_array( '.elementor-icon-list-text a', $hv_targets['text'], true ), 'e os links dentro dele (a cor do widget é escrita nos dois)' );
+ok( in_array( '.elementor-icon-list-icon i', $hv_targets['icon'], true ), 'e o ícone de fonte da lista' );
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

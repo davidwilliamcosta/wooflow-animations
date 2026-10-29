@@ -122,9 +122,14 @@ class WFAN_Controls {
 			'.elementor-widget-text-editor',
 			'.elementor-widget-text-editor p',
 			'.elementor-widget-text-editor li',
+			// Lista de ícones e Informações da Postagem (Pro) escrevem a cor em
+			// `.elementor-icon-list-text` e nos links dentro dela.
+			'.elementor-icon-list-text',
+			'.elementor-icon-list-text a',
 		],
 		'icon'   => [
 			'.elementor-icon',
+			'.elementor-icon-list-icon i',
 			'svg',
 			'svg *',
 		],
