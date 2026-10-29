@@ -166,3 +166,18 @@ html.lenis body {
 .wfan-mq--dragging a {
 	pointer-events: none;
 }
+
+/* Carrossel (Swiper): o marquee corre cópias dos slides e esconde o original. */
+.wfan-mq-src {
+	display: none !important;
+}
+
+.wfan-mq-item {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+}
+
+.wfan-mq-item img {
+	max-width: none;
+}

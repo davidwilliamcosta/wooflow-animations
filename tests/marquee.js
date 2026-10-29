@@ -105,12 +105,17 @@ function criar( env, tipo, nome ) {
 			this.childNodes.forEach( ( f ) => c.appendChild( f.cloneNode( true ) ) );
 			return c;
 		},
+		// Só os seletores que o motor usa: `[id]` e listas de `.classe`.
 		querySelectorAll: function ( sel ) {
 			const achados = [];
+			const casa = ( f ) => sel.split( ',' ).some( ( parte ) => {
+				parte = parte.trim();
+				return '[id]' === parte ? f.hasAttribute( 'id' ) : f.classList.contains( parte.slice( 1 ) );
+			} );
 			( function andar( n ) {
 				n.childNodes.forEach( ( f ) => {
 					if ( 1 === f.nodeType ) {
-						if ( ( '[id]' === sel && f.hasAttribute( 'id' ) ) || ( '.wfan-pending' === sel && f.classList.contains( 'wfan-pending' ) ) ) {
+						if ( casa( f ) ) {
 							achados.push( f );
 						}
 						andar( f );
@@ -118,6 +123,9 @@ function criar( env, tipo, nome ) {
 				} );
 			}( this ) );
 			return achados;
+		},
+		querySelector: function ( sel ) {
+			return this.querySelectorAll( sel )[ 0 ] || null;
 		},
 		getBoundingClientRect: function () {
 			if ( classes.has( 'wfan-mq-group' ) ) {
@@ -494,6 +502,36 @@ console.log( 'Arrastar' );
 	const t = montar( { drag: false } );
 	t.bind();
 	ok( ! t.miolo.classList.contains( 'wfan-mq--drag' ), 'sem "arrastável" não há classe nem cursor de mão' );
+}
+
+console.log( 'Carrossel (Swiper)' );
+{
+	const t = montar( {} );
+	// Como o Image Carousel do Elementor: .swiper > .swiper-wrapper > .swiper-slide > figure > img
+	const swiper = criar( t, 1, 'elementor-image-carousel-wrapper swiper' );
+	const trilho = criar( t, 1, 'swiper-wrapper' );
+	[ false, false, false, true ].forEach( ( duplicado, i ) => {
+		const slide = criar( t, 1, 'swiper-slide' + ( duplicado ? ' swiper-slide-duplicate' : '' ) );
+		const figura = criar( t, 1, 'swiper-slide-inner' );
+		figura.setAttribute( 'id', 'fig' + i );
+		slide.appendChild( figura );
+		trilho.appendChild( slide );
+	} );
+	swiper.appendChild( trilho );
+	t.miolo.childNodes.length = 0;
+	t.miolo.appendChild( swiper );
+
+	t.bind();
+	const grupo = t.track().childNodes[ 0 ];
+
+	ok( grupo.childNodes.length === 3, 'corre uma cópia de cada slide, sem os duplicados que o Swiper cria', 'itens=' + grupo.childNodes.length );
+	ok( swiper.classList.contains( 'wfan-mq-src' ), 'o carrossel original fica no lugar, escondido (o Swiper guarda referências a ele)' );
+	ok( swiper.parentNode === t.miolo, 'e não é movido para dentro da esteira, onde colapsaria a largura zero' );
+	ok( ! grupo.querySelectorAll( '[id]' ).length, 'a cópia do slide não repete id' );
+
+	t.reset();
+	ok( ! swiper.classList.contains( 'wfan-mq-src' ), 'reset mostra o carrossel de novo' );
+	ok( t.miolo.childNodes.length === 1 && t.miolo.childNodes[ 0 ] === swiper, 'e deixa o miolo como estava' );
 }
 
 console.log( 'Nada para correr' );

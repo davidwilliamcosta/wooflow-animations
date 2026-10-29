@@ -350,7 +350,8 @@ emenda. Desligado, o texto atravessa o elemento uma vez e recomeça — e, no mo
 pela rolagem, essa travessia acompanha o elemento cruzando a tela.
 
 **Onde aplicar.** Num widget (Título, Imagem, Galeria de ícones…), o que corre é
-o conteúdo do widget. Num container, correm os filhos dele — o jeito de fazer uma
+o conteúdo do widget. No Carrossel de imagens e em outros carrosséis, correm os
+slides (o carrossel original fica escondido e as setas/pontos não valem). Num container, correm os filhos dele — o jeito de fazer uma
 faixa de logos ou cartões. Os filhos ficam com a largura natural; defina a largura
 de cada um no próprio filho.
 
@@ -487,6 +488,13 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.8.1
+
+- **O marquee no Carrossel de imagens (e em qualquer carrossel Swiper) não
+  aparecia.** O Swiper não tem largura própria: dentro da esteira ele colapsava
+  para zero. Agora o marquee corre cópias do conteúdo de cada slide e deixa o
+  carrossel original no lugar, escondido. Conferido num navegador real.
 
 ### 2.8.0
 

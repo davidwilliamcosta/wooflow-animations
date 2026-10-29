@@ -30,6 +30,8 @@
 	var GROUP = 'wfan-mq-group';
 	var DRAGGABLE = 'wfan-mq--drag';
 	var DRAGGING = 'wfan-mq--dragging';
+	var SOURCE = 'wfan-mq-src';
+	var ITEM = 'wfan-mq-item';
 
 	// Fração da velocidade que sobra com o mouse em cima.
 	var SLOW = 0.2;
@@ -59,6 +61,61 @@
 		return Math.max( low, Math.min( high, n ) );
 	}
 
+	/** Tira de um clone o que não pode se repetir ou herdar. */
+	function scrub( node ) {
+		node.removeAttribute( 'id' );
+
+		[].forEach.call( node.querySelectorAll( '[id]' ), function ( n ) {
+			n.removeAttribute( 'id' );
+		} );
+
+		[].forEach.call( node.querySelectorAll( '.wfan-pending' ), function ( n ) {
+			n.classList.remove( 'wfan-pending' );
+		} );
+
+		return node;
+	}
+
+	/**
+	 * Carrossel (Swiper): não dá para correr o carrossel em si. Ele não tem
+	 * largura própria, então dentro de uma esteira `max-content` colapsa para
+	 * zero e some; e o Swiper guarda referências ao DOM que clonar quebraria.
+	 * O que corre são cópias do conteúdo de cada slide, e o carrossel original
+	 * fica onde está, escondido.
+	 *
+	 * @return {{swiper:Element,items:Element[]}|null}
+	 */
+	function slidesOf( host ) {
+		var swiper = host.querySelector( '.swiper, .swiper-container' );
+
+		if ( ! swiper ) {
+			return null;
+		}
+
+		var slides = [].filter.call( swiper.querySelectorAll( '.swiper-slide' ), function ( slide ) {
+			return ! slide.classList.contains( 'swiper-slide-duplicate' );
+		} );
+
+		if ( ! slides.length ) {
+			return null;
+		}
+
+		return {
+			swiper: swiper,
+			items: slides.map( function ( slide ) {
+				var item = document.createElement( 'div' );
+
+				item.className = ITEM;
+
+				[].forEach.call( slide.childNodes, function ( child ) {
+					item.appendChild( scrub( child.cloneNode( true ) ) );
+				} );
+
+				return item;
+			} )
+		};
+	}
+
 	/**
 	 * Cópia da esteira para preencher a largura. Não pode repetir `id`, não
 	 * pode entrar na ordem de tabulação nem ser lida duas vezes por leitor de
@@ -67,16 +124,9 @@
 	function cloneGroup( group ) {
 		var copy = group.cloneNode( true );
 
+		scrub( copy );
 		copy.setAttribute( 'aria-hidden', 'true' );
 		copy.setAttribute( 'inert', '' );
-
-		[].forEach.call( copy.querySelectorAll( '[id]' ), function ( node ) {
-			node.removeAttribute( 'id' );
-		} );
-
-		[].forEach.call( copy.querySelectorAll( '.wfan-pending' ), function ( node ) {
-			node.classList.remove( 'wfan-pending' );
-		} );
 
 		return copy;
 	}
@@ -352,11 +402,16 @@
 		// Os nós originais voltam para onde estavam: o editor re-renderiza o
 		// widget a cada mexida, mas o ▶ Testar desmonta e remonta o mesmo.
 		if ( m.track.parentNode === m.host ) {
-			while ( m.group.firstChild ) {
+			// Cópias de slide não voltam: o original nunca saiu do lugar.
+			while ( ! m.source && m.group.firstChild ) {
 				m.host.insertBefore( m.group.firstChild, m.track );
 			}
 
 			m.host.removeChild( m.track );
+		}
+
+		if ( m.source ) {
+			m.source.classList.remove( SOURCE );
 		}
 
 		m.host.classList.remove( HOST, DRAGGABLE, DRAGGING );
@@ -368,7 +423,8 @@
 		unmount( el );
 
 		var host = coreOf( el );
-		var nodes = [].slice.call( host.childNodes );
+		var slides = slidesOf( host );
+		var nodes = slides ? slides.items : [].slice.call( host.childNodes );
 
 		// Sem nada para correr (só espaço em branco) não há marquee.
 		if ( ! nodes.some( function ( n ) {
@@ -389,6 +445,11 @@
 
 		track.appendChild( group );
 		host.appendChild( track );
+
+		if ( slides ) {
+			slides.swiper.classList.add( SOURCE );
+		}
+
 		host.classList.add( HOST );
 		host.style.setProperty( '--wfan-mq-gap', spec.marquee.gap + 'px' );
 
@@ -399,6 +460,7 @@
 			group: group,
 			cfg: spec.marquee,
 			copies: [],
+			source: slides ? slides.swiper : null,
 			undo: [],
 			C: 0,
 			W: 0,
