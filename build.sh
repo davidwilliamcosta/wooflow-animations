@@ -38,6 +38,9 @@ node "$ROOT/tests/header.js" > /dev/null
 echo "Rodando o teste do popup circular…"
 node "$ROOT/tests/popup.js" > /dev/null
 
+echo "Rodando o teste do marquee…"
+node "$ROOT/tests/marquee.js" > /dev/null
+
 OUT="$ROOT/release"
 STAGE="$OUT/$SLUG"
 

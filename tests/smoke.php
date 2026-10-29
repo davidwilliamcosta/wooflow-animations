@@ -2424,6 +2424,147 @@ ok(
 ok( ! WFAN_Popup::available(), 'sem o Elementor Pro o módulo se declara indisponível' );
 ok( ! WFAN_Popup::active(), 'e não se liga nem com o ajuste ligado' );
 
+section( '25. Marquee' );
+
+/*
+ * Regra 31. Dois presets, motor próprio, gatilho fixo em `load`, e um bloco `mq`
+ * no payload que o core.js normaliza e o engine-marquee.js lê.
+ */
+
+update_option( WFAN_Settings::OPTION, WFAN_Settings::defaults() );
+WFAN_Settings::flush();
+
+$mq_render = new WFAN_Render();
+$mq_ids    = WFAN_Presets::ids_marquee();
+
+ok( [ 'marquee-auto', 'marquee-scroll' ] === $mq_ids, 'os dois presets de marquee existem', implode( ', ', $mq_ids ) );
+ok( isset( WFAN_Presets::groups()['marquee'] ), 'e têm grupo próprio no painel' );
+
+foreach ( $mq_ids as $mq_id ) {
+	$mq_result = $mq_render->spec( [ WFAN_Keys::ours( 'preset' ) => $mq_id ] );
+
+	ok( $mq_result && 'marquee' === $mq_result['engine'], "$mq_id pede o motor marquee" );
+	ok( $mq_result && 'load' === ( $mq_result['payload']['tr']['t'] ?? '' ), "$mq_id fica com o gatilho em load, qualquer que seja o gravado" );
+	ok( $mq_result && ! in_array( 'wfan-pending', $mq_result['classes'], true ), "$mq_id não pré-esconde: o conteúdo é o próprio marquee" );
+	ok( $mq_result && isset( $mq_result['payload']['mq'] ), "$mq_id manda o bloco mq no payload" );
+}
+
+// Cada preset recebe só o modo dele, e o payload traz os valores do painel.
+$mq_auto = $mq_render->spec(
+	[
+		WFAN_Keys::ours( 'preset' )    => 'marquee-auto',
+		WFAN_Keys::ours( 'mq_dir' )    => 'right',
+		WFAN_Keys::ours( 'mq_speed' )  => [ 'unit' => 'px', 'size' => 250 ],
+		WFAN_Keys::ours( 'mq_space' )  => [ 'unit' => 'px', 'size' => 12 ],
+		WFAN_Keys::ours( 'mq_edge' )   => 'yes',
+		WFAN_Keys::ours( 'mq_slow' )   => 'yes',
+		WFAN_Keys::ours( 'mq_freeze' ) => '',
+		WFAN_Keys::ours( 'mq_drag' )   => 'yes',
+	]
+);
+
+$mq_block = $mq_auto['payload']['mq'] ?? [];
+
+ok( 'auto' === ( $mq_block['m'] ?? '' ), 'marquee-auto manda o modo auto' );
+ok( 'r' === ( $mq_block['dir'] ?? '' ), 'a direção do painel chega no payload' );
+ok( 250 === ( $mq_block['v'] ?? 0 ), 'e a velocidade' );
+ok( 12 === ( $mq_block['g'] ?? -1 ), 'e o espaço entre repetições' );
+ok( 1 === ( $mq_block['e'] ?? 0 ) && 1 === ( $mq_block['sl'] ?? 0 ) && 1 === ( $mq_block['dr'] ?? 0 ), 'e as chaves liga/desliga' );
+ok( 0 === ( $mq_block['fz'] ?? 1 ), 'desligado vai como 0, não como ausente nem como "yes"' );
+
+$mq_scroll = $mq_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'marquee-scroll' ] );
+
+ok( 'scroll' === ( $mq_scroll['payload']['mq']['m'] ?? '' ), 'marquee-scroll manda o modo scroll' );
+
+// Velocidade absurda não passa: 0 pararia o efeito, 99999 o tornaria ilegível.
+$mq_wild = $mq_render->spec(
+	[
+		WFAN_Keys::ours( 'preset' )   => 'marquee-auto',
+		WFAN_Keys::ours( 'mq_speed' ) => [ 'unit' => 'px', 'size' => 99999 ],
+		WFAN_Keys::ours( 'mq_dir' )   => '<script>',
+	]
+);
+
+ok( 600 === ( $mq_wild['payload']['mq']['v'] ?? 0 ), 'a velocidade tem teto' );
+ok( 'l' === ( $mq_wild['payload']['mq']['dir'] ?? '' ), 'direção fora da lista cai na padrão' );
+
+// Quem não é marquee não carrega o bloco.
+$mq_none = $mq_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'fade-up' ] );
+
+ok( ! isset( $mq_none['payload']['mq'] ), 'preset comum não leva o bloco mq' );
+
+// ------------------------------------------------------------------ painel
+
+$mq_keys = [ 'mq_dir', 'mq_space', 'mq_edge', 'mq_drag' ];
+
+foreach ( $mq_keys as $mq_key ) {
+	ok( isset( $widget->controls[ WFAN_Keys::ours( $mq_key ) ] ), "o controle $mq_key existe" );
+	ok( in_array( $mq_key, WFAN_Keys::OURS, true ), "e $mq_key está em WFAN_Keys::OURS (copiar/colar e biblioteca)" );
+}
+
+$mq_on = [ WFAN_Keys::ours( 'preset' ) => 'marquee-auto' ];
+
+ok( wfan_visible( $widget->controls[ WFAN_Keys::ours( 'mq_speed' ) ], $mq_on ), 'a velocidade aparece no automático' );
+ok( ! wfan_visible( $widget->controls[ WFAN_Keys::ours( 'mq_speed' ) ], [ WFAN_Keys::ours( 'preset' ) => 'marquee-scroll' ] ), 'e não no marquee pela rolagem' );
+ok( wfan_visible( $widget->controls[ WFAN_Keys::ours( 'mq_force' ) ], [ WFAN_Keys::ours( 'preset' ) => 'marquee-scroll' ] ), 'a intensidade aparece na rolagem' );
+ok( ! wfan_visible( $widget->controls[ WFAN_Keys::ours( 'mq_force' ) ], $mq_on ), 'e não no automático' );
+ok( ! wfan_visible( $widget->controls[ WFAN_Keys::ours( 'mq_dir' ) ], [ WFAN_Keys::ours( 'preset' ) => 'fade-up' ] ), 'a direção do marquee não aparece em outro preset' );
+
+// Controle que o motor não obedece é configuração que não faz nada.
+foreach ( [ 'duration', 'delay', 'easing' ] as $mq_dead ) {
+	ok(
+		! wfan_visible( $widget->controls[ WFAN_Keys::ours( $mq_dead ) ], $mq_on + [ WFAN_Keys::ours( 'trigger' ) => 'scroll-in' ] ),
+		"$mq_dead sai do painel no marquee (efeito contínuo não tem linha do tempo)"
+	);
+}
+
+foreach ( [ 'viewport', 'once', 'trigger' ] as $mq_dead ) {
+	ok(
+		! wfan_visible( $widget->controls[ WFAN_Keys::ours( $mq_dead ) ], $mq_on + [ WFAN_Keys::ours( 'trigger' ) => 'scroll-in' ] ),
+		"$mq_dead sai do painel no marquee, mesmo com o gatilho gravado em scroll-in"
+	);
+}
+
+ok( wfan_visible( $widget->controls[ WFAN_Keys::ours( 'off_mobile' ) ], $mq_on ), '"Desligar no celular" continua valendo: quem obedece é o core.js' );
+
+// Regra 22: nenhum controle do marquee re-renderiza o widget por Ajax.
+foreach ( [ 'mq_dir', 'mq_speed', 'mq_force', 'mq_space', 'mq_edge', 'mq_slow', 'mq_freeze', 'mq_drag' ] as $mq_key ) {
+	$mq_rt = $widget->controls[ WFAN_Keys::ours( $mq_key ) ]['render_type'] ?? '';
+
+	ok( 'none' === $mq_rt, "$mq_key declara render_type none", (string) $mq_rt );
+}
+
+// ------------------------------------------------------------- arquivos e motor
+
+$mq_js   = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/engine-marquee.js' );
+$mq_css  = (string) file_get_contents( WFAN_DIR . 'assets/css/frontend.css' );
+$mq_core = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/core.js' );
+
+// Regra 15: o contrato é conferido nos dois sentidos.
+foreach ( [ "mq.m", "mq.dir", "mq.v", "mq.k", "mq.g", "mq.e", "mq.sl", "mq.fz", "mq.dr" ] as $mq_read ) {
+	ok( false !== strpos( $mq_core, $mq_read ), "o core.js lê $mq_read do payload" );
+}
+
+// As classes que o JS escreve são as que o CSS conhece.
+foreach ( [ 'wfan-mq', 'wfan-mq-track', 'wfan-mq-group', 'wfan-mq--drag', 'wfan-mq--dragging', '--wfan-mq-gap' ] as $mq_name ) {
+	ok( false !== strpos( $mq_js, $mq_name ), "o motor usa $mq_name" );
+	ok( false !== strpos( $mq_css, $mq_name ), "e o CSS declara $mq_name" );
+}
+
+ok( false !== strpos( $mq_js, 'IntersectionObserver' ), 'o laço só roda com o elemento na tela' );
+ok( false !== strpos( $mq_js, 'Math.min( 64' ), 'e o passo é limitado (aba que volta do segundo plano não salta a esteira)' );
+ok( false !== strpos( $mq_js, "aria-hidden" ), 'a cópia sai da leitura de tela' );
+ok( false === strpos( $mq_js, 'gsap' ) && false === strpos( $mq_js, 'ScrollTrigger' ), 'o motor não depende de GSAP: o marquee não custa 115 KB' );
+
+// O motor é registrado, sem dependência de biblioteca, e carregado no preview.
+$mq_assets = (string) file_get_contents( WFAN_DIR . 'includes/class-assets.php' );
+
+ok( (bool) preg_match( "/'marquee'\s*=>\s*\[\s*'assets\/js\/frontend\/engine-marquee\.js',\s*\[\s*'wfan-core'\s*\]/", $mq_assets ), 'o motor marquee depende só do core' );
+ok( false !== strpos( $mq_assets, "wp_enqueue_script( 'wfan-engine-marquee' )" ), 'e o preview do editor o enfileira (o ▶ Testar precisa dele)' );
+
+ok( file_exists( WFAN_DIR . 'tests/marquee.js' ), 'o teste do marquee existe' );
+ok( false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/marquee.js' ), 'e o build não empacota sem rodá-lo' );
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

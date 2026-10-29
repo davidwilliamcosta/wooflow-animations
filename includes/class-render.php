@@ -412,6 +412,24 @@ class WFAN_Render {
 			];
 		}
 
+		// Marquee. A direção passa por lista fechada; velocidade, espaço e
+		// intensidade têm piso e teto, porque `0` e `NaN` parariam o efeito.
+		if ( in_array( 'mq', $params, true ) ) {
+			$dir = isset( $settings[ $k( 'mq_dir' ) ] ) ? (string) $settings[ $k( 'mq_dir' ) ] : 'left';
+
+			$payload['mq'] = [
+				'm'  => in_array( 'mq_force', $params, true ) ? 'scroll' : 'auto',
+				'dir' => 'right' === $dir ? 'r' : 'l',
+				'v'  => (int) min( 600, max( 10, $this->num( $settings, $k( 'mq_speed' ), 100 ) ) ),
+				'k'  => (int) min( 400, max( 10, $this->num( $settings, $k( 'mq_force' ), 100 ) ) ),
+				'g'  => (int) min( 400, max( 0, $this->num( $settings, $k( 'mq_space' ), 48 ) ) ),
+				'e'  => $this->on( $settings, $k( 'mq_edge' ) ) ? 1 : 0,
+				'sl' => $this->on( $settings, $k( 'mq_slow' ) ) ? 1 : 0,
+				'fz' => $this->on( $settings, $k( 'mq_freeze' ) ) ? 1 : 0,
+				'dr' => $this->on( $settings, $k( 'mq_drag' ) ) ? 1 : 0,
+			];
+		}
+
 		if ( in_array( 'counter_to', $params, true ) ) {
 			$payload['to'] = (float) $this->num( $settings, $k( 'counter_to' ), 100 );
 		}

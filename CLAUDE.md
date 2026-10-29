@@ -1,7 +1,7 @@
 # WooFlow Animations for Elementor — índice para agentes
 
-Plugin WordPress que dá ao Elementor um painel de animações por elemento (80
-presets — 44 nossos e 36 entregues à animação de entrada do próprio Elementor —,
+Plugin WordPress que dá ao Elementor um painel de animações por elemento (82
+presets — 46 nossos e 36 entregues à animação de entrada do próprio Elementor —,
 gatilhos, cascata, scroll travado, fundo animado) e as ações de copiar/colar
 animação que originaram o projeto.
 
@@ -132,6 +132,15 @@ junto. Vale para qualquer asset novo — e vale também para o widget dinâmico,
     - **o ponto de partida é o raio que o elemento já tem** (`cornersOf()`, lido do `getComputedStyle`, um valor por canto): começar de zero tirava o raio de um container arredondado no primeiro pixel de rolagem;
     - **o reset limpa só o que o cartão escreveu** (`CARD_PROPS`), nunca `clearProps:'all'`, que apagaria o `isolation` inline do fundo animado (regra 20). O alvo é sempre o próprio elemento, nunca os filhos: a cascata encolheria cada coluna para um lado.
 
+31. **Marquee é motor próprio, sem gatilho, e o sentido do movimento mora na posição — não no deslocamento.** `marquee-auto` e `marquee-scroll` ([class-presets.php](includes/class-presets.php), motor `marquee`, [engine-marquee.js](assets/js/frontend/engine-marquee.js)) correm o conteúdo do elemento em fila infinita, como o Marquee Headings e o Marquee Layout do Uncode. Sete consequências:
+    - **gatilho fixo em `load` e `bind()` direto.** O efeito não tem começo nem fim: o `bindTrigger()` do `core.js` testa `spec.marquee` antes de qualquer gatilho e entrega o elemento ao `bind()` do motor. Duração, espera, curva, ponto de disparo e "só uma vez" saem do painel por `WFAN_Presets::ids_marquee()` — com o gatilho gravado ainda em `scroll-in` por padrão, o `viewport` e o `once` precisam do `preset!` na condição, senão aparecem sem ser obedecidos. "Desligar no celular" continua, porque quem obedece é o `core.js`;
+    - **o deslocamento `u` soma auto/rolagem + arrasto, e a direção só entra no `pos()`.** Arrastar e a inércia mexem no mesmo `ud` com `dx * dir`; se a direção fosse aplicada ao `u`, arrastar ao contrário do movimento inverteria o gesto;
+    - **o laço se apaga.** Roda só com o elemento na tela (`IntersectionObserver`), congelado ele termina no primeiro quadro, e o amortecimento da rolagem converge. O passo é limitado a 64 ms (aba que volta do segundo plano). Um `requestAnimationFrame` eterno em página de loja é bateria — mesmo critério da regra 27;
+    - **volta de cópia = largura do grupo, com o espaço dentro do grupo.** O grupo leva `padding-inline-end` igual ao `gap` dos itens: sem isso, a emenda entre uma cópia e outra seria maior que o espaço entre itens. A medida é `getBoundingClientRect().width` (fracionária); arredondar acumulava um salto no fim de cada volta;
+    - **a cópia é inerte.** `aria-hidden` e `inert`, sem `id` repetido e sem `wfan-pending` herdado de filho animado — senão leitor de tela lê duas vezes, o Tab passa por links invisíveis e a cópia nasce escondida;
+    - **o arrasto só captura o ponteiro depois de 5 px.** Capturar no `pointerdown` mandaria o clique para o miolo e mataria os links do marquee; e o clique que sucede um arrasto é engolido na fase de captura. O hover que desacelera ignora toque (`pointerType`), senão um toque deixa o marquee lento até tocar noutro lugar;
+    - **no editor vale a regra 19.** O canvas não tem `data-wfan`; o marquee só monta pelo ▶ Testar/preview automático, e o `bind()` desmonta qualquer montagem anterior (o `wfanPlay` zera `el.__wfan` sem chamar `reset`). A esteira some quando o Elementor re-renderiza o widget, e é o que se quer.
+
 ---
 
 ## 3. Arquitetura
@@ -154,14 +163,15 @@ includes/
   class-backtotop.php       botão "voltar ao topo" global; controle de verdade, não decoração
   class-header.php          REGRA 27: barra fixa; fundo e sombra progressivos, cor lida do elemento
   class-popup.php           REGRA 28: popup nascendo de um círculo no ponto do clique (só Pro)
+  (marquee: presets em class-presets.php, controles em class-controls.php, payload `mq` em class-render.php)
   class-lottie.php          REGRA 6: handle do lottie-web + guarda de URL
   class-settings.php        REGRA 16: ajustes globais; menu-pai resolvido em runtime
   class-library.php         "minhas animações" (option + ajax)
 templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.php (REGRA 16)
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js (REGRA 23)
-assets/js/frontend/    core.js (orquestrador, REGRA 26) · engine-{css,gsap,anime,lottie}.js · lenis-boot.js · overlay.js (REGRA 20) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
+assets/js/frontend/    core.js (orquestrador, REGRA 26) · engine-{css,gsap,anime,lottie,marquee}.js · lenis-boot.js · overlay.js (REGRA 20) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · backtotop.css · header.css · popup.css · admin.css (REGRA 16)
-tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
+tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · marquee.js (REGRA 31) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 ```
 
 ### Quem decide o quê
@@ -183,12 +193,13 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 495 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 574 verificações, sem WordPress e sem banco
 node tests/trigger.js        # REGRA 25: quantas vezes a animação toca
 node tests/backtotop.js      # quando o script acha o botão, e por onde a subida vai
 node tests/header.js         # REGRA 27: de onde sai a cor da barra, e se o laço para
 node tests/popup.js          # REGRA 28: de onde sai a origem do círculo, e quando a caixa é medida
 node tests/scrub.js          # REGRA 29 e 30: percurso da revelação e do cartão no scroll
+node tests/marquee.js        # REGRA 31: posição da esteira, laço que se apaga, clique após arrasto
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -197,7 +208,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27 e 28. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 e 31. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O `tests/trigger.js` sobe o `core.js` de verdade num DOM de mentira e dirige o

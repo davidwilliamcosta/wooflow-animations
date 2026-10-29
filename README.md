@@ -11,7 +11,7 @@ ações **Copiar animação** / **Colar animação** que deram origem ao plugin.
 
 O Elementor clássico oferece uma lista de nomes de animação de entrada, sem
 preview, sem controle de gatilho, sem scroll travado, sem cascata e sem timeline.
-Este plugin preenche essa lacuna: **80 presets** escolhidos numa grade visual que
+Este plugin preenche essa lacuna: **82 presets** escolhidos numa grade visual que
 anima no hover, com gatilho, duração, curva e cascata configuráveis em cada
 elemento — mais um **fundo animado** por elemento, que não é animação de entrada
 e convive com uma.
@@ -172,6 +172,7 @@ um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 | **Texto** (6) | revelar por linha, por palavra, por letra, cortina por linha, desfoque por palavra, desfoque por letra | próprio |
 | **Texto no scroll** (2) | revelar por palavra e por letra travado no scroll, acendendo a partir de uma opacidade de partida | GSAP |
 | **Scroll** (10) | parallax H/V (com sentido invertível), fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso, contador | GSAP |
+| **Marquee** (2) | conteúdo do elemento em fila infinita: automático (com velocidade, hover que desacelera, congelar e arrastar) e empurrado pela rolagem | próprio |
 | **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
 | **SVG** (1) | desenhar traço | Anime.js |
 | **Lottie** (2) | tocar, travado no scroll | lottie-web |
@@ -331,6 +332,38 @@ aparece do mesmo jeito.
 
 ---
 
+## Marquee
+
+Dois presets no grupo **Marquee**, inspirados no *Marquee Headings* e no
+*Marquee Layout* do Uncode. Servem para títulos, faixas de logos, depoimentos —
+tudo que se queira correr em fila:
+
+- **Marquee automático** anda sozinho. Velocidade em px por segundo, direção,
+  espaço entre repetições, *desacelerar ao passar o mouse* (para dar tempo de
+  clicar num link), *congelar* e *arrastável* (mouse ou dedo, com inércia).
+- **Marquee pela rolagem** anda conforme a página rola: um pixel de marquee por
+  pixel de rolagem, vezes a intensidade escolhida, e inverte sozinho ao rolar
+  para cima.
+
+Nos dois, *Preencher a largura toda* repete o conteúdo até cobrir a largura, sem
+emenda. Desligado, o texto atravessa o elemento uma vez e recomeça — e, no modo
+pela rolagem, essa travessia acompanha o elemento cruzando a tela.
+
+**Onde aplicar.** Num widget (Título, Imagem, Galeria de ícones…), o que corre é
+o conteúdo do widget. Num container, correm os filhos dele — o jeito de fazer uma
+faixa de logos ou cartões. Os filhos ficam com a largura natural; defina a largura
+de cada um no próprio filho.
+
+Sem biblioteca: o motor tem ~5 KB e não carrega GSAP. O laço só gasta quadro com
+o elemento na tela e se apaga sozinho quando não há o que mover. Com
+`prefers-reduced-motion` o conteúdo fica parado, inteiro e legível.
+
+**Limites conhecidos.** Uma linha só (sem quebra de texto), só na horizontal, e o
+conteúdo aparece em seu layout normal por um instante antes de o JavaScript
+montar a esteira.
+
+---
+
 ## Ajustes
 
 Em **WooFlow → Animations**, no menu lateral. O menu **WooFlow** é o mesmo de
@@ -416,9 +449,11 @@ node tests/trigger.js
 node tests/backtotop.js
 node tests/header.js
 node tests/popup.js
+node tests/scrub.js
+node tests/marquee.js
 ```
 
-491 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+574 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
 contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
@@ -452,6 +487,15 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.8.0
+
+- **Marquee**, grupo novo com dois presets: *Marquee automático* e *Marquee pela
+  rolagem*. Direção, velocidade, espaço entre repetições, preencher a largura,
+  desacelerar no hover, congelar e arrastar (com inércia). Motor próprio, sem
+  GSAP. `tests/marquee.js` confere a posição da esteira quadro a quadro, que o
+  laço se apague fora da tela e congelado, e que o clique após um arrasto não
+  abra o link.
 
 ### 2.7.1
 
@@ -503,7 +547,7 @@ WordPress.
   o fundo, a sobreposição e o vídeo de fundo arredondam juntos, sem
   `overflow:hidden`; um container que já tinha cantos arredondados parte do
   raio dele.
-- Testes: 491 verificações no smoke test, mais o `tests/header.js` novo, que
+- Testes: 574 verificações no smoke test, mais o `tests/header.js` novo, que
   confere de onde sai a cor da barra e que o laço de amortecimento para, e o
   `tests/popup.js`, que confere de onde sai a origem do círculo e quando a caixa
   do popup é medida.

@@ -78,6 +78,7 @@
 		var stagger = raw.st || null;
 		var lottie = raw.lt || null;
 		var card = raw.card || null;
+		var mq = raw.mq || null;
 
 		return {
 			version: raw.v || 1,
@@ -117,6 +118,17 @@
 				url: lottie.url || '',
 				loop: !! lottie.loop,
 				speed: lottie.speed || 1
+			} : null,
+			marquee: mq ? {
+				mode: 'scroll' === mq.m ? 'scroll' : 'auto',
+				dir: 'r' === mq.dir ? 1 : -1,
+				speed: typeof mq.v === 'number' && mq.v > 0 ? mq.v : 100,
+				force: typeof mq.k === 'number' && mq.k > 0 ? mq.k / 100 : 1,
+				gap: typeof mq.g === 'number' && mq.g >= 0 ? mq.g : 48,
+				edge: !! mq.e,
+				slow: !! mq.sl,
+				freeze: !! mq.fz,
+				drag: !! mq.dr
 			} : null,
 			card: card ? {
 				state: 'in' === card.st ? 'in' : 'out',
@@ -516,6 +528,19 @@
 	function bindTrigger( entry ) {
 		var spec = entry.spec;
 		var engine = engineFor( entry.spec );
+
+		// Marquee não tem gatilho: não começa, não termina e não espera o
+		// elemento aparecer. O motor monta o elemento e cuida do resto,
+		// inclusive de só gastar quadro enquanto ele estiver na tela.
+		if ( spec.marquee ) {
+			reveal( entry.el );
+
+			if ( engine && typeof engine.bind === 'function' ) {
+				engine.bind( entry.el, spec, entry.targets );
+			}
+
+			return;
+		}
 
 		if ( 'scroll-scrub' === spec.trigger ) {
 			if ( engine && typeof engine.bind === 'function' ) {

@@ -152,6 +152,8 @@ class WFAN_Assets {
 			'gsap'   => [ 'assets/js/frontend/engine-gsap.js', [ 'wfan-core', 'wfan-scrolltrigger' ] ],
 			'anime'  => [ 'assets/js/frontend/engine-anime.js', [ 'wfan-core', 'wfan-anime' ] ],
 			'lottie' => [ 'assets/js/frontend/engine-lottie.js', [ 'wfan-core' ] ],
+			// Marquee: sem biblioteca, como o `css`. Regra 31.
+			'marquee' => [ 'assets/js/frontend/engine-marquee.js', [ 'wfan-core' ] ],
 		];
 
 		foreach ( $engines as $engine => $spec ) {
@@ -222,7 +224,7 @@ class WFAN_Assets {
 	/**
 	 * Um elemento renderizado pediu este motor.
 	 *
-	 * @param string $engine css | gsap | anime | lottie.
+	 * @param string $engine css | gsap | anime | lottie | marquee.
 	 * @return void
 	 */
 	public function require_engine( $engine ) {
@@ -484,6 +486,7 @@ class WFAN_Assets {
 		wp_enqueue_style( 'wfan-frontend' );
 		wp_enqueue_script( 'wfan-core' );
 		wp_enqueue_script( 'wfan-engine-css' );
+		wp_enqueue_script( 'wfan-engine-marquee' );
 
 		// O fundo animado precisa estar lá antes de o usuário ligar o toggle:
 		// no editor não há segunda chance de enfileirar.

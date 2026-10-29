@@ -217,6 +217,18 @@
 	60%, 100% { transform: scale(0.7); transform-origin: 50% 100%; border-radius: 5px; }
 }
 
+/* Marquee: a caixa atravessa o card e recomeça do outro lado. */
+@keyframes wfan-pv-marquee {
+	0% { transform: translateX(-26px); }
+	100% { transform: translateX(26px); }
+}
+
+/* Pela rolagem: vai e volta, como a mão que rola a página. */
+@keyframes wfan-pv-marquee-scroll {
+	0%, 100% { transform: translateX(-18px); }
+	50% { transform: translateX(18px); }
+}
+
 @keyframes wfan-pv-pulse {
 	0%, 100% { transform: scale(1); }
 	50% { transform: scale(1.35); }
@@ -295,6 +307,13 @@
 .wfan-card:hover .wfan-pv-pulse,
 .wfan-card:hover .wfan-pv-glow,
 .wfan-card:hover .wfan-pv-counter { animation-name: wfan-pv-pulse; }
+
+.wfan-card:hover .wfan-pv-marquee-auto {
+	animation-name: wfan-pv-marquee;
+	animation-timing-function: linear;
+}
+
+.wfan-card:hover .wfan-pv-marquee-scroll { animation-name: wfan-pv-marquee-scroll; }
 
 .wfan-card:hover .wfan-pv-shake { animation-name: wfan-pv-shake; }
 

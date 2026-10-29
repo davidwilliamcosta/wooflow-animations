@@ -33,6 +33,7 @@ class WFAN_Presets {
 			'nativa'  => __( 'Nativas', 'wooflow-animations' ),
 			'texto'   => __( 'Texto', 'wooflow-animations' ),
 			'scroll'  => __( 'Scroll', 'wooflow-animations' ),
+			'marquee' => __( 'Marquee', 'wooflow-animations' ),
 			'enfase'  => __( 'Ênfase', 'wooflow-animations' ),
 			'svg'     => __( 'SVG', 'wooflow-animations' ),
 			'lottie'  => __( 'Lottie', 'wooflow-animations' ),
@@ -278,6 +279,19 @@ class WFAN_Presets {
 			 * engine-gsap.js.
 			 */
 			'scrub-card'    => [ 'label' => __( 'Virar cartão no scroll', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'card' ], 'triggers' => [ 'scroll-scrub' ] ],
+			/*
+			 * Marquee: o conteúdo do elemento corre em fila infinita, como o
+			 * Marquee Headings e o Marquee Layout do Uncode. Dois presets e não um
+			 * com seletor de "modo" porque o que cada um precisa do painel é
+			 * diferente — velocidade em px/s de um lado, intensidade da rolagem do
+			 * outro — e controle que o motor não obedece é configuração que não faz
+			 * nada. Motor próprio (`marquee`), sem biblioteca, e gatilho fixo em
+			 * `load`: o efeito não tem começo nem fim, o `core.js` só entrega o
+			 * elemento ao `bind()` do motor (payload `mq`). Ver CLAUDE.md, regra 31.
+			 */
+			'marquee-auto'   => [ 'label' => __( 'Marquee automático', 'wooflow-animations' ), 'group' => 'marquee', 'engine' => 'marquee', 'params' => [ 'mq', 'mq_speed', 'mq_slow', 'mq_freeze' ], 'triggers' => [ 'load' ] ],
+			'marquee-scroll' => [ 'label' => __( 'Marquee pela rolagem', 'wooflow-animations' ), 'group' => 'marquee', 'engine' => 'marquee', 'params' => [ 'mq', 'mq_force' ], 'triggers' => [ 'load' ] ],
+
 			'progress-bar'  => [ 'label' => __( 'Barra de progresso', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
 			'counter'       => [ 'label' => __( 'Contador numérico', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ] ],
 
@@ -437,6 +451,24 @@ class WFAN_Presets {
 
 		foreach ( self::all() as $id => $preset ) {
 			if ( ! empty( $preset['css_only'] ) ) {
+				$ids[] = $id;
+			}
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Ids dos presets de marquee. Não têm linha do tempo — duração, espera,
+	 * curva e ponto de disparo não chegam a lugar nenhum num efeito contínuo.
+	 *
+	 * @return string[]
+	 */
+	public static function ids_marquee() {
+		$ids = [];
+
+		foreach ( self::all() as $id => $preset ) {
+			if ( 'marquee' === $preset['engine'] ) {
 				$ids[] = $id;
 			}
 		}

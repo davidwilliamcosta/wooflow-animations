@@ -384,6 +384,13 @@ class WFAN_Controls {
 		$native_ids = WFAN_Presets::ids_native();
 		$own_engine = array_merge( $timed, $native_ids );
 
+		// Marquee é contínuo: não tem começo, fim, curva nem ponto de disparo.
+		// Duração, espera, curva, gatilho, "visível (%)" e "só uma vez" saem do
+		// painel, e `off_mobile` continua valendo (o core.js é quem obedece).
+		$mq_ids  = WFAN_Presets::ids_marquee();
+		$no_line = array_merge( $timed, $mq_ids );
+		$no_trig = array_merge( [ '' ], $native_ids, $mq_ids );
+
 		// A chave da animação nativa muda conforme o tipo de elemento.
 		$native = in_array( $element->get_name(), [ 'common', 'common-optimized' ], true )
 			? WFAN_Keys::NATIVE_WIDGET['name']
@@ -461,7 +468,7 @@ class WFAN_Controls {
 				'type'      => Controls_Manager::SELECT,
 				'default'   => 'scroll-in',
 				'options'   => WFAN_Presets::triggers(),
-				'condition' => [ $k( 'preset' ) . '!' => '' ],
+				'condition' => [ $k( 'preset' ) . '!' => array_merge( [ '' ], $mq_ids ) ],
 			]
 		);
 
@@ -475,7 +482,7 @@ class WFAN_Controls {
 				'range'      => [ '%' => [ 'min' => 0, 'max' => 100, 'step' => 5 ] ],
 				'default'    => [ 'unit' => '%', 'size' => 20 ],
 				'condition'  => [
-					$k( 'preset' ) . '!' => array_merge( [ '' ], $native_ids ),
+					$k( 'preset' ) . '!' => $no_trig,
 					$k( 'trigger' )      => [ 'scroll-in', 'scroll-out' ],
 				],
 			]
@@ -491,7 +498,7 @@ class WFAN_Controls {
 				'return_value' => 'yes',
 				// O nativo só toca uma vez, e não há como pedir o contrário.
 				'condition'    => [
-					$k( 'preset' ) . '!' => array_merge( [ '' ], $native_ids ),
+					$k( 'preset' ) . '!' => $no_trig,
 					$k( 'trigger' )      => [ 'scroll-in', 'scroll-out' ],
 				],
 			]
@@ -516,7 +523,7 @@ class WFAN_Controls {
 					'{{WRAPPER}}.' . self::NATIVE_CLASS . '.animated' => 'animation-duration: {{SIZE}}ms;',
 				],
 				'condition'  => [
-					$k( 'preset' ) . '!'  => $timed,
+					$k( 'preset' ) . '!'  => $no_line,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
 			]
@@ -532,7 +539,7 @@ class WFAN_Controls {
 				'range'      => [ 'px' => [ 'min' => 0, 'max' => 3000, 'step' => 50 ] ],
 				'default'    => [ 'unit' => 'px', 'size' => 0 ],
 				'condition'  => [
-					$k( 'preset' ) . '!'  => $timed,
+					$k( 'preset' ) . '!'  => $no_line,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
 			]
@@ -562,7 +569,7 @@ class WFAN_Controls {
 					'{{WRAPPER}}.' . self::NATIVE_CLASS . '.animated' => 'animation-timing-function: {{VALUE}};',
 				],
 				'condition'           => [
-					$k( 'preset' ) . '!'  => $timed,
+					$k( 'preset' ) . '!'  => $no_line,
 					$k( 'trigger' ) . '!' => 'scroll-scrub',
 				],
 			]
@@ -918,6 +925,119 @@ class WFAN_Controls {
 				'default'     => [ 'unit' => '%', 'size' => 150 ],
 				'description' => __( 'Quanta rolagem o efeito leva para se completar. 100% é uma tela inteira.', 'wooflow-animations' ),
 				'condition'   => $card,
+			]
+		);
+
+		/*
+		 * Marquee. Tudo é lido pelo `engine-marquee.js`; nenhum controle aqui
+		 * muda o HTML do elemento (regra 22), então o `add()` resolve o
+		 * `render_type` sozinho. A velocidade e a intensidade da rolagem são
+		 * controles separados porque cada preset usa um só deles.
+		 */
+		$mq = [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'mq' ) ];
+
+		$this->add(
+			$element,
+			$k( 'mq_dir' ),
+			[
+				'label'     => __( 'Direção', 'wooflow-animations' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => 'left',
+				'options'   => [
+					'left'  => __( 'Da direita para a esquerda', 'wooflow-animations' ),
+					'right' => __( 'Da esquerda para a direita', 'wooflow-animations' ),
+				],
+				'condition' => $mq,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_speed' ),
+			[
+				'label'      => __( 'Velocidade (px por segundo)', 'wooflow-animations' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range'      => [ 'px' => [ 'min' => 10, 'max' => 600, 'step' => 5 ] ],
+				'default'    => [ 'unit' => 'px', 'size' => 100 ],
+				'condition'  => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'mq_speed' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_force' ),
+			[
+				'label'       => __( 'Intensidade da rolagem (%)', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ '%' ],
+				'range'       => [ '%' => [ 'min' => 10, 'max' => 400, 'step' => 5 ] ],
+				'default'     => [ 'unit' => '%', 'size' => 100 ],
+				'description' => __( '100% anda um pixel de marquee por pixel de rolagem. Só vale com "Preencher a largura toda" ligado; desligado, o texto cruza a tela uma vez enquanto o elemento a atravessa.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'mq_force' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_space' ),
+			[
+				'label'       => __( 'Espaço entre repetições (px)', 'wooflow-animations' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => [ 'px' ],
+				'range'       => [ 'px' => [ 'min' => 0, 'max' => 400, 'step' => 4 ] ],
+				'default'     => [ 'unit' => 'px', 'size' => 48 ],
+				'description' => __( 'Vale também entre os itens, quando o marquee é de um bloco com vários filhos.', 'wooflow-animations' ),
+				'condition'   => $mq,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_edge' ),
+			[
+				'label'        => __( 'Preencher a largura toda', 'wooflow-animations' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'default'      => 'yes',
+				'return_value' => 'yes',
+				'description'  => __( 'Repete o conteúdo até cobrir a largura, sem buraco no loop. Desligado, ele atravessa o elemento uma vez e recomeça.', 'wooflow-animations' ),
+				'condition'    => $mq,
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_slow' ),
+			[
+				'label'        => __( 'Desacelerar ao passar o mouse', 'wooflow-animations' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'description'  => __( 'Útil quando há links no marquee e o usuário precisa clicar.', 'wooflow-animations' ),
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'mq_slow' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_freeze' ),
+			[
+				'label'        => __( 'Congelar (parado)', 'wooflow-animations' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'description'  => __( 'Mantém a repetição de borda a borda, sem movimento.', 'wooflow-animations' ),
+				'condition'    => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'mq_freeze' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
+			$k( 'mq_drag' ),
+			[
+				'label'        => __( 'Arrastável', 'wooflow-animations' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'return_value' => 'yes',
+				'description'  => __( 'O visitante pode arrastar o marquee com o mouse ou o dedo.', 'wooflow-animations' ),
+				'condition'    => $mq,
 			]
 		);
 

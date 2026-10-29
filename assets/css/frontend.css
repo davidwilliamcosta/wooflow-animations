@@ -112,3 +112,57 @@ html.lenis body {
 .lenis.lenis-scrolling iframe {
 	pointer-events: none;
 }
+
+/* ---------- Marquee ----------
+ *
+ * O engine-marquee.js põe o conteúdo do elemento numa esteira e a move por
+ * transform. Tudo aqui só descreve a esteira: quem decide posição, cópias e
+ * velocidade é o motor, e o espaço entre repetições chega pela custom
+ * property `--wfan-mq-gap`, escrita inline no miolo do elemento.
+ */
+.wfan-mq {
+	overflow: hidden;
+	overflow: clip;
+}
+
+.wfan-mq-track {
+	display: flex;
+	flex-wrap: nowrap;
+	width: max-content;
+	max-width: none;
+	will-change: transform;
+}
+
+/* O espaço de uma repetição para a outra é o mesmo de um item para o outro, e
+ * o padding no fim do grupo é o que fecha o loop sem emenda. */
+.wfan-mq-group {
+	display: flex;
+	flex: 0 0 auto;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: var(--wfan-mq-gap, 48px);
+	padding-inline-end: var(--wfan-mq-gap, 48px);
+	white-space: nowrap;
+}
+
+.wfan-mq-group > * {
+	flex: 0 0 auto;
+	width: auto;
+	max-width: none;
+}
+
+.wfan-mq--drag {
+	cursor: grab;
+	touch-action: pan-y;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.wfan-mq--dragging {
+	cursor: grabbing;
+}
+
+/* Link sob o arrasto não pode ser o alvo da soltura. */
+.wfan-mq--dragging a {
+	pointer-events: none;
+}
