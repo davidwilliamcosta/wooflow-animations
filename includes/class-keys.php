@@ -101,6 +101,7 @@ class WFAN_Keys {
 		'lottie_url',
 		'lottie_loop',
 		'lottie_speed',
+		'counter_from',
 		'counter_to',
 		'hover_bg',
 		'hover_title',

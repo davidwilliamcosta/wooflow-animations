@@ -248,7 +248,7 @@ class WFAN_Controls {
 		$ids = [];
 
 		foreach ( WFAN_Presets::all() as $id => $preset ) {
-			if ( $engine === $preset['engine'] && empty( $preset['css_only'] ) ) {
+			if ( $engine === $preset['engine'] && empty( $preset['css_only'] ) && empty( $preset['lock_engine'] ) ) {
 				$ids[] = $id;
 			}
 		}
@@ -745,12 +745,24 @@ class WFAN_Controls {
 
 		$this->add(
 			$element,
+			$k( 'counter_from' ),
+			[
+				'label'       => __( 'Começar em', 'wooflow-animations' ),
+				'type'        => Controls_Manager::NUMBER,
+				'default'     => 0,
+				'description' => __( 'O número escrito no elemento é o final — é ele que robôs e buscadores leem. A contagem só mostra valores menores durante a animação.', 'wooflow-animations' ),
+				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'counter_from' ) ],
+			]
+		);
+
+		$this->add(
+			$element,
 			$k( 'counter_to' ),
 			[
-				'label'       => __( 'Contar até', 'wooflow-animations' ),
+				'label'       => __( 'Número final (opcional)', 'wooflow-animations' ),
 				'type'        => Controls_Manager::NUMBER,
-				'default'     => 100,
-				'description' => __( 'O número de partida é o que já está escrito no elemento.', 'wooflow-animations' ),
+				'default'     => '',
+				'description' => __( 'Deixe vazio para contar até o número escrito no elemento. Preenchido, a página mostra para os robôs o número do texto, não este.', 'wooflow-animations' ),
 				'condition'   => [ $k( 'preset' ) => WFAN_Presets::ids_with_param( 'counter_to' ) ],
 			]
 		);

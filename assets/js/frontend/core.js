@@ -102,7 +102,10 @@
 			line: typeof raw.line === 'number' ? raw.line : 0,
 			speed: typeof raw.speed === 'number' && raw.speed > 0 ? raw.speed : 65,
 			rot: typeof raw.rot === 'number' ? raw.rot : 12,
-			to: typeof raw.to === 'number' ? raw.to : 100,
+			counter: raw.cn ? {
+				from: typeof raw.cn.f === 'number' ? raw.cn.f : 0,
+				to: typeof raw.cn.t === 'number' ? raw.cn.t : null
+			} : null,
 			loop: !! raw.loop,
 			split: raw.sp || '',
 			native: raw.nat || '',

@@ -297,34 +297,9 @@
 		gsap.set( targets, { clearProps: 'all' } );
 	}
 
-	function counter( el, spec ) {
-		var text = ( el.textContent || '' ).trim();
-		var start = parseFloat( text.replace( /[^\d.,-]/g, '' ).replace( /\./g, '' ).replace( ',', '.' ) );
-		var decimals = ( String( spec.to ).split( '.' )[ 1 ] || '' ).length;
-		var proxy = { value: isNaN( start ) ? 0 : start };
-
-		return gsap.to( proxy, {
-			value: spec.to,
-			duration: Math.max( 0.1, spec.duration / 1000 ),
-			delay: spec.delay / 1000,
-			ease: spec.easing,
-			onUpdate: function () {
-				el.textContent = proxy.value.toLocaleString( undefined, {
-					minimumFractionDigits: decimals,
-					maximumFractionDigits: decimals
-				} );
-			}
-		} );
-	}
-
 	window.wfan.register( 'gsap', {
 
 		play: function ( el, spec, targets ) {
-			if ( 'counter' === spec.preset ) {
-				el.__wfanTween = counter( el, spec );
-				return;
-			}
-
 			var loop = loopVars( spec );
 
 			if ( loop && spec.loop ) {

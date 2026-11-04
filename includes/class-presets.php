@@ -293,7 +293,14 @@ class WFAN_Presets {
 			'marquee-scroll' => [ 'label' => __( 'Marquee pela rolagem', 'wooflow-animations' ), 'group' => 'marquee', 'engine' => 'marquee', 'params' => [ 'mq', 'mq_force' ], 'triggers' => [ 'load' ] ],
 
 			'progress-bar'  => [ 'label' => __( 'Barra de progresso', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'scrub_end' ], 'triggers' => [ 'scroll-scrub' ] ],
-			'counter'       => [ 'label' => __( 'Contador numérico', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'gsap', 'params' => [ 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ] ],
+			/*
+			 * O número escrito no elemento é o FINAL: é o que robôs, buscadores,
+			 * leitores de tela e quem está sem JavaScript enxergam. O motor só
+			 * troca o texto por números menores durante a contagem e devolve o
+			 * original ao fim. Motor próprio e travado — GSAP por causa de um
+			 * contador seria 115 KB à toa. Ver CLAUDE.md, regra 32.
+			 */
+			'counter'       => [ 'label' => __( 'Contador numérico', 'wooflow-animations' ), 'group' => 'scroll', 'engine' => 'css', 'params' => [ 'counter_from', 'counter_to' ], 'triggers' => [ 'scroll-in', 'load' ], 'hide' => true, 'lock_engine' => true ],
 
 			// Ênfase — loops curtos, motor próprio.
 			'pulse'  => [ 'label' => __( 'Pulsar', 'wooflow-animations' ), 'group' => 'enfase', 'engine' => 'css', 'params' => [ 'loop' ] ],
@@ -344,6 +351,8 @@ class WFAN_Presets {
 					'triggers' => [],
 					'split'    => '',
 					'css_only' => false,
+					'hide'     => false,
+					'lock_engine' => false,
 					'native'   => '',
 				]
 			);

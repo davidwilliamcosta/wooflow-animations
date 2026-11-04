@@ -266,7 +266,7 @@ class WFAN_Render {
 			return 'css';
 		}
 
-		if ( 'css' === $engine && in_array( $override, [ 'gsap', 'anime' ], true ) ) {
+		if ( 'css' === $engine && empty( $preset['lock_engine'] ) && in_array( $override, [ 'gsap', 'anime' ], true ) ) {
 			$engine = $override;
 		}
 
@@ -305,7 +305,9 @@ class WFAN_Render {
 	 * @return bool
 	 */
 	private function hides_element( $preset, $trigger ) {
-		if ( ! in_array( $preset['group'], [ 'entrada', 'texto' ], true ) ) {
+		// O contador começa escondido para não piscar o número final antes de
+		// recomeçar do zero. O número continua no DOM — só a opacidade muda.
+		if ( empty( $preset['hide'] ) && ! in_array( $preset['group'], [ 'entrada', 'texto' ], true ) ) {
 			return false;
 		}
 
@@ -430,8 +432,17 @@ class WFAN_Render {
 			];
 		}
 
-		if ( in_array( 'counter_to', $params, true ) ) {
-			$payload['to'] = (float) $this->num( $settings, $k( 'counter_to' ), 100 );
+		// Contador. `t` só vai se o campo foi preenchido: vazio quer dizer "conta
+		// até o número escrito no elemento", e o JS não pode confundir isso com
+		// zero. Ver CLAUDE.md, regra 32.
+		if ( in_array( 'counter_from', $params, true ) ) {
+			$to = isset( $settings[ $k( 'counter_to' ) ] ) ? $settings[ $k( 'counter_to' ) ] : '';
+
+			$payload['cn'] = [ 'f' => (float) $this->num( $settings, $k( 'counter_from' ), 0 ) ];
+
+			if ( '' !== $to && null !== $to && is_numeric( $to ) ) {
+				$payload['cn']['t'] = (float) $to;
+			}
 		}
 
 		if ( in_array( 'loop', $params, true ) ) {

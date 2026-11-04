@@ -2573,6 +2573,66 @@ ok( in_array( '.elementor-icon-list-text', $hv_targets['text'], true ), 'o hover
 ok( in_array( '.elementor-icon-list-text a', $hv_targets['text'], true ), 'e os links dentro dele (a cor do widget é escrita nos dois)' );
 ok( in_array( '.elementor-icon-list-icon i', $hv_targets['icon'], true ), 'e o ícone de fonte da lista' );
 
+section( '26. Contador' );
+
+/*
+ * Regra 32. O número escrito no HTML é o final; o payload só leva a partida e,
+ * se preenchido, o número do painel. Motor próprio e travado, elemento
+ * pré-escondido para não piscar o final antes de recomeçar.
+ */
+
+$cn_render = new WFAN_Render();
+$cn_pre    = WFAN_Presets::get( 'counter' );
+
+ok( 'css' === ( $cn_pre['engine'] ?? '' ), 'o contador usa o motor próprio: GSAP por causa de um contador seriam 115 KB' );
+
+$cn_spec = $cn_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'counter' ] );
+
+ok( $cn_spec && 'css' === $cn_spec['engine'], 'e o render resolve css' );
+ok( $cn_spec && in_array( 'wfan-pending', $cn_spec['classes'], true ), 'começa escondido (o número final não pisca antes da contagem)' );
+ok( $cn_spec && 0.0 === ( $cn_spec['payload']['cn']['f'] ?? null ), 'a partida de fábrica é 0' );
+ok( $cn_spec && ! array_key_exists( 't', $cn_spec['payload']['cn'] ?? [] ), 'sem número no painel, o payload não manda "t": vale o do texto' );
+ok( $cn_spec && ! array_key_exists( 'to', $cn_spec['payload'] ), 'a chave antiga "to" saiu do payload' );
+
+$cn_set = $cn_render->spec(
+	[
+		WFAN_Keys::ours( 'preset' )       => 'counter',
+		WFAN_Keys::ours( 'counter_from' ) => 20,
+		WFAN_Keys::ours( 'counter_to' )   => '450',
+	]
+);
+
+ok( 20.0 === ( $cn_set['payload']['cn']['f'] ?? null ), 'a partida do painel chega' );
+ok( 450.0 === ( $cn_set['payload']['cn']['t'] ?? null ), 'o número final do painel chega' );
+
+$cn_zero = $cn_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'counter', WFAN_Keys::ours( 'counter_to' ) => '0' ] );
+
+ok( 0.0 === ( $cn_zero['payload']['cn']['t'] ?? null ), 'zero é um número final válido, não "vazio"' );
+
+// Trocar o motor no painel não leva o contador para o GSAP.
+$cn_forced = $cn_render->spec( [ WFAN_Keys::ours( 'preset' ) => 'counter', WFAN_Keys::ours( 'engine' ) => 'gsap' ] );
+
+ok( $cn_forced && 'css' === $cn_forced['engine'], 'o motor do contador é travado, mesmo com "GSAP" gravado (copiar/colar)' );
+
+$cn_widget = $widget;
+
+$cn_vals = [ WFAN_Keys::ours( 'preset' ) => 'counter' ];
+
+ok( ! wfan_visible( $cn_widget->controls[ WFAN_Keys::ours( 'engine' ) ], $cn_vals ), 'o seletor de motor não aparece no contador' );
+ok( wfan_visible( $cn_widget->controls[ WFAN_Keys::ours( 'counter_from' ) ], $cn_vals ), 'a partida aparece' );
+ok( wfan_visible( $cn_widget->controls[ WFAN_Keys::ours( 'counter_to' ) ], $cn_vals ), 'e o número final opcional' );
+ok( ! wfan_visible( $cn_widget->controls[ WFAN_Keys::ours( 'counter_from' ) ], [ WFAN_Keys::ours( 'preset' ) => 'fade-up' ] ), 'a partida não aparece em outro preset' );
+ok( '' === ( $cn_widget->controls[ WFAN_Keys::ours( 'counter_to' ) ]['default'] ?? null ), 'o número final nasce vazio: "vazio" é o que diz "conte até o texto"' );
+
+$cn_keys = WFAN_Keys::all_ours();
+ok( in_array( WFAN_Keys::ours( 'counter_from' ), $cn_keys, true ), 'a partida entra em OURS (copiar/colar e biblioteca)' );
+
+$cn_engine = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/engine-gsap.js' );
+ok( false === strpos( $cn_engine, 'counter' ), 'o GSAP não tem mais contador: dois motores para a mesma coisa divergiriam' );
+
+ok( file_exists( WFAN_DIR . 'tests/counter.js' ), 'o teste do contador existe' );
+ok( false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/counter.js' ), 'e o build não empacota sem rodá-lo' );
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

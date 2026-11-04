@@ -171,7 +171,7 @@ um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 | **Nativas** (36) | as animações de entrada do Elementor: fade, zoom, quicar, deslizar, girar, velocidade da luz, rolar e os dez chamarizes (pulsar, tremer, tada…) | Elementor |
 | **Texto** (6) | revelar por linha, por palavra, por letra, cortina por linha, desfoque por palavra, desfoque por letra | próprio |
 | **Texto no scroll** (2) | revelar por palavra e por letra travado no scroll, acendendo a partir de uma opacidade de partida | GSAP |
-| **Scroll** (10) | parallax H/V (com sentido invertível), fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso, contador | GSAP |
+| **Scroll** (10) | parallax H/V (com sentido invertível), fade/escala/giro/cortina travados no scroll, virar cartão (a seção encolhe e arredonda os cantos ao sair), fixar na tela, barra de progresso | GSAP |
 | **Marquee** (2) | conteúdo do elemento em fila infinita: automático (com velocidade, hover que desacelera, congelar e arrastar) e empurrado pela rolagem | próprio |
 | **Ênfase** (6) | pulsar, flutuar, tremer, balançar, brilhar, inverter cores no hover | próprio |
 | **SVG** (1) | desenhar traço | Anime.js |
@@ -209,8 +209,8 @@ explícita: **nenhuma biblioteca é carregada por padrão.**
 | Animação nativa | **nada do plugin** — só a folha de ~500 bytes que o Elementor já usa para aquela animação |
 | Inverter cores no hover | **nenhum JS** — só o CSS que o Elementor já gera para o elemento |
 | Fundo animado | `overlay.js`, ~7 KB, sem biblioteca nenhuma e sem o `core.js` |
-| Fade, slide, texto, ênfase | `core.js` + motor próprio, ~10 KB |
-| Scroll travado, pin, parallax, contador | \+ GSAP e ScrollTrigger, ~115 KB |
+| Fade, slide, texto, ênfase, contador | `core.js` + motor próprio, ~10 KB |
+| Scroll travado, pin, parallax | \+ GSAP e ScrollTrigger, ~115 KB |
 | Desenho de SVG | \+ Anime.js, ~115 KB |
 | Lottie | \+ lottie-web, ~164 KB — ou **zero**, se o Elementor Pro já estiver ativo, porque a cópia dele é reusada |
 
@@ -488,6 +488,25 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.9.0
+
+- **Contador que robôs e buscadores leem.** O contador antigo exigia o número
+  de *partida* escrito no HTML, então quem não roda JavaScript — buscadores,
+  leitores de tela, IAs que leem a página — via "20" onde o visitante via 450.
+  Agora o número escrito no elemento é o **final**: a contagem só troca o texto
+  por valores menores durante a animação e devolve o original ao fim. Dá para
+  escrever "+ de 450", "R$ 1.250,50" ou "12,000": prefixo, sufixo, separador
+  de milhar e casas decimais do texto são preservados.
+- Novo controle **Começar em** (padrão 0). O antigo "Contar até" virou
+  **Número final (opcional)** e nasce vazio, que quer dizer "conte até o que
+  está escrito". Se você o preenchia, a contagem agora parte de "Começar em",
+  não do texto.
+- O contador saiu do GSAP e roda no motor próprio: ~115 KB a menos numa página
+  que só tinha um contador. O seletor de motor não aparece mais para ele.
+- O contador começa escondido e aparece já na partida, para o número final não
+  piscar antes da contagem. Com "menos movimento" ou sem JavaScript, o número
+  final aparece direto.
 
 ### 2.8.2
 

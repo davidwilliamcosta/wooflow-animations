@@ -142,6 +142,14 @@ junto. Vale para qualquer asset novo — e vale também para o widget dinâmico,
     - **carrossel Swiper não é movido nem clonado: corre-se cópia dos slides.** O `.swiper` não tem largura própria — dentro da esteira `max-content` colapsa a zero e some (foi assim que chegou: Carrossel de imagens com o preset aplicado, nada na tela) — e o Swiper guarda referências ao DOM original. `slidesOf()` copia o conteúdo de cada `.swiper-slide` (sem os `-duplicate` que o Swiper cria no loop) e esconde o original com `.wfan-mq-src`;
     - **no editor vale a regra 19.** O canvas não tem `data-wfan`; o marquee só monta pelo ▶ Testar/preview automático, e o `bind()` desmonta qualquer montagem anterior (o `wfanPlay` zera `el.__wfan` sem chamar `reset`). A esteira some quando o Elementor re-renderiza o widget, e é o que se quer.
 
+32. **No contador, o número escrito no HTML é o FINAL — e é o motor que mente durante a animação, nunca o HTML.** O que robô, buscador, leitor de tela e visitante sem JavaScript enxergam é o texto do servidor; um contador que exige a *partida* escrita ali (como o HFE Counter e o Counter do Elementor, que servem `data-start`/`from` como texto) mostra "20" onde o visitante vê 450. O preset `counter` ([class-presets.php](includes/class-presets.php)) inverte isso. Seis consequências:
+    - **motor `css`, travado** (`lock_engine`): é uma contagem por `requestAnimationFrame`, e GSAP seriam 115 KB à toa. `resolve_engine()` ignora o motor gravado (um copiar/colar traz `gsap` junto) e o controle `engine` não aparece para ele. O GSAP **não tem mais** contador — dois motores para a mesma coisa divergiriam;
+    - **o payload `cn` leva só a partida (`f`) e, se preenchido, o número do painel (`t`).** `t` ausente quer dizer "conte até o número do texto", e não zero — zero é um final válido, por isso o PHP testa `'' !== $to` e não `empty()`. O controle `counter_to` nasce vazio pelo mesmo motivo. A chave antiga `to` saiu do payload;
+    - **só o nó de texto que tem o número é tocado** (`numberNode()`), e o formato sai do próprio texto (`readNumber()`): um separador só seguido de exatamente três dígitos é milhar ("1.250", "12,000"), com outra quantidade é decimal ("3,5"); dois separadores diferentes dizem quem é quem pelo último. "+ de 450" ou "R$ 1.250,50 mil" mantêm prefixo e sufixo, e um `<span>` vizinho nunca é desmontado;
+    - **termina SEMPRE no `nodeValue` original**, não no número formatado de novo: é o que garante que a página fica idêntica à que o servidor mandou. O `reset()` faz o mesmo no meio da contagem, e tocar de novo cancela o quadro pendente em vez de empilhar laços;
+    - **começa escondido** (`'hide' => true` no preset; o `hides_element()` olha essa chave antes do grupo): sem isso o número final apareceria por um quadro antes de recomeçar do zero. O DOM continua com o texto final — só a opacidade muda, e as três redes da regra 8 valem (com `prefers-reduced-motion` ou sem JS o final aparece direto). O primeiro valor é escrito de forma síncrona no `play()`, logo depois do `reveal()`;
+    - **o número do painel só decide até onde contar**: a página continua mostrando o texto ao fim e aos robôs. Quem precisa que o robô leia o número deve escrevê-lo no elemento e deixar "Número final" vazio. Quem confere a contagem é [tests/counter.js](tests/counter.js), com o `engine-css.js` real num DOM de mentira.
+
 ---
 
 ## 3. Arquitetura
@@ -172,7 +180,7 @@ templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.ph
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js (REGRA 23)
 assets/js/frontend/    core.js (orquestrador, REGRA 26) · engine-{css,gsap,anime,lottie,marquee}.js · lenis-boot.js · overlay.js (REGRA 20) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · backtotop.css · header.css · popup.css · admin.css (REGRA 16)
-tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · marquee.js (REGRA 31) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
+tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · marquee.js (REGRA 31) · counter.js (REGRA 32) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 ```
 
 ### Quem decide o quê
@@ -194,13 +202,14 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 574 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 596 verificações, sem WordPress e sem banco
 node tests/trigger.js        # REGRA 25: quantas vezes a animação toca
 node tests/backtotop.js      # quando o script acha o botão, e por onde a subida vai
 node tests/header.js         # REGRA 27: de onde sai a cor da barra, e se o laço para
 node tests/popup.js          # REGRA 28: de onde sai a origem do círculo, e quando a caixa é medida
 node tests/scrub.js          # REGRA 29 e 30: percurso da revelação e do cartão no scroll
 node tests/marquee.js        # REGRA 31: posição da esteira, laço que se apaga, clique após arrasto
+node tests/counter.js        # REGRA 32: o texto final volta idêntico, formato preservado, laço que se apaga
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -209,7 +218,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28 e 31. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31 e 32. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O `tests/trigger.js` sobe o `core.js` de verdade num DOM de mentira e dirige o
