@@ -44,6 +44,9 @@ node "$ROOT/tests/marquee.js" > /dev/null
 echo "Rodando o teste do contador…"
 node "$ROOT/tests/counter.js" > /dev/null
 
+echo "Rodando o teste dos painéis expansíveis…"
+node "$ROOT/tests/panels.js" > /dev/null
+
 OUT="$ROOT/release"
 STAGE="$OUT/$SLUG"
 

@@ -58,6 +58,7 @@ class WFAN_Plugin {
 			'class-library',
 			'class-assets',
 			'class-overlay',
+			'class-panels',
 			'class-controls',
 			'class-control-picker',
 			'class-editor',

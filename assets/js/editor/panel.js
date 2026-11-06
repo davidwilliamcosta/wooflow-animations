@@ -32,6 +32,7 @@
 
 	var previewTimer = null;
 	var overlayTimer = null;
+	var panelsTimer = null;
 
 	function cp() {
 		return window.wfanCopyPaste || null;
@@ -251,6 +252,44 @@
 		}, OVERLAY_DELAY );
 	}
 
+	/**
+	 * Painéis expansíveis: o mesmo caminho do fundo animado. Todo parâmetro
+	 * está no CSS do container (regra 33), e o panels.js do canvas só precisa
+	 * do empurrão para reler — ligar o toggle não re-renderiza nada.
+	 */
+	function schedulePanels() {
+		window.clearTimeout( panelsTimer );
+		panelsTimer = window.setTimeout( function () {
+			var win = preview();
+
+			if ( ! win || ! win.wfanPanels ) {
+				return;
+			}
+
+			selected().forEach( function ( container ) {
+				win.wfanPanels.syncId( container.id );
+			} );
+		}, OVERLAY_DELAY );
+	}
+
+	/**
+	 * Elemento escolhido para edição dentro de um painel fechado: o painel
+	 * abre, senão o usuário editaria às cegas.
+	 */
+	function revealPanels() {
+		window.setTimeout( function () {
+			var win = preview();
+
+			if ( ! win || ! win.wfanPanels ) {
+				return;
+			}
+
+			selected().forEach( function ( container ) {
+				win.wfanPanels.reveal( container.id );
+			} );
+		}, 50 );
+	}
+
 	function save() {
 		var settings = currentSettings();
 
@@ -435,6 +474,11 @@
 			return;
 		}
 
+		if ( 0 === name.indexOf( keys.prefix + 'pnl' ) ) {
+			schedulePanels();
+			return;
+		}
+
 		schedulePreview();
 	}
 
@@ -498,6 +542,7 @@
 			[ 'widget', 'container', 'section', 'column' ].forEach( function ( type ) {
 				elementor.hooks.addAction( 'panel/open_editor/' + type, function () {
 					window.setTimeout( narrowTriggers, 50 );
+					revealPanels();
 				} );
 			} );
 		}

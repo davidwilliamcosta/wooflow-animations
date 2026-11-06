@@ -149,6 +149,10 @@ class WFAN_Render {
 		// com ou sem uma escolhida no mesmo elemento — inclusive uma nativa.
 		WFAN_Overlay::attach( $element, $settings );
 
+		// Pelo mesmo motivo: os painéis expansíveis são do container pai e
+		// convivem com qualquer animação dele. Regra 33.
+		WFAN_Panels::attach( $element, $settings );
+
 		if ( $native ) {
 			return;
 		}

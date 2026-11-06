@@ -1231,5 +1231,9 @@ class WFAN_Controls {
 		// animado não é preset e convive com uma animação de entrada no mesmo
 		// elemento, então não cabe na seção de cima.
 		WFAN_Overlay::add_controls( $element, $tab );
+
+		// Mais uma irmã, só no container: os filhos diretos dele viram os
+		// painéis. Ver regra 33.
+		WFAN_Panels::add_controls( $element, $tab );
 	}
 }

@@ -2,7 +2,7 @@
 
 Plugin WordPress que dá ao Elementor um painel de animações por elemento (82
 presets — 46 nossos e 36 entregues à animação de entrada do próprio Elementor —,
-gatilhos, cascata, scroll travado, fundo animado) e as ações de copiar/colar
+gatilhos, cascata, scroll travado, fundo animado, painéis expansíveis) e as ações de copiar/colar
 animação que originaram o projeto.
 
 - **Versão:** `WFAN_VER` em [wooflow-animations.php](wooflow-animations.php) — o cabeçalho `Version:` **precisa** bater com a constante
@@ -150,6 +150,13 @@ junto. Vale para qualquer asset novo — e vale também para o widget dinâmico,
     - **começa escondido** (`'hide' => true` no preset; o `hides_element()` olha essa chave antes do grupo): sem isso o número final apareceria por um quadro antes de recomeçar do zero. O DOM continua com o texto final — só a opacidade muda, e as três redes da regra 8 valem (com `prefers-reduced-motion` ou sem JS o final aparece direto). O primeiro valor é escrito de forma síncrona no `play()`, logo depois do `reveal()`;
     - **o número do painel só decide até onde contar**: a página continua mostrando o texto ao fim e aos robôs. Quem precisa que o robô leia o número deve escrevê-lo no elemento e deixar "Número final" vazio. Quem confere a contagem é [tests/counter.js](tests/counter.js), com o `engine-css.js` real num DOM de mentira.
 
+33. **Os painéis expansíveis são do container PAI, e a largura do conteúdo é congelada.** O [class-panels.php](includes/class-panels.php) liga, num container, o "accordion horizontal" das seções de soluções: os filhos diretos viram painéis, um aberto ocupando o que sobra e os outros reduzidos a uma faixa (`<button>`) com número, título na vertical e "+". Abaixo do ponto de quebra empilham num accordion vertical. Segue o padrão do fundo animado (regra 20) — seção própria, só no `container` (`WFAN_Panels::accepts()`), todo parâmetro em custom property dos `selectors`, `render_type` `ui`, script próprio sem `core.js` ([panels.js](assets/js/frontend/panels.js)) — e tem cinco armadilhas próprias:
+    - **`--wfan-pnl` é herdada pela árvore inteira**, então "o valor é 1" não identifica o container: os painéis e tudo dentro deles dizem 1 também. O container é onde a propriedade **começa** (`isOn()` compara com o pai). Sem isso, no editor, cada painel virava container de painéis, com faixas dentro de faixas. No front-end a classe `wfan-pnl` do PHP basta; no editor ela sobra da carga inicial depois de o toggle ser desligado, e quem manda é o CSS;
+    - **o conteúdo de todo painel, fechado inclusive, é diagramado na largura do aberto** (`WFAN_Panels::MEASURE_VAR`, medida pelo JS e escrita inline no container) e só cortado pelo `overflow:hidden` do painel. Sem isso o texto escondido de um painel de 110 px quebra uma palavra por linha, fica altíssimo e **estica a fileira inteira** — medido no Chrome: a fileira passava da altura mínima e o botão do painel aberto saía da tela —, e o texto do painel abrindo requebra a cada quadro. Painel com os filhos em linha fica de fora (`wfan-pnl-item--row`): congelar cada filho empurraria os outros;
+    - **largura e altura vão inline**, escritas pelo JS: o Elementor põe `width:var(--width)` e o `flex` dele em todo container, e só o inline passa por cima sem `!important`. Empilhado, a altura do aberto é medida com `height:auto` por um instante, **nunca com `scrollHeight`**: com o conteúdo alinhado embaixo (o comum, título no pé da foto), o que transborda vai para cima e o `scrollHeight` não conta transbordo para cima — o painel saltava em vez de crescer;
+    - **nada esconde sem o JS**: toda regra que tira conteúdo de vista pende de `.wfan-pnl--ready` ou `.is-open`, que só o `panels.js` põe. Sem JavaScript os filhos ficam lado a lado como o Elementor os desenhou — por isso não há pré-esconde nem tempo de segurança (regra 8). O smoke test reprova a regra que esconder sem esse estado;
+    - **a faixa é um `<button>` e o tema estiliza botão** (`[type=button]:hover` do Hello, `.elementor-kit-N button:hover` do kit, até 0,2,1): o hover e o foco são zerados à parte, em `.wfan-pnl-item > .wfan-pnl-rail:hover` (0,3,0), sem tocar em opacidade nem visibilidade — quem cuida delas é o `.is-open`. Aberto pelo teclado, o foco vai para o painel (`tabindex=-1`), senão cairia no topo da página quando a faixa some. No editor, escolher para edição um elemento de painel fechado abre o painel (`wfanPanels.reveal()`, chamado pelo `panel.js` no `panel/open_editor/*`). Quem confere tudo isto é [tests/panels.js](tests/panels.js).
+
 ---
 
 ## 3. Arquitetura
@@ -163,6 +170,7 @@ includes/
   class-presets.php         catálogo (44 nossos + 36 nativas, REGRA 21), grupos, gatilhos, curvas, css_only; filtro wfan_presets
   class-controls.php        REGRA 2, 18, 21 e 22: injeta a seção na primeira aba dos 5 tipos
   class-overlay.php         REGRA 20: fundo animado por elemento; dono das custom properties
+  class-panels.php          REGRA 33: painéis expansíveis no container pai; dono das custom properties deles
   class-control-picker.php  controle `wfan-picker` (template da grade)
   class-editor.php          assets do editor + config tipada (REGRA 17) + contrato do ▶ Testar (REGRA 19)
   class-render.php          REGRA 4, 18, 20 e 21: escreve data-wfan; resolve motor, gatilho e animação nativa
@@ -178,9 +186,9 @@ includes/
   class-library.php         "minhas animações" (option + ajax)
 templates/admin/       settings-page.php (casca: nav + form) + tabs/tab-<aba>.php (REGRA 16)
 assets/js/editor/      copy-paste.js (REGRA 10) · control-picker.js · panel.js (REGRA 23)
-assets/js/frontend/    core.js (orquestrador, REGRA 26) · engine-{css,gsap,anime,lottie,marquee}.js · lenis-boot.js · overlay.js (REGRA 20) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
+assets/js/frontend/    core.js (orquestrador, REGRA 26) · engine-{css,gsap,anime,lottie,marquee}.js · lenis-boot.js · overlay.js (REGRA 20) · panels.js (REGRA 33) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 assets/css/            editor.css (REGRA 13) · frontend.css · blur.css · backtotop.css · header.css · popup.css · admin.css (REGRA 16)
-tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · marquee.js (REGRA 31) · counter.js (REGRA 32) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
+tests/                 smoke.php + stubs.php · trigger.js (REGRA 25) · marquee.js (REGRA 31) · counter.js (REGRA 32) · panels.js (REGRA 33) · backtotop.js · header.js (REGRA 27) · popup.js (REGRA 28)
 ```
 
 ### Quem decide o quê
@@ -202,7 +210,7 @@ faz essa conta é o ScrollTrigger.
 ## 4. Como testar
 
 ```bash
-php tests/smoke.php          # 596 verificações, sem WordPress e sem banco
+php tests/smoke.php          # 639 verificações, sem WordPress e sem banco
 node tests/trigger.js        # REGRA 25: quantas vezes a animação toca
 node tests/backtotop.js      # quando o script acha o botão, e por onde a subida vai
 node tests/header.js         # REGRA 27: de onde sai a cor da barra, e se o laço para
@@ -210,6 +218,7 @@ node tests/popup.js          # REGRA 28: de onde sai a origem do círculo, e qua
 node tests/scrub.js          # REGRA 29 e 30: percurso da revelação e do cartão no scroll
 node tests/marquee.js        # REGRA 31: posição da esteira, laço que se apaga, clique após arrasto
 node tests/counter.js        # REGRA 32: o texto final volta idêntico, formato preservado, laço que se apaga
+node tests/panels.js         # REGRA 33: quem é o container, faixa sem duplicar, painel aberto mantido, desmontagem limpa
 php -l <arquivo>             # lint de qualquer PHP alterado
 node --check <arquivo>       # lint de qualquer JS alterado
 npm run vendor               # reconstrói assets/lib/
@@ -218,7 +227,7 @@ npm run vendor               # reconstrói assets/lib/
 O smoke test ([tests/smoke.php](tests/smoke.php)) sobe o plugin inteiro contra
 dublês do WordPress e do Elementor ([tests/stubs.php](tests/stubs.php)), injeta
 controles num elemento falso, renderiza vários presets e confere as regras 1-7,
-11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31 e 32. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
+11, 12, 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32 e 33. **Rodar antes de qualquer commit**: ele pega exatamente a classe de
 erro que só apareceria dentro do editor.
 
 O `tests/trigger.js` sobe o `core.js` de verdade num DOM de mentira e dirige o

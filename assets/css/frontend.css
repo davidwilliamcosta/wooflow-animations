@@ -76,6 +76,237 @@
 	outline-color: var( --wfan-ovl-c2, #6442FF );
 }
 
+/*
+ * Painéis expansíveis (WFAN_Panels, regra 33). Tudo pendurado em
+ * `.wfan-pnl--ready`, que só o panels.js põe: sem JavaScript os painéis ficam
+ * lado a lado, com todo o conteúdo à mostra.
+ *
+ * A largura e a altura de cada painel vão inline, escritas pelo JS — o
+ * Elementor põe `width` e `flex` em todo container, e o inline passa por cima
+ * sem `!important`. Daqui saem as transições, a faixa do painel fechado e o
+ * sumiço do conteúdo dele.
+ */
+.wfan-pnl--ready .wfan-pnl-item {
+	overflow: hidden;
+	transition:
+		flex-grow var( --wfan-pnl-dur, 700ms ) var( --wfan-pnl-ease, cubic-bezier( 0.65, 0, 0.35, 1 ) ),
+		flex-basis var( --wfan-pnl-dur, 700ms ) var( --wfan-pnl-ease, cubic-bezier( 0.65, 0, 0.35, 1 ) ),
+		height var( --wfan-pnl-dur, 700ms ) var( --wfan-pnl-ease, cubic-bezier( 0.65, 0, 0.35, 1 ) ),
+		background 0.3s,
+		border 0.3s,
+		box-shadow 0.3s;
+}
+
+/*
+ * O conteúdo aparece só perto do fim da abertura: enquanto o painel cresce, o
+ * texto dele está quebrando linha a cada quadro, e isso não precisa ser visto.
+ * Ao fechar, some logo no começo. O contorno do editor fica de fora.
+ */
+.wfan-pnl--ready .wfan-pnl-item > :not( .wfan-pnl-rail ):not( .elementor-element-overlay ) {
+	transition:
+		opacity calc( var( --wfan-pnl-dur, 700ms ) * 0.4 ) ease calc( var( --wfan-pnl-dur, 700ms ) * 0.55 ),
+		visibility 0s linear 0s;
+}
+
+.wfan-pnl--ready .wfan-pnl-item:not( .is-open ) > :not( .wfan-pnl-rail ):not( .elementor-element-overlay ) {
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity calc( var( --wfan-pnl-dur, 700ms ) * 0.25 ) ease,
+		visibility 0s linear calc( var( --wfan-pnl-dur, 700ms ) * 0.25 );
+}
+
+/*
+ * O conteúdo de todo painel, fechado inclusive, é diagramado na largura do
+ * painel aberto (medida pelo panels.js) e só cortado pela do próprio painel.
+ * Sem isso o texto escondido de um painel estreito quebra uma palavra por
+ * linha e estica a fileira inteira, e o do painel abrindo requebra a cada
+ * quadro. Empilhados, a largura já é a de todos.
+ */
+.wfan-pnl--ready:not( .wfan-pnl--stack ) .wfan-pnl-item:not( .wfan-pnl-item--row ) > :not( .wfan-pnl-rail ):not( .elementor-element-overlay ) {
+	min-width: var( --wfan-pnl-cw, 0 );
+}
+
+/*
+ * A faixa é um <button> de verdade, e tema e kit do Elementor estilizam botão
+ * (`[type=button]:hover`, `.elementor-kit-N button:hover`, até 0,2,1). Os dois
+ * degraus de classe daqui ganham deles, e o estado de hover e foco é zerado à
+ * parte, sem mexer em opacidade nem visibilidade — quem cuida delas é o
+ * estado aberto, logo abaixo.
+ */
+.wfan-pnl-item > .wfan-pnl-rail {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	display: grid;
+	grid-template-rows: minmax( 0, 1fr ) auto;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	column-gap: 8px;
+	row-gap: 16px;
+	width: auto;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 28px 16px 22px;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	background: var( --wfan-pnl-shade, rgba( 0, 0, 0, 0.35 ) );
+	color: var( --wfan-pnl-fg, #fff );
+	font: inherit;
+	font-size: var( --wfan-pnl-fs, 18px );
+	line-height: 1.2;
+	letter-spacing: normal;
+	text-transform: none;
+	text-align: start;
+	cursor: pointer;
+	appearance: none;
+	opacity: 1;
+	visibility: visible;
+	transition:
+		opacity calc( var( --wfan-pnl-dur, 700ms ) * 0.4 ) ease calc( var( --wfan-pnl-dur, 700ms ) * 0.5 ),
+		visibility 0s linear 0s;
+}
+
+.wfan-pnl-item > .wfan-pnl-rail:hover,
+.wfan-pnl-item > .wfan-pnl-rail:focus {
+	border: 0;
+	box-shadow: none;
+	background: var( --wfan-pnl-shade, rgba( 0, 0, 0, 0.35 ) );
+	color: var( --wfan-pnl-fg, #fff );
+}
+
+.wfan-pnl-item > .wfan-pnl-rail:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: -6px;
+}
+
+.wfan-pnl-item.is-open > .wfan-pnl-rail {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity calc( var( --wfan-pnl-dur, 700ms ) * 0.25 ) ease,
+		visibility 0s linear calc( var( --wfan-pnl-dur, 700ms ) * 0.25 );
+}
+
+.wfan-pnl-n {
+	grid-area: 2 / 1;
+	justify-self: start;
+	align-self: center;
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.85;
+}
+
+.wfan-pnl--nonum .wfan-pnl-n {
+	display: none;
+}
+
+.wfan-pnl--nonum .wfan-pnl-plus {
+	grid-column: 1 / -1;
+	justify-self: center;
+}
+
+/*
+ * Vertical, de cima para baixo, ocupando o que sobra acima do pé da faixa.
+ * Número e + ficam na mesma linha, no pé — como na fileira de soluções.
+ * Título longo é cortado embaixo, antes de encostar nos dois.
+ */
+.wfan-pnl-label {
+	grid-area: 1 / 1 / 2 / -1;
+	align-self: start;
+	justify-self: center;
+	min-width: 0;
+	min-height: 0;
+	max-height: 100%;
+	overflow: hidden;
+	writing-mode: vertical-rl;
+	text-orientation: mixed;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	font-weight: 600;
+}
+
+.wfan-pnl-plus {
+	position: relative;
+	grid-area: 2 / 2;
+	justify-self: end;
+	align-self: center;
+	width: 2.2em;
+	height: 2.2em;
+	border: 1px solid currentColor;
+	border-radius: 50%;
+	transition: transform 0.3s ease;
+}
+
+.wfan-pnl-plus::before,
+.wfan-pnl-plus::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 38%;
+	height: 1.5px;
+	background: currentColor;
+	transform: translate( -50%, -50% );
+}
+
+.wfan-pnl-plus::after {
+	transform: translate( -50%, -50% ) rotate( 90deg );
+}
+
+.wfan-pnl-rail:hover .wfan-pnl-plus,
+.wfan-pnl-rail:focus-visible .wfan-pnl-plus {
+	transform: rotate( 90deg );
+}
+
+/* Empilhados: a faixa vira uma barra, com o título na horizontal. */
+.wfan-pnl--stack .wfan-pnl-item > .wfan-pnl-rail {
+	grid-template-rows: auto;
+	grid-template-columns: auto minmax( 0, 1fr ) auto;
+	column-gap: 14px;
+	row-gap: 0;
+	padding: 0 20px;
+}
+
+.wfan-pnl--stack .wfan-pnl-n {
+	grid-area: 1 / 1;
+}
+
+.wfan-pnl--stack .wfan-pnl-label {
+	grid-area: 1 / 2;
+	align-self: center;
+	justify-self: start;
+	max-height: none;
+	writing-mode: horizontal-tb;
+}
+
+.wfan-pnl--stack .wfan-pnl-plus {
+	grid-area: 1 / 3;
+}
+
+.wfan-pnl--stack.wfan-pnl--nonum .wfan-pnl-plus {
+	grid-area: 1 / 3;
+	justify-self: end;
+}
+
+/*
+ * Sem movimento: `prefers-reduced-motion` (se a opção de respeitá-lo estiver
+ * ligada) e "desligar no celular" põem `--still`; o primeiro desenho de cada
+ * montagem põe `--init`, senão a página nasceria animando o fechamento.
+ */
+.wfan-pnl--still .wfan-pnl-item,
+.wfan-pnl--still .wfan-pnl-item > *,
+.wfan-pnl--still .wfan-pnl-plus,
+.wfan-pnl--init .wfan-pnl-item,
+.wfan-pnl--init .wfan-pnl-item > * {
+	transition: none !important;
+}
+
 /* O conteúdo sempre aparece: sem movimento, mas aparece. */
 @media ( prefers-reduced-motion: reduce ) {
 

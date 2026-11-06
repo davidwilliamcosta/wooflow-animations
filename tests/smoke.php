@@ -2633,6 +2633,235 @@ ok( false === strpos( $cn_engine, 'counter' ), 'o GSAP não tem mais contador: d
 ok( file_exists( WFAN_DIR . 'tests/counter.js' ), 'o teste do contador existe' );
 ok( false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/counter.js' ), 'e o build não empacota sem rodá-lo' );
 
+section( '27. Painéis expansíveis' );
+
+/*
+ * Regra 33. Os painéis são do container pai, como o fundo animado é do
+ * elemento: seção própria, todo parâmetro em custom property escrita pelos
+ * `selectors`, nada em atributo — no canvas do editor o wrapper perde os
+ * atributos do PHP a cada re-render (regra 19), o CSS por elemento não.
+ */
+$pnl_section = WFAN_Keys::P . WFAN_Panels::SECTION;
+
+ok( isset( $block->sections[ $pnl_section ] ), 'o container ganha a seção dos painéis' );
+ok(
+	'layout' === ( $block->sections[ $pnl_section ]['tab'] ?? '' ),
+	'na aba Layout, junto das outras (regra 2)',
+	$block->sections[ $pnl_section ]['tab'] ?? '(sem aba)'
+);
+ok( ! isset( $widget->sections[ $pnl_section ] ), 'widget não ganha a seção: painel é container filho' );
+
+$pnl_section_el = new WFAN_Fake_Element( 'section', 'section' );
+do_action( 'elementor/element/section/section_layout/before_section_start', $pnl_section_el, [] );
+ok( ! isset( $pnl_section_el->sections[ $pnl_section ] ), 'nem a seção antiga, que não tem filhos diretos que sejam painéis' );
+
+$pnl_controls = [];
+
+foreach ( $block->controls as $id => $args ) {
+	if ( 0 === strpos( $id, WFAN_Keys::ours( 'pnl' ) ) ) {
+		$pnl_controls[ $id ] = $args;
+	}
+}
+
+ok( count( $pnl_controls ) === count( WFAN_Panels::VARS ), 'um controle por custom property', count( $pnl_controls ) . ' controles' );
+
+$pnl_undeclared = [];
+$pnl_heavy      = [];
+$pnl_bad_sel    = [];
+$pnl_written    = [];
+
+foreach ( $pnl_controls as $id => $args ) {
+	$suffix = substr( $id, strlen( WFAN_Keys::P ) );
+
+	if ( ! in_array( $suffix, WFAN_Keys::OURS, true ) ) {
+		$pnl_undeclared[] = $suffix;
+	}
+
+	if ( 'ui' !== ( $args['render_type'] ?? '' ) ) {
+		$pnl_heavy[] = $suffix;
+	}
+
+	$sel = $args['selectors'] ?? [];
+	$css = (string) ( $sel['{{WRAPPER}}'] ?? '' );
+
+	if ( 1 !== count( $sel ) || 1 !== substr_count( $css, ';' ) || ! preg_match( '/^(--wfan-pnl[a-z0-9-]*): /', $css, $m ) ) {
+		$pnl_bad_sel[] = $suffix;
+		continue;
+	}
+
+	$pnl_written[] = $m[1];
+}
+
+ok( ! $pnl_undeclared, 'toda chave dos painéis está em Keys::OURS (copiar/colar e biblioteca)', implode( ', ', $pnl_undeclared ) );
+ok( ! $pnl_heavy, 'todos declaram render_type ui (regra 22)', implode( ', ', $pnl_heavy ) );
+ok( ! $pnl_bad_sel, 'cada controle escreve uma só custom property no {{WRAPPER}}', implode( ', ', $pnl_bad_sel ) );
+ok(
+	! array_diff( array_values( WFAN_Panels::VARS ), $pnl_written ) && ! array_diff( $pnl_written, array_values( WFAN_Panels::VARS ) ),
+	'e as custom properties escritas são exatamente as do mapa VARS'
+);
+
+$pnl_on    = [ WFAN_Keys::ours( 'pnl' ) => 'yes' ];
+$pnl_loose = [];
+$pnl_stuck = [];
+
+foreach ( $pnl_controls as $id => $args ) {
+	if ( WFAN_Keys::ours( 'pnl' ) === $id ) {
+		continue;
+	}
+
+	if ( wfan_visible( $args, [] ) ) {
+		$pnl_loose[] = $id;
+	}
+
+	if ( ! wfan_visible( $args, $pnl_on + [ WFAN_Keys::ours( 'pnl_stack' ) => '767' ] ) ) {
+		$pnl_stuck[] = $id;
+	}
+}
+
+ok( ! $pnl_loose, 'nenhum controle dos painéis aparece com o toggle desligado', implode( ', ', $pnl_loose ) );
+ok( ! $pnl_stuck, 'todos aparecem com o toggle ligado', implode( ', ', $pnl_stuck ) );
+ok(
+	! wfan_visible( $block->controls[ WFAN_Keys::ours( 'pnl_bar' ) ], $pnl_on + [ WFAN_Keys::ours( 'pnl_stack' ) => '0' ] ),
+	'"empilhar: nunca" esconde a altura da barra, que não seria obedecida'
+);
+ok(
+	isset( $block->controls[ WFAN_Keys::ours( 'pnl_ease' ) ]['selectors_dictionary'] )
+	&& ! array_diff_key( WFAN_Panels::easings(), $block->controls[ WFAN_Keys::ours( 'pnl_ease' ) ]['selectors_dictionary'] ),
+	'a curva gravada é um nome, traduzido para o CSS pelo dicionário'
+);
+ok(
+	isset( WFAN_Panels::stacks()[ WFAN_Panels::DEFAULTS['stack'] ] )
+	&& isset( WFAN_Panels::triggers()[ WFAN_Panels::DEFAULTS['trigger'] ] )
+	&& isset( WFAN_Panels::easings()[ WFAN_Panels::DEFAULTS['ease'] ] ),
+	'todo padrão é uma das opções'
+);
+
+// Os dois sentidos do contrato, como na regra 15 e no fundo animado.
+$pnl_js   = (string) file_get_contents( WFAN_DIR . 'assets/js/frontend/panels.js' );
+$pnl_css  = (string) file_get_contents( WFAN_DIR . 'assets/css/frontend.css' );
+$pnl_both = $pnl_js . $pnl_css;
+$pnl_unread = [];
+
+foreach ( WFAN_Panels::VARS as $slot => $var ) {
+	if ( ! preg_match( '/' . preg_quote( $var, '/' ) . '(?![a-z0-9-])/', $pnl_both ) ) {
+		$pnl_unread[] = $slot;
+	}
+}
+
+ok( ! $pnl_unread, 'toda custom property dos painéis é lida no JS ou no CSS', implode( ', ', $pnl_unread ) );
+
+$pnl_unsent = [];
+
+if ( preg_match_all( '/--wfan-pnl[a-z0-9-]*/', $pnl_both, $m ) ) {
+	$pnl_unsent = array_diff( array_unique( $m[0] ), array_values( WFAN_Panels::VARS ), [ WFAN_Panels::MEASURE_VAR ] );
+}
+
+ok( ! $pnl_unsent, 'nenhuma custom property dos painéis sem dono no PHP', implode( ', ', $pnl_unsent ) );
+ok(
+	false !== strpos( $pnl_js, "'" . WFAN_Panels::HOST_CLASS . "'" ),
+	'a classe do container tem o mesmo nome nos dois lados',
+	WFAN_Panels::HOST_CLASS
+);
+
+// Sem JavaScript, nada pode sumir: toda regra que esconde pende do estado
+// que só o panels.js põe (regra 8).
+$pnl_hiding = [];
+
+if ( preg_match_all( '/([^{}]+)\{[^{}]*(?:visibility:\s*hidden|opacity:\s*0;)[^{}]*\}/', $pnl_css, $m ) ) {
+	foreach ( $m[1] as $selector ) {
+		if ( false !== strpos( $selector, 'wfan-pnl' ) && false === strpos( $selector, '.wfan-pnl--ready' ) && false === strpos( $selector, '.is-open' ) ) {
+			$pnl_hiding[] = trim( $selector );
+		}
+	}
+}
+
+ok( ! $pnl_hiding, 'nenhuma regra dos painéis esconde conteúdo sem o JS ter montado', implode( ' | ', $pnl_hiding ) );
+ok(
+	false !== strpos( $pnl_css, ':not( .elementor-element-overlay )' ),
+	'o contorno do editor não some no painel fechado'
+);
+ok(
+	false !== strpos( $pnl_css, '.wfan-pnl-item > .wfan-pnl-rail:hover' ),
+	'o hover do botão é zerado contra o estilo de botão do tema e do kit'
+);
+
+// Render: só o container ganha a classe, e convive com uma animação.
+$pnl_host = render_with( new WFAN_Fake_Element( 'container', 'container', [
+	WFAN_Keys::ours( 'pnl' )    => 'yes',
+	WFAN_Keys::ours( 'preset' ) => 'fade-up',
+] ) );
+
+ok( in_array( WFAN_Panels::HOST_CLASS, $pnl_host->classes(), true ), 'o container ligado ganha a classe' );
+ok( 'fade-up' === ( $pnl_host->payload()['p'] ?? '' ), 'e mantém a animação de entrada dele' );
+
+$pnl_widget = render_with( new WFAN_Fake_Element( 'common', 'widget', [ WFAN_Keys::ours( 'pnl' ) => 'yes' ] ) );
+ok( ! in_array( WFAN_Panels::HOST_CLASS, $pnl_widget->classes(), true ), 'widget com a chave colada não vira container de painéis' );
+
+$pnl_off = render_with( new WFAN_Fake_Element( 'container', 'container', [] ) );
+ok( ! in_array( WFAN_Panels::HOST_CLASS, $pnl_off->classes(), true ), 'container sem o toggle não ganha a classe' );
+
+// Assets: script próprio, sem core e sem biblioteca, enfileirado na hora (regra 24).
+$pnl_assets = new WFAN_Assets();
+$pnl_assets->register();
+WFAN_Test_Hooks::$enqueued = [];
+$pnl_assets->require_panels();
+
+ok( in_array( 'wfan-panels', WFAN_Test_Hooks::$enqueued, true ), 'os painéis entram na fila durante o render, não só no rodapé' );
+ok( in_array( 'wfan-frontend', WFAN_Test_Hooks::$enqueued, true ), 'com a folha que desenha a faixa' );
+ok( ! in_array( 'wfan-core', WFAN_Test_Hooks::$enqueued, true ), 'sem arrastar o core nem motor nenhum' );
+ok( [] === ( WFAN_Test_Hooks::$scripts['wfan-panels']['deps'] ?? null ), 'o script dos painéis não depende de biblioteca' );
+
+$pnl_quiet = new WFAN_Assets();
+$pnl_quiet->register();
+WFAN_Test_Hooks::$enqueued = [];
+$pnl_quiet->enqueue_needed();
+ok( ! in_array( 'wfan-panels', WFAN_Test_Hooks::$enqueued, true ), 'página sem painéis não carrega o script' );
+
+WFAN_Test_Hooks::$enqueued = [];
+( new WFAN_Assets() )->enqueue_all_for_preview();
+ok( in_array( 'wfan-panels', WFAN_Test_Hooks::$enqueued, true ), 'o preview do editor já tem o script antes de o toggle ser ligado' );
+
+WFAN_Test_Hooks::$inline_js = [];
+( new WFAN_Assets() )->register();
+
+$pnl_cfg_raw = WFAN_Test_Hooks::$inline_js['wfan-panels'] ?? '';
+$pnl_cfg     = json_decode( (string) preg_replace( '/^var wfanPanelsConfig = |;$/', '', trim( $pnl_cfg_raw ) ), true );
+
+ok( is_array( $pnl_cfg ), 'a configuração dos painéis é JSON válido', $pnl_cfg_raw );
+
+foreach ( [ 'reduced', 'offMobile', 'debug', 'editor' ] as $flag ) {
+	ok(
+		is_bool( $pnl_cfg[ $flag ] ?? null ),
+		"wfanPanelsConfig.$flag chega como booleano, nunca \"0\" (regra 17)",
+		var_export( $pnl_cfg[ $flag ] ?? null, true )
+	);
+}
+
+ok( ( $pnl_cfg['vars'] ?? null ) === WFAN_Panels::VARS, 'o JS recebe o mesmo mapa de custom properties' );
+ok( ( $pnl_cfg['measure'] ?? null ) === WFAN_Panels::MEASURE_VAR, 'e o nome da largura medida, que não é controle' );
+ok(
+	false !== strpos( $pnl_css, 'min-width: var( ' . WFAN_Panels::MEASURE_VAR ),
+	'o conteúdo de todo painel é diagramado na largura do aberto: o fechado não estica a fileira'
+);
+ok(
+	! in_array( WFAN_Panels::MEASURE_VAR, WFAN_Panels::VARS, true ),
+	'a largura medida não vira controle: quem a escreve é o JS, inline'
+);
+
+// Editor: o painel empurra o canvas quando um controle muda, e abre o painel
+// do elemento escolhido para edição.
+ok(
+	false !== strpos( $panel_js, 'function schedulePanels' ) && false !== strpos( $pnl_js, 'function syncId' ),
+	'ligar os painéis no editor mostra na hora, sem ida ao servidor'
+);
+ok(
+	false !== strpos( $panel_js, 'wfanPanels.reveal' ) && false !== strpos( $pnl_js, 'function reveal' ),
+	'escolher um elemento de painel fechado abre o painel'
+);
+
+ok( file_exists( WFAN_DIR . 'tests/panels.js' ), 'o teste dos painéis existe' );
+ok( false !== strpos( file_get_contents( WFAN_DIR . 'build.sh' ), 'tests/panels.js' ), 'e o build não empacota sem rodá-lo' );
+
 // ------------------------------------------------------------------ resultado
 
 echo "\n" . str_repeat( '-', 48 ) . "\n";

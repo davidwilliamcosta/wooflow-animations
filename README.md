@@ -161,6 +161,46 @@ isso o elemento ganha um contexto de empilhamento próprio (`isolation: isolate`
 — o que significa que um filho que precise escapar por `z-index`, um submenu ou
 um tooltip, fica contido nele. Não ligue o fundo em elementos assim.
 
+## Painéis expansíveis
+
+O "accordion horizontal" de seções de soluções e serviços: uma fileira de
+painéis em que um fica aberto, ocupando quase toda a largura, e os outros viram
+faixas estreitas com o número, o título na vertical e um botão **+**. Clicar
+numa faixa abre aquele painel e fecha o anterior. **Não é animação**, e por
+isso tem seção própria, a **WooFlow — Painéis expansíveis**, na aba Layout do
+container.
+
+Como montar:
+
+1. Crie um container com a direção em **linha** e dê a ele uma **altura
+   mínima** (ex.: 560 px) — sem ela, os painéis podem mudar de altura ao abrir.
+2. Dentro dele, um container filho por painel, cada um com a foto de fundo, a
+   sobreposição e o conteúdo (Título, texto, botão).
+3. No container pai, ligue **Painéis expansíveis**.
+
+O título da faixa vem do **primeiro Título** de cada painel. Para escrever
+outro, ponha no painel o atributo `data-wfan-label|Texto da faixa`
+(Avançado > Atributos, no Elementor Pro).
+
+| Controle | O que faz |
+|---|---|
+| Painel aberto de início | qual painel começa aberto (1 é o primeiro) |
+| Abrir com | clique ou passar o mouse; empilhado e em tela de toque é sempre o clique |
+| Largura do painel fechado | largura da faixa, em px |
+| Empilhar | no celular, no tablet e no celular, ou nunca |
+| Altura da barra empilhada | altura do painel fechado quando empilhado |
+| Mostrar número | o "01", "02"… no pé da faixa, ao lado do + |
+| Duração / Curva | velocidade e forma da abertura |
+| Cor do título e do + | aceita cor global do Elementor |
+| Véu do painel fechado | escurece a foto do painel fechado para o título ser lido |
+| Tamanho do título | tamanho do título da faixa |
+
+No editor, escolher para edição um elemento que está num painel fechado abre o
+painel. A faixa é um botão de verdade: dá para navegar pelo teclado, e o leitor
+de tela lê o número, o título e se o painel está aberto. Com *reduzir
+movimento* ligado no sistema, os painéis trocam sem transição. Sem JavaScript,
+os painéis ficam lado a lado com todo o conteúdo à mostra.
+
 ---
 
 ## Presets
@@ -452,9 +492,11 @@ node tests/header.js
 node tests/popup.js
 node tests/scrub.js
 node tests/marquee.js
+node tests/counter.js
+node tests/panels.js
 ```
 
-574 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
+639 verificações sem WordPress, sem banco e sem Elementor instalado: nomes de
 chave, condições de controle apontando para controle existente, motor resolvido
 por preset, biblioteca enfileirada só quando pedida, reuso do Lottie do Pro, o
 contrato `data-wfan` conferido chave por chave entre o PHP e o `core.js`, a
@@ -488,6 +530,18 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.10.0
+
+- **Painéis expansíveis.** Nova seção no container, *WooFlow — Painéis
+  expansíveis*: os containers filhos viram painéis, um aberto e os outros como
+  faixas com número, título na vertical e um botão +. Abre por clique ou por
+  hover, empilha como accordion vertical no celular (ou no tablet, ou nunca) e
+  não carrega biblioteca nenhuma: um script próprio de ~6,5 KB com gzip, só nas páginas que
+  usam.
+- O conteúdo de um painel é diagramado já na largura de aberto e só revelado:
+  o texto não requebra enquanto o painel abre, e o conteúdo escondido dos
+  fechados não estica a fileira.
 
 ### 2.9.0
 

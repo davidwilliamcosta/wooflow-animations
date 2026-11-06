@@ -117,6 +117,18 @@ class WFAN_Keys {
 		'ovl_size',
 		'ovl_opacity',
 		'ovl_blend',
+		'pnl',
+		'pnl_first',
+		'pnl_trigger',
+		'pnl_closed',
+		'pnl_stack',
+		'pnl_bar',
+		'pnl_number',
+		'pnl_dur',
+		'pnl_ease',
+		'pnl_fg',
+		'pnl_shade',
+		'pnl_size',
 	];
 
 	/**

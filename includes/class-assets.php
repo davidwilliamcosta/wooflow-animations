@@ -46,6 +46,13 @@ class WFAN_Assets {
 	private $overlay = false;
 
 	/**
+	 * Algum container desta página ligou os painéis expansíveis.
+	 *
+	 * @var bool
+	 */
+	private $panels = false;
+
+	/**
 	 * Animações de entrada nativas usadas nesta página.
 	 *
 	 * @var array<string,bool>
@@ -166,6 +173,30 @@ class WFAN_Assets {
 		// elemento pode tê-lo sem ter animação alguma.
 		wp_register_script( 'wfan-overlay', self::url( 'assets/js/frontend/overlay.js' ), [], self::ver( 'assets/js/frontend/overlay.js' ), true );
 		self::localize( 'wfan-overlay', 'wfanOverlayConfig', $this->overlay_config() );
+
+		// Painéis expansíveis: também sem core e sem biblioteca. Regra 33.
+		wp_register_script( 'wfan-panels', self::url( 'assets/js/frontend/panels.js' ), [], self::ver( 'assets/js/frontend/panels.js' ), true );
+		self::localize( 'wfan-panels', 'wfanPanelsConfig', $this->panels_config() );
+	}
+
+	/**
+	 * Configuração dos painéis expansíveis, tipada pelo mesmo caminho do resto
+	 * (regra 17): `cfg.reduced`, `cfg.offMobile` e `cfg.editor` são testados
+	 * por veracidade no panels.js.
+	 *
+	 * @return array
+	 */
+	private function panels_config() {
+		return [
+			'reduced'   => WFAN_Settings::is_on( 'respect_reduced' ),
+			'offMobile' => WFAN_Settings::is_on( 'off_mobile' ),
+			'mobileBp'  => (int) WFAN_Settings::get( 'mobile_bp', 767 ),
+			'debug'     => WFAN_Settings::is_on( 'debug' ),
+			'editor'    => $this->is_preview(),
+			'hostClass' => WFAN_Panels::HOST_CLASS,
+			'vars'      => WFAN_Panels::VARS,
+			'measure'   => WFAN_Panels::MEASURE_VAR,
+		];
 	}
 
 	/**
@@ -309,6 +340,22 @@ class WFAN_Assets {
 	}
 
 	/**
+	 * Um container renderizado ligou os painéis expansíveis.
+	 *
+	 * A folha do front-end vem junto porque é ela que desenha a faixa do
+	 * painel fechado e traduz as custom properties. Nada de core.js.
+	 *
+	 * @return void
+	 */
+	public function require_panels() {
+		$this->used   = true;
+		$this->styles = true;
+		$this->panels = true;
+
+		$this->flush();
+	}
+
+	/**
 	 * Um elemento renderizado foi entregue à animação de entrada do Elementor.
 	 *
 	 * A folha de cada animação é registrada pelo próprio Elementor
@@ -374,6 +421,10 @@ class WFAN_Assets {
 
 		if ( $this->overlay ) {
 			wp_enqueue_script( 'wfan-overlay' );
+		}
+
+		if ( $this->panels ) {
+			wp_enqueue_script( 'wfan-panels' );
 		}
 
 		if ( ! $this->needed ) {
@@ -491,6 +542,7 @@ class WFAN_Assets {
 		// O fundo animado precisa estar lá antes de o usuário ligar o toggle:
 		// no editor não há segunda chance de enfileirar.
 		wp_enqueue_script( 'wfan-overlay' );
+		wp_enqueue_script( 'wfan-panels' );
 
 		// Pelo mesmo motivo, os keyframes das nativas: o ▶ Testar reproduz uma
 		// animação que o elemento ainda não tinha quando a página do preview
