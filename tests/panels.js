@@ -403,6 +403,7 @@ console.log( '\n1. Quem é o container de painéis' );
 	ok( t.host.classSet.has( 'wfan-pnl--ready' ), 'o container fica pronto' );
 	ok( t.itens.every( ( it ) => ! it.__wfanPanels ), 'nenhum painel vira container de painéis, apesar da herança' );
 	ok( t.root.classSet.has( 'wfan-pnl-root' ), 'a caixa do conteúdo (.e-con-inner) é a raiz' );
+	ok( 'flex' === t.root.style.display, 'a raiz vira flex, mesmo quando o Elementor a desenhou em grade' );
 	ok( 'row' === t.root.style.flexDirection && 'nowrap' === t.root.style.flexWrap, 'painéis lado a lado, sem quebrar linha' );
 }
 
@@ -624,7 +625,7 @@ console.log( '\n7. Editor' );
 		t.itens.every( ( it ) => '' === it.style.flex && '' === it.style.width && '' === it.style.height && ! it.classSet.has( 'wfan-pnl-item' ) ),
 		'e cada painel volta a ser o container que o Elementor desenhou'
 	);
-	ok( '' === t.root.style.flexDirection && ! t.host.classSet.has( 'wfan-pnl--ready' ), 'a raiz também' );
+	ok( '' === t.root.style.display && '' === t.root.style.flexDirection && ! t.host.classSet.has( 'wfan-pnl--ready' ), 'a raiz também' );
 	ok( undefined === t.host.style[ '--wfan-pnl-cw' ], 'e a largura medida sai do container' );
 
 	t.host.vars[ '--wfan-pnl' ] = '1';

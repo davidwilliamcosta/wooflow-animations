@@ -172,8 +172,10 @@ container.
 
 Como montar:
 
-1. Crie um container com a direção em **linha** e dê a ele uma **altura
+1. Crie um container — em **linha** ou em **grade** — e dê a ele uma **altura
    mínima** (ex.: 560 px) — sem ela, os painéis podem mudar de altura ao abrir.
+   Com os painéis ligados, a fileira vira flex: o aberto ocupa o que sobra e
+   os outros ficam na largura da faixa.
 2. Dentro dele, um container filho por painel, cada um com a foto de fundo, a
    sobreposição e o conteúdo (Título, texto, botão).
 3. No container pai, ligue **Painéis expansíveis**.
@@ -530,6 +532,14 @@ WordPress.
 ---
 
 ## Changelog
+
+### 2.10.1
+
+- **Painéis expansíveis num container em grade.** O Elementor desenha a grade
+  com `display: grid`, e o flex dos painéis era ignorado: os quatro ficavam
+  com a mesma largura, mesmo com o primeiro marcado como aberto. Com os
+  painéis ligados, a fileira vira flex — o aberto ocupa o que sobra e clicar
+  numa faixa troca o painel.
 
 ### 2.10.0
 

@@ -83,7 +83,9 @@
  *
  * A largura e a altura de cada painel vão inline, escritas pelo JS — o
  * Elementor põe `width` e `flex` em todo container, e o inline passa por cima
- * sem `!important`. Daqui saem as transições, a faixa do painel fechado e o
+ * sem `!important`. A raiz também vira flex no JS: um container em grade
+ * (`display: var(--display)`, com `--display: grid`) ignora esse flex e deixa
+ * as colunas iguais. Daqui saem as transições, a faixa do painel fechado e o
  * sumiço do conteúdo dele.
  */
 .wfan-pnl--ready .wfan-pnl-item {

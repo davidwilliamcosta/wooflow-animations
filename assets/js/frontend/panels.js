@@ -60,7 +60,7 @@
 	// Propriedades inline que este arquivo escreve, para devolver tudo como
 	// estava quando o toggle é desligado no editor.
 	var ITEM_PROPS = [ 'flex', 'width', 'minWidth', 'maxWidth', 'height' ];
-	var ROOT_PROPS = [ 'flexDirection', 'flexWrap', 'alignItems' ];
+	var ROOT_PROPS = [ 'display', 'flexDirection', 'flexWrap', 'alignItems' ];
 
 	function log() {
 		if ( cfg.debug && window.console ) {
@@ -252,6 +252,13 @@
 		host.classList.toggle( STILL, prefersReduced() || ( !! cfg.offMobile && isSmallScreen() ) );
 
 		root.classList.add( ROOT );
+
+		// Grade do Elementor (Layout > Grade, `--display: grid`, classe
+		// `.e-grid`) ignora o flex dos filhos: as colunas ficam iguais e o
+		// painel aberto não cresce. O inline passa por cima de
+		// `display: var(--display)` sem `!important`. Sem o JS, a grade
+		// continua como o Elementor desenhou.
+		root.style.display = 'flex';
 		root.style.flexDirection = this.stacked ? 'column' : 'row';
 		root.style.flexWrap = 'nowrap';
 		root.style.alignItems = 'stretch';
